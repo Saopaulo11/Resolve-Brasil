@@ -14,6 +14,17 @@ export default tseslint.config(
     },
   },
   {
+    // Корневая точка входа для Vercel — CommonJS-файл на обычном Node:
+    // правила для модулей TypeScript здесь дают ложные ошибки.
+    files: ["server.js"],
+    languageOptions: {
+      globals: { require: "readonly", module: "writable" },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     // Скрипты из public/ выполняются в браузере, а не в Node: там другие
     // глобальные объекты, и правила Node давали бы ложные ошибки.
     files: ["public/js/**/*.js"],

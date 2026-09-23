@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
+  "main": "server.js",
   "engines": {
     "node": ">=22"
   },
