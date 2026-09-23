@@ -7,6 +7,7 @@ import type {
   MessageDirection,
   MessageType,
   PaymentMethod,
+  PixSituation,
 } from "../generated/prisma/enums";
 import { db } from "../services/db";
 
@@ -28,6 +29,7 @@ export type CaseRecord = {
   amount: string | null;
   currency: string;
   paymentMethod: PaymentMethod;
+  pixSituation: PixSituation | null;
   purchaseDate: Date | null;
   promisedDate: Date | null;
   status: CaseStatus;
@@ -138,6 +140,8 @@ export interface CaseStore {
   /** Возврат закрытого дела в работу: дата закрытия снимается. */
   reopen(caseId: string, status: CaseStatus): Promise<void>;
   setEscalation(caseId: string, level: EscalationLevel, status: CaseStatus): Promise<void>;
+  /** Ситуацию с Pix выбирает человек: вывести её из рассказа нельзя (§36). */
+  setPixSituation(caseId: string, situation: PixSituation): Promise<void>;
 }
 
 /**
@@ -300,6 +304,13 @@ export class PrismaCaseStore implements CaseStore {
     await db().case.update({
       where: { id: caseId },
       data: { escalationLevel: level, status },
+    });
+  }
+
+  async setPixSituation(caseId: string, situation: PixSituation): Promise<void> {
+    await db().case.update({
+      where: { id: caseId },
+      data: { pixSituation: situation },
     });
   }
 }

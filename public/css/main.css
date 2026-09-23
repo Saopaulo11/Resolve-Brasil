@@ -863,6 +863,54 @@ input[type="date"] {
   min-height: 48px;
 }
 
+/* --- Выбор из нескольких вариантов ---------------------------------------- */
+
+.choices {
+  border: 0;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Вся карточка кликабельна: попадать пальцем в кружок радиокнопки на
+   телефоне неудобно, и человек промахивается. */
+.choice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--blue);
+  background: var(--bg-soft);
+}
+
+.choice input {
+  margin-top: 0.25rem;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.choice label {
+  display: grid;
+  gap: 0.125rem;
+  cursor: pointer;
+}
+
+.choice__label {
+  font-weight: 600;
+}
+
+.choice__hint {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
 /* --- Оценка ответа AI (§52) ----------------------------------------------- */
 
 .rating {

@@ -760,6 +760,9 @@ model AnalyticsCase {
   /// Диапазон, а не точная сумма.
   amountBucket      String?          @map("amount_bucket")
   paymentMethod     PaymentMethod
+  /// §36, §84. Категория, а не идентификатор перевода: Pix-транзакция в
+  /// аналитику не попадает никогда (§56).
+  pixSituation      PixSituation?    @map("pix_situation")
   resolutionStatus  CaseStatus       @map("resolution_status")
   resolutionDays    Int?             @map("resolution_days")
   escalationLevel   EscalationLevel  @map("escalation_level")

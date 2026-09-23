@@ -1,4 +1,4 @@
-import type { CaseCategory } from "../generated/prisma/enums";
+import type { CaseCategory, PixSituation } from "../generated/prisma/enums";
 import { trackEvent } from "../analytics/events";
 import { refreshProjection } from "../analytics/pipeline";
 import { generatePublicCaseId } from "../utils/ids";
@@ -123,6 +123,42 @@ export async function getCaseForUser(
   if (found.userId !== userId) return null;
 
   return { case: found, timeline: await cases.listEvents(found.id) };
+}
+
+/**
+ * Ситуация с Pix (§36).
+ *
+ * Выбирает человек. Отличить мошенничество от коммерческого спора по
+ * рассказу нельзя, а ошибка здесь уводит дело совсем не туда — поэтому
+ * система не догадывается, а спрашивает (§5).
+ */
+export async function setPixSituation(input: {
+  caseRecord: CaseRecord;
+  situation: PixSituation;
+  label: string;
+}): Promise<CaseRecord | null> {
+  const { cases } = stores();
+
+  // Вопрос имеет смысл только там, где платили через Pix. В остальных
+  // случаях это поле осталось бы непроверяемым мусором в аналитике.
+  if (input.caseRecord.paymentMethod !== "PIX") return null;
+  if (input.caseRecord.pixSituation === input.situation) return input.caseRecord;
+
+  await cases.setPixSituation(input.caseRecord.id, input.situation);
+
+  await cases.addEvent({
+    caseId: input.caseRecord.id,
+    type: "pix_situacao",
+    title: `Situação do Pix: ${input.label}`,
+    description: null,
+    eventDate: new Date(),
+    source: "USER_FACT",
+  });
+
+  const updated = await cases.findById(input.caseRecord.id);
+  if (updated) await refreshProjection(updated);
+
+  return updated;
 }
 
 // --- Завершение и эскалация -------------------------------------------------

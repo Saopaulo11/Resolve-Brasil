@@ -6,6 +6,7 @@ import type {
   CaseStatus,
   EscalationLevel,
   Industry,
+  PixSituation,
   PaymentMethod,
 } from "../generated/prisma/enums";
 import { amountBucket } from "./events";
@@ -33,6 +34,7 @@ export type AnalyticsProjection = {
   companyNormalized: string | null;
   amountBucket: string | null;
   paymentMethod: PaymentMethod;
+  pixSituation: PixSituation | null;
   resolutionStatus: CaseStatus;
   resolutionDays: number | null;
   escalationLevel: EscalationLevel;
@@ -82,6 +84,7 @@ export function projectCase(input: {
     companyNormalized: caseRecord.companyNormalized,
     amountBucket: amountBucket(caseRecord.amount === null ? null : Number(caseRecord.amount)),
     paymentMethod: caseRecord.paymentMethod,
+    pixSituation: caseRecord.pixSituation,
     resolutionStatus: caseRecord.status,
     resolutionDays: resolutionDays(caseRecord),
     escalationLevel: caseRecord.escalationLevel,

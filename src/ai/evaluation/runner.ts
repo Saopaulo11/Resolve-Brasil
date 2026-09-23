@@ -60,6 +60,8 @@ export function contextFor(item: EvalCase): CaseContext {
     amount: item.amount,
     currency: "BRL",
     paymentMethod: item.paymentMethod,
+    // Набор оценки ситуацию Pix не описывает: её выбирает живой человек.
+    pixSituation: null,
     purchaseDate: null,
     promisedDate: null,
     status: "NOVO",

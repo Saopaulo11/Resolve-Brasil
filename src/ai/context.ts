@@ -30,6 +30,7 @@ export function buildCaseContext(input: {
     amount: input.case.amount,
     currency: input.case.currency,
     paymentMethod: input.case.paymentMethod,
+    pixSituation: input.case.pixSituation,
     purchaseDate: isoDate(input.case.purchaseDate),
     promisedDate: isoDate(input.case.promisedDate),
     status: input.case.status,

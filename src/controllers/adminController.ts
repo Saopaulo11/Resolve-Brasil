@@ -220,6 +220,7 @@ export async function analytics(
         { titulo: "Por categoria", dados: report.byCategory },
         { titulo: "Por setor", dados: report.byIndustry },
         { titulo: "Por forma de pagamento", dados: report.byPaymentMethod },
+        { titulo: "Por situação do Pix", dados: report.byPixSituation },
         { titulo: "Por faixa de valor", dados: report.byAmountBucket },
         { titulo: "Por mês", dados: report.byMonth },
         { titulo: "Por estado", dados: report.byState },

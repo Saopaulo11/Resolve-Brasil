@@ -353,6 +353,7 @@ describe.skipIf(!DATABASE_URL)("хранилища на Prisma", () => {
       companyNormalized: null,
       amountBucket: "100-500",
       paymentMethod: "PIX",
+      pixSituation: "GOLPE_FRAUDE",
       resolutionStatus: "EM_ANALISE",
       resolutionDays: null,
       escalationLevel: "NENHUM",
@@ -372,6 +373,7 @@ describe.skipIf(!DATABASE_URL)("хранилища на Prisma", () => {
       companyNormalized: null,
       amountBucket: "100-500",
       paymentMethod: "PIX",
+      pixSituation: "GOLPE_FRAUDE",
       resolutionStatus: "RESOLVIDO",
       resolutionDays: 12,
       escalationLevel: "NENHUM",
@@ -382,6 +384,9 @@ describe.skipIf(!DATABASE_URL)("хранилища на Prisma", () => {
     const rows = (await analytics.listReal()).filter((row) => row.caseKey === `chave-${tag}`);
     expect(rows).toHaveLength(1);
     expect(rows[0]?.resolutionStatus).toBe("RESOLVIDO");
+    // Категория ситуации, а не идентификатор перевода: сам Pix в
+    // аналитику не попадает никогда (§56).
+    expect(rows[0]?.pixSituation).toBe("GOLPE_FRAUDE");
 
     const columns = Object.keys(rows[0] ?? {});
     for (const forbidden of ["userId", "caseId", "phone", "email", "cpf", "description"]) {

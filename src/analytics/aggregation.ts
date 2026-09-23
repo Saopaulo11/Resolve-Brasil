@@ -114,6 +114,7 @@ export type InternalReport = {
   summary: Summary;
   byCategory: GroupedResult;
   byIndustry: GroupedResult;
+  byPixSituation: GroupedResult;
   byPaymentMethod: GroupedResult;
   byAmountBucket: GroupedResult;
   byMonth: GroupedResult;
@@ -131,6 +132,13 @@ export async function internalReport(): Promise<InternalReport> {
     summary: summarize(rows, minGroupSize),
     byCategory: groupWithSuppression(rows, (row) => row.category, minGroupSize),
     byIndustry: groupWithSuppression(rows, (row) => row.industry, minGroupSize),
+    // §36: только дела, где ситуация названа. Остальные не «прочее», их
+    // просто нет в этом разрезе.
+    byPixSituation: groupWithSuppression(
+      rows.filter((row) => row.pixSituation !== null),
+      (row) => row.pixSituation ?? "",
+      minGroupSize,
+    ),
     byPaymentMethod: groupWithSuppression(rows, (row) => row.paymentMethod, minGroupSize),
     byAmountBucket: groupWithSuppression(rows, (row) => row.amountBucket, minGroupSize),
     byMonth: groupWithSuppression(rows, (row) => row.month, minGroupSize),

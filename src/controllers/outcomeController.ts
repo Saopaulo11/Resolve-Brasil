@@ -6,9 +6,11 @@ import {
   ESCALATION_ORDER,
   getCaseForUser,
   reopenCase,
+  setPixSituation,
   type CaseOutcome,
   type EscalationStep,
 } from "../cases/caseService";
+import { isPixSituation, pixSituationDefinition } from "../cases/pix";
 import { ESCALATION_LABELS } from "../cases/status";
 import { isValidPublicCaseId } from "../utils/ids";
 
@@ -78,6 +80,36 @@ export async function reabrir(
 
   await reopenCase(found.case);
   res.redirect(303, `/caso/${found.case.publicId}`);
+}
+
+export async function situacaoPix(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) return;
+
+  const found = await resolveCase(req, userId);
+  if (!found) return next();
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  if (!isPixSituation(body.situacao)) return next();
+
+  const updated = await setPixSituation({
+    caseRecord: found.case,
+    situation: body.situacao,
+    label: pixSituationDefinition(body.situacao).label,
+  });
+
+  const aviso = updated
+    ? null
+    : "Esta pergunta vale para casos pagos com Pix.";
+
+  res.redirect(
+    303,
+    `/caso/${found.case.publicId}${aviso ? `?aviso=${encodeURIComponent(aviso)}` : "#pix"}`,
+  );
 }
 
 export async function escalar(

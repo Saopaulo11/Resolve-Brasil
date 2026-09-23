@@ -80,6 +80,7 @@ async function main(): Promise<void> {
 
     printGroup("По категориям", report.byCategory);
     printGroup("По отраслям", report.byIndustry);
+    printGroup("По ситуации Pix", report.byPixSituation);
     printGroup("По способу оплаты", report.byPaymentMethod);
     printGroup("По диапазону суммы", report.byAmountBucket);
     printGroup("По месяцам", report.byMonth);

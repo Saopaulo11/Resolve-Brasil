@@ -4,6 +4,7 @@ import type {
   CaseCategory,
   CaseStatus,
   EscalationLevel,
+  PixSituation,
 } from "../generated/prisma/enums";
 import type {
   CaseEventRecord,
@@ -41,6 +42,7 @@ export class MemoryCaseStore implements CaseStore {
       amount: null,
       currency: "BRL",
       paymentMethod: "DESCONHECIDO",
+      pixSituation: null,
       purchaseDate: null,
       promisedDate: null,
       status: "NOVO",
@@ -184,6 +186,13 @@ export class MemoryCaseStore implements CaseStore {
     if (!record) return;
     record.escalationLevel = level;
     record.status = status;
+    record.updatedAt = new Date();
+  }
+
+  async setPixSituation(caseId: string, situation: PixSituation): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    record.pixSituation = situation;
     record.updatedAt = new Date();
   }
 

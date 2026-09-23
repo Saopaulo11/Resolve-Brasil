@@ -52,6 +52,52 @@
       </ol>
     </div>
 
+    <% if (pix) { %>
+      <h2 id="pix">Sobre o Pix</h2>
+      <div class="panel">
+        <%# §36: мошенничество, платёж не тем и спор с реальной компанией
+            ведут в разные стороны. Различить их по рассказу нельзя, поэтому
+            выбирает человек, а не система (§5). %>
+        <p class="muted small">
+          Pix tem caminhos diferentes dependendo do que aconteceu. Qual das
+          situações abaixo descreve melhor o seu caso?
+        </p>
+
+        <% if (pix.atualLabel) { %>
+          <p><strong>Situação informada:</strong> <%= pix.atualLabel %></p>
+        <% } %>
+
+        <form method="post" action="/caso/<%= caso.publicId %>/pix">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <fieldset class="choices">
+            <legend class="sr-only">Situação do Pix</legend>
+            <% pix.opcoes.forEach(function (opcao) { %>
+              <div class="choice">
+                <input type="radio" id="pix-<%= opcao.value %>" name="situacao"
+                       value="<%= opcao.value %>"
+                       <%= pix.atual === opcao.value ? "checked" : "" %> />
+                <label for="pix-<%= opcao.value %>">
+                  <span class="choice__label"><%= opcao.label %></span>
+                  <span class="choice__hint"><%= opcao.hint %></span>
+                </label>
+              </div>
+            <% }); %>
+          </fieldset>
+
+          <button type="submit" class="btn btn--primary">Salvar situação</button>
+        </form>
+
+        <%# §9: конкретные процедуры и сроки сюда не вписываются — они
+            меняются и обязаны приходить из проверенного источника. %>
+        <p class="small muted">
+          Essa informação entra no seu caso como um fato seu e orienta as
+          próximas sugestões. Prazos e procedimentos aparecem apenas quando
+          houver uma fonte oficial confirmada para eles.
+        </p>
+      </div>
+    <% } %>
+
     <h2 id="documentos">Documentos</h2>
 
     <div class="panel">

@@ -17,6 +17,7 @@ import {
   nextEscalation,
 } from "../cases/caseService";
 import { stores } from "../users/storeRegistry";
+import { PIX_SITUATIONS, pixSituationDefinition } from "../cases/pix";
 import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
@@ -192,6 +193,16 @@ export async function ver(
       // работу, а эскалация показывает только следующий шаг — остальные
       // каналы остаются доступны, но не навязываются.
       encerrado: isClosedStatus(found.case.status),
+      // §36: вопрос о Pix показывается только там, где платили через Pix.
+      pix: found.case.paymentMethod === "PIX"
+        ? {
+            atual: found.case.pixSituation,
+            atualLabel: found.case.pixSituation
+              ? pixSituationDefinition(found.case.pixSituation).label
+              : null,
+            opcoes: PIX_SITUATIONS,
+          }
+        : null,
       canais: ESCALATION_ORDER.filter((level) => level !== "NENHUM").map((level) => ({
         valor: level,
         rotulo: ESCALATION_LABELS[level],

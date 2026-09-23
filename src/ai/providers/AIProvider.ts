@@ -34,6 +34,8 @@ export type CaseContext = {
   amount: string | null;
   currency: string;
   paymentMethod: string | null;
+  /// Ситуация с Pix, выбранная человеком (§36). Не выводится моделью.
+  pixSituation: string | null;
   purchaseDate: string | null;
   promisedDate: string | null;
   status: string;
