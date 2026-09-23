@@ -23,7 +23,8 @@ export type DataExport = {
 };
 
 export async function buildExport(userId: string): Promise<DataExport | null> {
-  const { users, cases, documents, facts, reminders, notifications, consents } = stores();
+  const { users, cases, documents, facts, reminders, notifications, consents, sources } =
+    stores();
 
   const user = await users.findById(userId);
   if (!user) return null;
@@ -65,6 +66,14 @@ export async function buildExport(userId: string): Promise<DataExport | null> {
         valor: fact.value,
         situacao: fact.status,
         origem: fact.source,
+      })),
+      // §31: на что опирались подсказки по этому делу. Вопрос «откуда это
+      // взялось» человек вправе задать и получить ответ.
+      fontesOficiais: (await sources.listForCase(item.id)).map((link) => ({
+        assunto: link.claim,
+        organizacao: link.source.organization,
+        endereco: link.source.url,
+        verificadaEm: link.source.lastVerifiedAt?.toISOString() ?? null,
       })),
     })),
   );

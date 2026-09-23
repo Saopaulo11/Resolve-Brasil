@@ -10,6 +10,30 @@ import type { SourceRecord, SourceStore, UpsertSourceInput } from "./sourceStore
  */
 export class MemorySourceStore implements SourceStore {
   private readonly sources = new Map<string, SourceRecord>();
+  private readonly links: Array<{ caseId: string; sourceId: string; claim: string }> = [];
+
+  async linkToCase(input: {
+    caseId: string;
+    sourceId: string;
+    claim: string;
+  }): Promise<void> {
+    const exists = this.links.some(
+      (link) =>
+        link.caseId === input.caseId &&
+        link.sourceId === input.sourceId &&
+        link.claim === input.claim,
+    );
+    if (!exists) this.links.push({ ...input });
+  }
+
+  async listForCase(
+    caseId: string,
+  ): Promise<Array<{ claim: string; source: SourceRecord }>> {
+    return this.links
+      .filter((link) => link.caseId === caseId)
+      .map((link) => ({ claim: link.claim, source: this.sources.get(link.sourceId)! }))
+      .filter((item) => item.source !== undefined);
+  }
 
   async upsert(input: UpsertSourceInput): Promise<SourceRecord> {
     const existing = await this.findByUrl(input.url);

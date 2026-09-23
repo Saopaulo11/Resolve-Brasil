@@ -37,6 +37,15 @@ export interface SourceStore {
   findByUrl(url: string): Promise<SourceRecord | null>;
   markVerified(sourceId: string, at: Date): Promise<void>;
   markUnavailable(sourceId: string, reason: string): Promise<void>;
+  /**
+   * Запоминает, на какой источник опирается утверждение в деле (§31).
+   *
+   * Без этой связи нельзя ответить на вопрос «откуда это взялось»: план
+   * показывает ссылки, а через месяц непонятно, какой именно шаг на
+   * какую из них опирался.
+   */
+  linkToCase(input: { caseId: string; sourceId: string; claim: string }): Promise<void>;
+  listForCase(caseId: string): Promise<Array<{ claim: string; source: SourceRecord }>>;
 }
 
 export class PrismaSourceStore implements SourceStore {
@@ -80,6 +89,37 @@ export class PrismaSourceStore implements SourceStore {
       where: { id: sourceId },
       data: { lastVerifiedAt: at, active: true },
     });
+  }
+
+  async linkToCase(input: {
+    caseId: string;
+    sourceId: string;
+    claim: string;
+  }): Promise<void> {
+    // Повтор — не ошибка: один и тот же источник встречается в плане и в
+    // следующем разборе. Уникальность держит база.
+    await db().caseSource.upsert({
+      where: {
+        caseId_sourceId_claim: {
+          caseId: input.caseId,
+          sourceId: input.sourceId,
+          claim: input.claim,
+        },
+      },
+      update: {},
+      create: input,
+    });
+  }
+
+  async listForCase(
+    caseId: string,
+  ): Promise<Array<{ claim: string; source: SourceRecord }>> {
+    const rows = await db().caseSource.findMany({
+      where: { caseId },
+      orderBy: { createdAt: "asc" },
+      include: { source: true },
+    });
+    return rows.map((row) => ({ claim: row.claim, source: row.source }));
   }
 
   async markUnavailable(sourceId: string, reason: string): Promise<void> {

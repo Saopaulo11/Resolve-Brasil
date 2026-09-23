@@ -108,6 +108,10 @@ export async function runAnalysis(input: {
       aiRequestId,
     });
 
+    if (input.kind === "plano") {
+      await linkPlanSources(input.caseRecord.id, result.data as { sources?: unknown });
+    }
+
     if (input.kind === "classificar") {
       await applyClassification(input.caseRecord, result.data as {
         category: string;
@@ -138,6 +142,39 @@ export async function runAnalysis(input: {
       reason: "falhou",
       detail: "Não foi possível concluir a análise agora. Tente novamente.",
     };
+  }
+}
+
+/**
+ * Запоминает, на какие источники опёрся план (§31).
+ *
+ * Без этой связи вопрос «откуда это взялось» остаётся без ответа: план
+ * показывает ссылки сейчас, а через месяц непонятно, что именно ими
+ * подтверждалось.
+ *
+ * Связываются только источники, уже лежащие в нашей базе: адрес, который
+ * модель вернула сама, туда не попал и попасть не должен (§30).
+ */
+async function linkPlanSources(caseId: string, plan: { sources?: unknown }): Promise<void> {
+  const sources = Array.isArray(plan.sources) ? plan.sources : [];
+  if (sources.length === 0) return;
+
+  const store = stores().sources;
+
+  for (const item of sources) {
+    const url = (item as { url?: unknown }).url;
+    const title = (item as { title?: unknown }).title;
+    if (typeof url !== "string" || typeof title !== "string") continue;
+
+    const known = await store.findByUrl(url);
+    if (!known) continue;
+
+    try {
+      await store.linkToCase({ caseId, sourceId: known.id, claim: title.slice(0, 300) });
+    } catch (error) {
+      // Учёт источников не имеет права ломать выдачу плана человеку.
+      logger().warn({ err: error, url }, "falha ao vincular fonte ao caso");
+    }
   }
 }
 

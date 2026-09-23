@@ -268,6 +268,22 @@ describe.skipIf(!DATABASE_URL)("хранилища на Prisma", () => {
       ),
     ).toBe(true);
 
+    // §31: связь дела с источником — по ней видно, на что опирались подсказки.
+    const user = await users.findByPhone(phone);
+    const [caso] = await cases.listForUser(user!.id);
+    await sources.linkToCase({
+      caseId: caso!.id,
+      sourceId: source.id,
+      claim: "Prazo de resposta",
+    });
+    // Повтор допустим: тот же источник встречается в плане и в разборе.
+    await sources.linkToCase({
+      caseId: caso!.id,
+      sourceId: source.id,
+      claim: "Prazo de resposta",
+    });
+    expect(await sources.listForCase(caso!.id)).toHaveLength(1);
+
     await sources.markUnavailable(source.id, "404");
     expect((await sources.findByUrl(url))?.active).toBe(false);
   });

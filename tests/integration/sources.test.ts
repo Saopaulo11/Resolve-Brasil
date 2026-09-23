@@ -195,3 +195,80 @@ describe("источники в плане действий (§29–§32)", () =
     expect(String(calls[0]?.instructions)).toContain("nenhuma fonte oficial");
   });
 });
+
+/**
+ * §31. Связь дела с источниками.
+ *
+ * Без неё вопрос «откуда это взялось» остаётся без ответа: план показывает
+ * ссылки сейчас, а через месяц непонятно, что именно ими подтверждалось.
+ */
+describe("на что опиралось дело (§31)", () => {
+  it("источник из плана запоминается за делом", async () => {
+    await importCandidates([SOURCE]);
+    await verificarFonte();
+
+    setOpenAiClient(
+      stub(
+        planReply([
+          {
+            organization: SOURCE.organization,
+            title: SOURCE.title,
+            url: SOURCE.url,
+          },
+        ]),
+      ),
+    );
+
+    await gerarPlano();
+
+    const caso = await harness.cases.findByPublicId(publicId);
+    const vinculos = await harness.sources.listForCase(caso!.id);
+
+    expect(vinculos).toHaveLength(1);
+    expect(vinculos[0]?.source.url).toBe(SOURCE.url);
+    expect(vinculos[0]?.claim).toBe(SOURCE.title);
+  });
+
+  it("повторный план не плодит дублей", async () => {
+    await importCandidates([SOURCE]);
+    await verificarFonte();
+
+    setOpenAiClient(
+      stub(
+        planReply([
+          { organization: SOURCE.organization, title: SOURCE.title, url: SOURCE.url },
+        ]),
+      ),
+    );
+
+    await gerarPlano();
+    await gerarPlano();
+
+    const caso = await harness.cases.findByPublicId(publicId);
+    expect(await harness.sources.listForCase(caso!.id)).toHaveLength(1);
+  });
+
+  it("адрес, которого нет в нашей базе, за делом не запоминается", async () => {
+    // §30: источник, не прошедший проверку, для системы не существует —
+    // в том числе когда модель вернула его сама.
+    await importCandidates([SOURCE]);
+    await verificarFonte();
+
+    setOpenAiClient(
+      stub(
+        planReply([
+          {
+            organization: "Fonte inventada",
+            title: "Página que ninguém verificou",
+            url: "https://www.exemplo.gov.br/pagina-inventada",
+          },
+        ]),
+      ),
+    );
+
+    await gerarPlano();
+
+    const caso = await harness.cases.findByPublicId(publicId);
+    expect(await harness.sources.listForCase(caso!.id)).toHaveLength(0);
+  });
+});
