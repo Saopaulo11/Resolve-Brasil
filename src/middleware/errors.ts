@@ -31,7 +31,8 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   const isCsrf = error.message === "CSRF_TOKEN_INVALIDO";
-  const status = isCsrf ? 403 : 500;
+  const isUpload = error.message === "UPLOAD_REJEITADO";
+  const status = isCsrf ? 403 : isUpload ? 413 : 500;
 
   logger().error({ err: error, path: req.path, status }, "erro na requisição");
 
@@ -45,10 +46,17 @@ export function errorHandler(
         message:
           "Por segurança, recarregue a página e envie o formulário novamente.",
       }
-    : {
-        heading: "Algo deu errado",
-        message: "Tente novamente em instantes.",
-      };
+    : isUpload
+      ? {
+          heading: "Arquivo não aceito",
+          message:
+            "O arquivo é grande demais ou foi enviado em um formato inesperado. " +
+            "Envie um PDF, JPG, PNG ou WEBP dentro do limite de tamanho.",
+        }
+      : {
+          heading: "Algo deu errado",
+          message: "Tente novamente em instantes.",
+        };
 
   // Макет сам может не отрендериться — тогда отдаём простой текст,
   // иначе обработчик ошибок уронит ответ второй раз.

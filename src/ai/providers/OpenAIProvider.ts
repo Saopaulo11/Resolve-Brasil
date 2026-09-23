@@ -47,6 +47,25 @@ import type {
 } from "./AIProvider";
 
 /**
+ * Документ как часть запроса.
+ *
+ * PDF уходит как input_file, картинка — как input_image: это разные типы
+ * содержимого в Responses API. Файл передаётся data-URL внутри запроса и
+ * не загружается в постоянное хранилище провайдера — вместе с store: false
+ * это значит, что копии документа у него не остаётся.
+ */
+function documentPart(document: DocumentInput): Record<string, unknown> {
+  const base64 = document.data.toString("base64");
+  const dataUrl = `data:${document.mimeType};base64,${base64}`;
+
+  if (document.mimeType === "application/pdf") {
+    return { type: "input_file", filename: document.filename, file_data: dataUrl };
+  }
+
+  return { type: "input_image", detail: "auto", image_url: dataUrl };
+}
+
+/**
  * Основной провайдер (§6).
  *
  * Здесь только сборка запроса и возврат проверенного результата. Правила
@@ -120,12 +139,22 @@ export class OpenAIProvider implements AIProvider {
 
   async extractDocument(document: DocumentInput): Promise<AiResult<DocumentExtraction>> {
     const prompt = buildDocumentExtractionPrompt(document);
+
     return runStructured({
       operation: "extractDocument",
       promptVersion: DOCUMENT_EXTRACTION_PROMPT_VERSION,
       schemaName: "document_extraction",
       schema: documentExtractionSchema,
-      ...prompt,
+      instructions: prompt.instructions,
+      input: [
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: prompt.userText },
+            documentPart(document),
+          ],
+        },
+      ],
     });
   }
 

@@ -52,6 +52,128 @@
       </ol>
     </div>
 
+    <h2 id="documentos">Documentos</h2>
+
+    <div class="panel">
+      <p class="muted small">
+        Nota fiscal, comprovante de Pix, pedido, conversa com a empresa.
+        Aceitamos PDF, JPG, PNG e WEBP.
+      </p>
+
+      <form method="post" action="/caso/<%= caso.publicId %>/documentos"
+            enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field">
+          <label for="arquivo">Arquivo</label>
+          <input type="file" id="arquivo" name="arquivo" required
+                 accept=".pdf,.jpg,.jpeg,.png,.webp" />
+        </div>
+
+        <div class="field">
+          <label for="tipo-documento">O que é este arquivo?</label>
+          <select id="tipo-documento" name="tipo">
+            <option value="COMPROVANTE_PIX">Comprovante de Pix</option>
+            <option value="NOTA_FISCAL">Nota fiscal</option>
+            <option value="PEDIDO">Pedido</option>
+            <option value="CONVERSA">Conversa</option>
+            <option value="EMAIL">E-mail</option>
+            <option value="RESPOSTA_DA_EMPRESA">Resposta da empresa</option>
+            <option value="CONTRATO">Contrato</option>
+            <option value="CAPTURA_DE_TELA">Captura de tela</option>
+            <option value="OUTRO" selected>Outro</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn--primary">Enviar documento</button>
+      </form>
+
+      <% if (documentos.length > 0) { %>
+        <ul class="doc-list">
+          <% documentos.forEach(function (doc) { %>
+            <li class="doc">
+              <div class="doc__info">
+                <a href="/caso/<%= caso.publicId %>/documentos/<%= doc.id %>">
+                  <%= doc.filename %>
+                </a>
+                <p class="small muted">
+                  <%= doc.kindLabel %> · <%= doc.sizeKb %> KB · <%= doc.createdAt %>
+                </p>
+              </div>
+              <%# Извлечение — отдельное действие: это единственная операция,
+                  где сам файл уходит провайдеру модели (§47, §48). %>
+              <% if (doc.extractionStatus === "CONCLUIDA") { %>
+                <span class="tag tag--concluido">Lido</span>
+              <% } else { %>
+                <form method="post"
+                      action="/caso/<%= caso.publicId %>/documentos/<%= doc.id %>/extrair">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="btn btn--secondary">
+                    Ler dados do documento
+                  </button>
+                </form>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+        <p class="small muted">
+          Seus documentos são privados. Eles não têm link público e só são
+          enviados para leitura automática quando você pede.
+        </p>
+      <% } %>
+    </div>
+
+    <% if (fatos.length > 0) { %>
+      <h2 id="dados-extraidos">Dados encontrados nos documentos</h2>
+      <div class="panel">
+        <p class="muted small">
+          Estes dados foram lidos automaticamente e <strong>ainda não são
+          fatos do caso</strong>. Confirme, corrija ou descarte cada um.
+        </p>
+
+        <ul class="fact-list">
+          <% fatos.forEach(function (fato) { %>
+            <li class="fact">
+              <div class="fact__head">
+                <span class="fact__label"><%= fato.label %></span>
+                <span class="tag tag--<%= fato.statusTone %>"><%= fato.statusLabel %></span>
+              </div>
+
+              <% if (fato.status === "UNCONFIRMED") { %>
+                <form method="post"
+                      action="/caso/<%= caso.publicId %>/fatos/<%= fato.id %>"
+                      class="fact__form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <label class="sr-only" for="valor-<%= fato.id %>">
+                    <%= fato.label %>
+                  </label>
+                  <input type="text" id="valor-<%= fato.id %>" name="valor"
+                         value="<%= fato.value %>" maxlength="500" />
+                  <div class="actions">
+                    <button type="submit" name="decisao" value="confirmar"
+                            class="btn btn--primary">Confirmar</button>
+                    <button type="submit" name="decisao" value="corrigir"
+                            class="btn btn--secondary">Salvar correção</button>
+                    <button type="submit" name="decisao" value="rejeitar"
+                            class="btn btn--secondary">Descartar</button>
+                  </div>
+                  <% if (fato.confidence !== null) { %>
+                    <p class="small muted">
+                      Confiança da leitura: <%= fato.confidence %>%
+                    </p>
+                  <% } %>
+                </form>
+              <% } else { %>
+                <p class="fact__value"><%= fato.value %></p>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+
+        <%- include('../partials/ai-disclaimer') %>
+      </div>
+    <% } %>
+
     <h2>Análise</h2>
 
     <% if (aviso) { %>

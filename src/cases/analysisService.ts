@@ -5,6 +5,7 @@ import { AiError } from "../ai/openai/client";
 import type { OfficialSourceOption } from "../ai/providers/AIProvider";
 import { loadConfig } from "../config/env";
 import type { MessageType } from "../generated/prisma/enums";
+import { confirmedFacts } from "../documents/documentService";
 import { db, isDatabaseConfigured } from "../services/db";
 import { trackEvent } from "../analytics/events";
 import { logger } from "../utils/logger";
@@ -83,6 +84,10 @@ export async function runAnalysis(input: {
   const context = buildCaseContext({
     case: input.caseRecord,
     timeline: input.timeline,
+    // Только подтверждённые человеком факты (§5, §26). Извлечённое моделью
+    // и не проверенное пользователем к ней же как факт не возвращается —
+    // иначе её собственная догадка закрепится как установленное.
+    confirmedFacts: await confirmedFacts(input.caseRecord.id),
   });
 
   try {

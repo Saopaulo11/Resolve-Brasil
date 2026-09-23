@@ -87,13 +87,19 @@ export function setOpenAiClient(custom: ResponsesLike | null): void {
   client = custom;
 }
 
+/**
+ * Вход запроса. Строка — обычный случай; массив частей нужен там, где к
+ * запросу прикладывается сам файл (извлечение данных из документа).
+ */
+export type StructuredInput = string | Array<Record<string, unknown>>;
+
 export type StructuredCall<T> = {
   operation: string;
   promptVersion: string;
   schemaName: string;
   schema: z.ZodType<T>;
   instructions: string;
-  input: string;
+  input: StructuredInput;
 };
 
 export type StructuredResult<T> = {

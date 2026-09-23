@@ -56,6 +56,10 @@ export class MemoryCaseStore implements CaseStore {
     return null;
   }
 
+  async findById(caseId: string): Promise<CaseRecord | null> {
+    return this.cases.get(caseId) ?? null;
+  }
+
   async listForUser(userId: string): Promise<CaseRecord[]> {
     return [...this.cases.values()]
       .filter((record) => record.userId === userId)

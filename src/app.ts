@@ -10,6 +10,7 @@ import { csrfProtection } from "./middleware/csrf";
 import { errorHandler, notFound } from "./middleware/errors";
 import { globalRateLimit } from "./middleware/rateLimit";
 import { securityHeaders } from "./middleware/security";
+import { uploadParser } from "./middleware/upload";
 import { buildRouter } from "./routes";
 import { logger } from "./utils/logger";
 import { randomToken } from "./utils/crypto";
@@ -69,6 +70,9 @@ export function createApp(): Express {
   );
 
   app.use(express.urlencoded({ extended: false, limit: "128kb" }));
+  // Порядок важен: multipart разбирается до CSRF, иначе тело запроса пустое
+  // и любая загрузка файла выглядит как подделка (см. middleware/upload.ts).
+  app.use(uploadParser());
   app.use(cookieParser(resolveCookieSecret()));
   app.use(csrfProtection());
   app.use(attachSession());

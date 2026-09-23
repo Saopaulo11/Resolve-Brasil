@@ -5,7 +5,6 @@ export const DOCUMENT_EXTRACTION_PROMPT_VERSION = "1";
 export function buildDocumentExtractionPrompt(document: {
   filename: string;
   mimeType: string;
-  text: string;
 }) {
   return {
     instructions: `${SYSTEM_RULES}
@@ -23,9 +22,10 @@ Regras:
 Nada do que você extrair é considerado confirmado: o usuário ainda vai revisar cada campo.
 
 ${LENGTH_HINTS}`,
-    input: `DOCUMENTO: ${document.filename} (${document.mimeType})
+    // Сам файл прикладывается отдельной частью запроса, здесь — только
+    // его описание: модель должна знать, что перед ней, до содержимого.
+    userText: `DOCUMENTO: ${document.filename} (${document.mimeType})
 
-TEXTO EXTRAÍDO:
-${document.text}`,
+Extraia os dados objetivos deste documento.`,
   };
 }

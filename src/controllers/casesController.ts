@@ -3,6 +3,12 @@ import { z } from "zod";
 
 import { CATEGORIES, findCategoryBySlug } from "../cases/categories";
 import { runAnalysis, type AnalysisKind } from "../cases/analysisService";
+import {
+  DOCUMENT_KIND_LABELS,
+  FACT_STATUS_LABELS,
+  FACT_STATUS_TONE,
+  fieldLabel,
+} from "../documents/labels";
 import { createCase, getCaseForUser } from "../cases/caseService";
 import { stores } from "../users/storeRegistry";
 import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
@@ -131,7 +137,10 @@ export async function ver(
   if (!found) return next();
 
   const status = statusDefinition(found.case.status);
-  const messages = await stores().cases.listMessages(found.case.id);
+  const { cases, documents, facts } = stores();
+  const messages = await cases.listMessages(found.case.id);
+  const documentList = await documents.listForCase(found.case.id);
+  const factList = await facts.listForCase(found.case.id);
 
   /** Последний результат каждого вида: старые остаются в истории дела. */
   const latest = (type: string) =>
@@ -151,6 +160,26 @@ export async function ver(
       escalationLabel: ESCALATION_LABELS[found.case.escalationLevel],
       amountFormatted: formatBRL(found.case.amount),
       timeline: found.timeline,
+      documentos: documentList.map((document) => ({
+        id: document.id,
+        filename: document.filename,
+        kindLabel: DOCUMENT_KIND_LABELS[document.kind],
+        sizeKb: Math.max(1, Math.round(document.fileSize / 1024)),
+        extractionStatus: document.extractionStatus,
+        createdAt: document.createdAt.toLocaleDateString("pt-BR"),
+      })),
+      fatos: factList
+        // Отклонённые не показываем: человек уже сказал, что это не его данные.
+        .filter((fact) => fact.status !== "REJECTED")
+        .map((fact) => ({
+          id: fact.id,
+          label: fieldLabel(fact.field),
+          value: fact.value,
+          status: fact.status,
+          statusLabel: FACT_STATUS_LABELS[fact.status],
+          statusTone: FACT_STATUS_TONE[fact.status],
+          confidence: fact.confidence === null ? null : Math.round(fact.confidence * 100),
+        })),
       classificacao: latest("CLASSIFICACAO"),
       perguntas: latest("PERGUNTAS"),
       plano: latest("PLANO_DE_ACAO"),

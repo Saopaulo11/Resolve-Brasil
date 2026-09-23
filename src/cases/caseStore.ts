@@ -94,6 +94,7 @@ export type CreateMessageInput = {
 export interface CaseStore {
   create(input: CreateCaseInput): Promise<CaseRecord>;
   findByPublicId(publicId: string): Promise<CaseRecord | null>;
+  findById(caseId: string): Promise<CaseRecord | null>;
   listForUser(userId: string): Promise<CaseRecord[]>;
   publicIdExists(publicId: string): Promise<boolean>;
   attachToUser(caseId: string, userId: string): Promise<void>;
@@ -124,6 +125,11 @@ export class PrismaCaseStore implements CaseStore {
 
   async findByPublicId(publicId: string): Promise<CaseRecord | null> {
     const row = await db().case.findUnique({ where: { publicId } });
+    return row ? toRecord(row as unknown as PrismaCaseRow) : null;
+  }
+
+  async findById(caseId: string): Promise<CaseRecord | null> {
+    const row = await db().case.findUnique({ where: { id: caseId } });
     return row ? toRecord(row as unknown as PrismaCaseRow) : null;
   }
 

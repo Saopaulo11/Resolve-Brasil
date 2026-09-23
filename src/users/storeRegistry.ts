@@ -1,4 +1,17 @@
 import { MemoryCaseStore } from "../cases/memoryCaseStore";
+import {
+  MemoryAuditStore,
+  MemoryDocumentStore,
+  MemoryFactStore,
+} from "../documents/memoryDocumentStore";
+import {
+  PrismaAuditStore,
+  PrismaDocumentStore,
+  PrismaFactStore,
+  type AuditStore,
+  type DocumentStore,
+  type FactStore,
+} from "../documents/documentStore";
 import { PrismaCaseStore, type CaseStore } from "../cases/caseStore";
 import { loadConfig } from "../config/env";
 import { isDatabaseConfigured } from "../services/db";
@@ -33,6 +46,9 @@ export type Stores = {
   sessions: SessionStore;
   consents: ConsentStore;
   cases: CaseStore;
+  documents: DocumentStore;
+  facts: FactStore;
+  audit: AuditStore;
 };
 
 let instance: Stores | null = null;
@@ -45,6 +61,9 @@ function build(): Stores {
       sessions: new PrismaSessionStore(),
       consents: new PrismaConsentStore(),
       cases: new PrismaCaseStore(),
+      documents: new PrismaDocumentStore(),
+      facts: new PrismaFactStore(),
+      audit: new PrismaAuditStore(),
     };
   }
 
@@ -67,6 +86,9 @@ function build(): Stores {
     sessions: new MemorySessionStore(),
     consents: new MemoryConsentStore(),
     cases: new MemoryCaseStore(),
+    documents: new MemoryDocumentStore(),
+    facts: new MemoryFactStore(),
+    audit: new MemoryAuditStore(),
   };
 }
 

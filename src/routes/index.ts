@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as account from "../controllers/accountController";
 import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
+import * as documents from "../controllers/documentsController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import { findCategoryBySlug } from "../cases/categories";
@@ -38,6 +39,21 @@ export function buildRouter(): Router {
   router.get("/caso/:publicId", requireAuth(), cases.ver);
   // Вызовы модели платные и медленные — отдельный лимит (§46).
   router.post("/caso/:publicId/analisar", requireAuth(), aiRateLimit(), cases.analisar);
+
+  // --- Документы (§23–§26) ---
+  router.post("/caso/:publicId/documentos", requireAuth(), documents.enviar);
+  router.get(
+    "/caso/:publicId/documentos/:documentId",
+    requireAuth(),
+    documents.baixar,
+  );
+  router.post(
+    "/caso/:publicId/documentos/:documentId/extrair",
+    requireAuth(),
+    aiRateLimit(),
+    documents.extrair,
+  );
+  router.post("/caso/:publicId/fatos/:factId", requireAuth(), documents.revisarFato);
 
   // §64 перечисляет /privacy и /terms по-английски, §74 — те же страницы
   // по-португальски. Каноничны португальские, английские ведут на них:
