@@ -1,5 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 
+import { listCases } from "../cases/caseService";
+import { findCategoryByValue } from "../cases/categories";
+import { formatBRL, statusDefinition } from "../cases/status";
 import { MARKETING_CHECKBOX_LABEL, setMarketingConsent } from "../privacy/consent";
 import { trackEvent } from "../analytics/events";
 import { formatBrazilianPhone } from "../utils/phone";
@@ -44,8 +47,21 @@ export async function minhaConta(
       marketingConsent: user.marketingConsent,
       caseNotifications: user.caseNotifications,
       marketingLabel: MARKETING_CHECKBOX_LABEL,
-      // PHASE 3: сюда придут настоящие дела.
-      cases: [],
+      cases: (await listCases(userId)).map((item) => {
+        const status = statusDefinition(item.status);
+        return {
+          publicId: item.publicId,
+          categoryLabel:
+            (item.category && findCategoryByValue(item.category)?.label) ??
+            "Ainda não classificado",
+          companyName: item.companyName,
+          amountFormatted: formatBRL(item.amount),
+          statusLabel: status.label,
+          statusTone: status.tone,
+          needsUser: status.needsUser,
+          updatedAt: item.updatedAt.toLocaleDateString("pt-BR"),
+        };
+      }),
       saved: req.query.salvo === "1",
     },
     next,

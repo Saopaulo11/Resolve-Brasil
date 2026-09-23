@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
+import { attachCaseToUser } from "../cases/caseService";
+import { PENDING_CASE_COOKIE } from "./casesController";
 import { loadConfig } from "../config/env";
 import { MARKETING_CHECKBOX_LABEL } from "../privacy/consent";
 import { requestCode, verifyCode } from "../users/authService";
@@ -218,6 +220,17 @@ export async function confirmarCodigo(
     path: "/",
     maxAge: config.session.maxAgeMs,
   });
+
+  // Дело, начатое до входа, становится делом этого пользователя (§15).
+  const pending = req.signedCookies?.[PENDING_CASE_COOKIE];
+  if (typeof pending === "string" && pending.length > 0) {
+    res.clearCookie(PENDING_CASE_COOKIE, { path: "/" });
+    const attached = await attachCaseToUser(pending, result.userId);
+    if (attached) {
+      res.redirect(303, `/caso/${attached.publicId}`);
+      return;
+    }
+  }
 
   res.redirect(303, nextUrl);
 }

@@ -35,6 +35,7 @@ export function buildRouter(): Router {
   });
 
   router.post("/caso/novo", cases.criar);
+  router.get("/caso/:publicId", requireAuth(), cases.ver);
 
   // §64 перечисляет /privacy и /terms по-английски, §74 — те же страницы
   // по-португальски. Каноничны португальские, английские ведут на них:

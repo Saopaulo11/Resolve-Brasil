@@ -1,3 +1,5 @@
+import { MemoryCaseStore } from "../cases/memoryCaseStore";
+import { PrismaCaseStore, type CaseStore } from "../cases/caseStore";
 import { loadConfig } from "../config/env";
 import { isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
@@ -30,6 +32,7 @@ export type Stores = {
   otp: OtpStore;
   sessions: SessionStore;
   consents: ConsentStore;
+  cases: CaseStore;
 };
 
 let instance: Stores | null = null;
@@ -41,6 +44,7 @@ function build(): Stores {
       otp: new PrismaOtpStore(),
       sessions: new PrismaSessionStore(),
       consents: new PrismaConsentStore(),
+      cases: new PrismaCaseStore(),
     };
   }
 
@@ -62,6 +66,7 @@ function build(): Stores {
     otp: new MemoryOtpStore(),
     sessions: new MemorySessionStore(),
     consents: new MemoryConsentStore(),
+    cases: new MemoryCaseStore(),
   };
 }
 

@@ -15,6 +15,10 @@
     <div class="panel">
       <form method="post" action="/caso/novo" novalidate>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <%# Категория, выбранная карточкой на /categorias. Пустая — если человек
+            пришёл прямо на главную: тогда категорию определит AI на PHASE 4. %>
+        <input type="hidden" name="categoria"
+               value="<%= typeof selectedCategory !== 'undefined' ? selectedCategory : '' %>" />
 
         <div class="field <%= errors.description ? 'field--invalid' : '' %>">
           <label for="description">O que aconteceu?</label>

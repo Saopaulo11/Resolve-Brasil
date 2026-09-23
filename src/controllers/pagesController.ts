@@ -15,6 +15,9 @@ export function home(req: Request, res: Response): void {
       "Conte seu problema com suas próprias palavras. A IA ajuda você a " +
       "entender a situação, organizar as informações e encontrar os próximos passos.",
     categories: CATEGORIES,
+    // Пришёл с карточки категории — форма это помнит и передаёт дальше.
+    selectedCategory:
+      typeof req.query.categoria === "string" ? req.query.categoria : "",
   });
 }
 

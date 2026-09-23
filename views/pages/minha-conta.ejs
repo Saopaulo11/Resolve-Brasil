@@ -11,6 +11,37 @@
       <% if (cases.length === 0) { %>
         <p class="muted">Você ainda não tem casos.</p>
         <a class="btn btn--primary" href="/">Contar o que aconteceu</a>
+      <% } else { %>
+        <ul class="case-list">
+          <% cases.forEach(function (item) { %>
+            <li class="case-card">
+              <a class="case-card__link" href="/caso/<%= item.publicId %>">
+                <span class="case-card__title"><%= item.categoryLabel %></span>
+              </a>
+              <dl class="rows">
+                <div class="row">
+                  <dt>Empresa</dt>
+                  <dd><%= item.companyName || "Ainda não informada" %></dd>
+                </div>
+                <div class="row">
+                  <dt>Valor</dt>
+                  <dd><%= item.amountFormatted || "Ainda não informado" %></dd>
+                </div>
+                <div class="row">
+                  <dt>Status</dt>
+                  <dd>
+                    <span class="tag tag--<%= item.statusTone %>"><%= item.statusLabel %></span>
+                  </dd>
+                </div>
+                <div class="row">
+                  <dt>Última atualização</dt>
+                  <dd><%= item.updatedAt %></dd>
+                </div>
+              </dl>
+            </li>
+          <% }); %>
+        </ul>
+        <a class="btn btn--secondary" href="/">Contar outro caso</a>
       <% } %>
     </div>
 

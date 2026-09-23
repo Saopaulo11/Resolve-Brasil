@@ -2,6 +2,7 @@ import request from "supertest";
 import type { Express } from "express";
 
 import { createApp } from "../../src/app";
+import { MemoryCaseStore } from "../../src/cases/memoryCaseStore";
 import {
   MemoryConsentStore,
   MemoryOtpStore,
@@ -36,6 +37,7 @@ export type Harness = {
   otp: MemoryOtpStore;
   sessions: MemorySessionStore;
   consents: MemoryConsentStore;
+  cases: MemoryCaseStore;
 };
 
 /** Свежее приложение с хранилищами в памяти — каждый тест изолирован. */
@@ -44,13 +46,14 @@ export function createHarness(): Harness {
   const otp = new MemoryOtpStore();
   const sessions = new MemorySessionStore();
   const consents = new MemoryConsentStore();
+  const cases = new MemoryCaseStore();
 
-  setStores({ users, otp, sessions, consents });
+  setStores({ users, otp, sessions, consents, cases });
 
   const otpProvider = new CapturingOtpProvider();
   setOtpProvider(otpProvider);
 
-  return { app: createApp(), otpProvider, users, otp, sessions, consents };
+  return { app: createApp(), otpProvider, users, otp, sessions, consents, cases };
 }
 
 /** CSRF-токен и куки со страницы — так же, как их берёт браузер. */
@@ -71,15 +74,20 @@ export function mergeCookies(current: string[], incoming: string[]): string[] {
   return [...jar.values()];
 }
 
-/** Полный вход: телефон → код → сессия. Возвращает куки вошедшего. */
+/**
+ * Полный вход: телефон → код → сессия. Возвращает куки вошедшего.
+ *
+ * options.cookies — куки уже начатой сессии браузера. Нужны, когда человек
+ * сначала описал проблему гостем: в них лежит номер начатого дела.
+ */
 export async function login(
   harness: Harness,
   phone: string,
-  options: { marketing?: boolean } = {},
+  options: { marketing?: boolean; cookies?: string[] } = {},
 ): Promise<string[]> {
   const { app, otpProvider } = harness;
 
-  const start = await openPage(app, "/entrar");
+  const start = await openPage(app, "/entrar", options.cookies ?? []);
   const sent = await request(app)
     .post("/entrar")
     .set("Cookie", start.cookies)

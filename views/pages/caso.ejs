@@ -1,0 +1,67 @@
+<section class="section">
+  <div class="container">
+    <p class="case-id">Caso <strong><%= caso.publicId %></strong></p>
+    <h1><%= statusLabel %></h1>
+    <p class="lede"><%= statusHint %></p>
+
+    <div class="panel">
+      <h2>Resumo</h2>
+      <dl class="rows">
+        <div class="row">
+          <dt>Empresa</dt>
+          <dd><%= caso.companyName || "Ainda não informada" %></dd>
+        </div>
+        <div class="row">
+          <dt>Valor</dt>
+          <dd><%= amountFormatted || "Ainda não informado" %></dd>
+        </div>
+        <div class="row">
+          <dt>Canal atual</dt>
+          <dd><%= escalationLabel %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <h2>O que você contou</h2>
+      <%# Текст пользователя — это USER FACT (§5), а не вывод модели. %>
+      <p class="case-description"><%= caso.description %></p>
+    </div>
+
+    <h2>Linha do tempo</h2>
+    <div class="panel">
+      <ol class="timeline">
+        <% timeline.forEach(function (event) { %>
+          <li class="timeline__item">
+            <time class="timeline__date" datetime="<%= event.eventDate.toISOString() %>">
+              <%= event.eventDate.toLocaleDateString("pt-BR") %>
+            </time>
+            <div>
+              <p class="timeline__title"><%= event.title %></p>
+              <% if (event.description) { %>
+                <p class="small muted"><%= event.description %></p>
+              <% } %>
+              <% if (event.source === "AI_SUGGESTION") { %>
+                <p class="tag tag--ai">Sugestão da IA</p>
+              <% } else if (event.source === "OFFICIAL_SOURCE") { %>
+                <p class="tag tag--fonte">Fonte oficial</p>
+              <% } %>
+            </div>
+          </li>
+        <% }); %>
+      </ol>
+    </div>
+
+    <h2>Próximos passos</h2>
+    <div class="panel">
+      <p class="notice">
+        <strong>Em construção.</strong> A análise do caso — categoria, perguntas,
+        plano de ação e mensagem para a empresa — entra nas próximas etapas do
+        desenvolvimento. Nada foi analisado ainda: preferimos não mostrar um
+        resultado que não existe.
+      </p>
+    </div>
+
+    <p><a href="/minha-conta#meus-casos">← Voltar para meus casos</a></p>
+  </div>
+</section>

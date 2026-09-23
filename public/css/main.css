@@ -547,3 +547,117 @@ input:focus {
 .section h2 {
   margin-top: 2rem;
 }
+
+/* --- Дела (PHASE 3) ------------------------------------------------------- */
+
+.case-id {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.04em;
+}
+
+.case-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.case-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.case-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  background: var(--surface);
+}
+
+.case-card__link {
+  display: block;
+  /* Крупная цель для пальца: вся строка заголовка, а не одно слово. */
+  padding: 0.25rem 0;
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.case-card__link:hover .case-card__title {
+  text-decoration: underline;
+}
+
+.tag {
+  display: inline-block;
+  margin: 0;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.tag--neutro {
+  background: #eef2f7;
+  color: var(--navy-700);
+}
+
+.tag--andamento {
+  background: #e7f0fb;
+  color: #17417d;
+}
+
+/* Ход за пользователем — заметнее остальных: иначе дело тут и зависнет. */
+.tag--atencao {
+  background: #fff4d6;
+  color: #6b4e00;
+}
+
+.tag--concluido {
+  background: #e8f6ee;
+  color: #14532d;
+}
+
+.tag--ai {
+  background: #fffbe9;
+  color: #5c4708;
+  border-color: #f0dca4;
+}
+
+.tag--fonte {
+  background: #e7f0fb;
+  color: #17417d;
+  border-color: #bcd3f0;
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline__item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.timeline__item:first-child {
+  border-top: none;
+}
+
+.timeline__date {
+  flex: 0 0 5.5rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline__title {
+  margin: 0;
+  font-weight: 500;
+}

@@ -1,24 +1,34 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
-import { CATEGORIES } from "../cases/categories";
+import { CATEGORIES, findCategoryBySlug } from "../cases/categories";
+import { createCase, getCaseForUser } from "../cases/caseService";
+import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
+import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
+import { isValidPublicCaseId } from "../utils/ids";
 import { renderPage } from "../utils/render";
 
 /**
- * Приём описания случая с главной (§12, §20).
+ * Дела (§20, §21, §22).
  *
- * Пока описание только принимается и проверяется. Классификация, вопросы и
- * план действий появятся на PHASE 3–4 — до тех пор страница честно говорит,
- * что разбора ещё нет. Правдоподобная заглушка была бы хуже пустоты: её
- * невозможно отличить от настоящего ответа модели (§9, §82).
+ * Классификация, вопросы и план действий приходят на PHASE 4. До тех пор
+ * страница дела показывает только то, что действительно известно: рассказ
+ * пользователя и хронологию. Правдоподобная заглушка была бы хуже пустоты —
+ * её невозможно отличить от настоящего ответа модели (§9, §82).
  */
+
+/** Кука с номером дела, созданного до входа. Живёт минуты, не дни. */
+export const PENDING_CASE_COOKIE = "rb_caso";
+const PENDING_CASE_TTL_MS = 30 * 60_000;
+
 const schema = z.object({
   description: z
     .string()
     .trim()
     .min(20, "Conte um pouco mais: o que foi comprado, quando e o que deu errado.")
     .max(5000, "Texto muito longo. Resuma os pontos principais."),
+  categoria: z.string().max(80).optional(),
 });
 
 const HOME_TITLE = "Resolve Brasil — Conte o que aconteceu. Descubra o que fazer.";
@@ -26,7 +36,11 @@ const HOME_DESCRIPTION =
   "Conte seu problema com suas próprias palavras. A IA ajuda você a entender " +
   "a situação, organizar as informações e encontrar os próximos passos.";
 
-export function criar(req: Request, res: Response, next: NextFunction): void {
+export async function criar(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const body = (req.body ?? {}) as Record<string, unknown>;
   const parsed = schema.safeParse(body);
 
@@ -56,14 +70,80 @@ export function criar(req: Request, res: Response, next: NextFunction): void {
 
   void trackEvent("case_started", { userId: req.session?.userId ?? null });
 
+  const category = parsed.data.categoria
+    ? (findCategoryBySlug(parsed.data.categoria)?.value ?? null)
+    : null;
+
+  const created = await createCase({
+    userId: req.session?.userId ?? null,
+    description: parsed.data.description,
+    category,
+  });
+
+  const target = `/caso/${created.publicId}`;
+
+  if (req.session) {
+    res.redirect(303, target);
+    return;
+  }
+
+  // Не вошёл — дело уже создано, но без владельца. Номер кладём в
+  // подписанную куку и ведём на вход; привязка произойдёт после
+  // подтверждения телефона (§15).
+  const config = loadConfig();
+  res.cookie(PENDING_CASE_COOKIE, created.publicId, {
+    httpOnly: true,
+    signed: true,
+    sameSite: "lax",
+    secure: config.isProduction,
+    path: "/",
+    maxAge: PENDING_CASE_TTL_MS,
+  });
+
+  res.redirect(303, `/entrar?next=${encodeURIComponent(target)}`);
+}
+
+export async function ver(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const userId = req.session?.userId;
+  if (!userId) {
+    res.redirect(303, "/entrar");
+    return;
+  }
+
+  // Express 5 типизирует параметр как string | string[]: повторённый
+  // параметр в адресе даёт массив. Берём только строку.
+  const raw = req.params.publicId;
+  const publicId = typeof raw === "string" ? raw : "";
+
+  // Неверный формат номера до базы не доходит.
+  if (!isValidPublicCaseId(publicId)) return next();
+
+  const found = await getCaseForUser(publicId, userId);
+
+  // Чужое дело и несуществующее дело дают одинаковый 404: ответ «403»
+  // подтвердил бы, что такой номер существует.
+  if (!found) return next();
+
+  const status = statusDefinition(found.case.status);
+
   renderPage(
     req,
     res,
-    "caso-novo",
+    "caso",
     {
-      title: "Seu caso — Resolve Brasil",
-      description: "Recebemos sua descrição.",
-      caseDescription: parsed.data.description,
+      title: `Caso ${found.case.publicId} — Resolve Brasil`,
+      description: "Acompanhe o andamento do seu caso.",
+      caso: found.case,
+      statusLabel: status.label,
+      statusHint: status.hint,
+      statusTone: status.tone,
+      escalationLabel: ESCALATION_LABELS[found.case.escalationLevel],
+      amountFormatted: formatBRL(found.case.amount),
+      timeline: found.timeline,
     },
     next,
   );
