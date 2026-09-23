@@ -129,6 +129,14 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       secretKey: optionalString(env.STORAGE_SECRET_KEY),
       // §25: жёсткий потолок на размер файла.
       maxFileSizeBytes: intOr(env.STORAGE_MAX_FILE_SIZE_BYTES, 10 * 1024 * 1024),
+      /**
+       * Каталог локального хранилища заглушки.
+       *
+       * Настраивается, чтобы тесты писали во временную папку и убирали за
+       * собой: с жёстко зашитым путём каждый прогон оставлял файлы в
+       * рабочем каталоге, и они копились без предела.
+       */
+      localRoot: optionalString(env.STORAGE_LOCAL_ROOT),
     },
 
     admin: {

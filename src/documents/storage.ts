@@ -85,7 +85,11 @@ export function checksum(data: Buffer): string {
  */
 export class MockStorageProvider implements StorageProvider {
   readonly name = "mock";
-  private readonly root = path.resolve(process.cwd(), "storage");
+  private readonly root: string;
+
+  constructor(root?: string) {
+    this.root = path.resolve(root ?? path.join(process.cwd(), "storage"));
+  }
 
   private resolve(key: string): string {
     const full = path.resolve(this.root, key);
@@ -129,7 +133,7 @@ export function storageProvider(): StorageProvider {
           "инстанса и исчезнут при перезапуске. Задайте STORAGE_PROVIDER.",
       );
     }
-    instance = new MockStorageProvider();
+    instance = new MockStorageProvider(config.storage.localRoot ?? undefined);
     return instance;
   }
 
