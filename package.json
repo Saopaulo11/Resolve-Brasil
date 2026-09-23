@@ -24,6 +24,7 @@
     "reminders:dispatch": "tsx src/notifications/cli.ts",
     "analytics:report": "tsx src/analytics/cli.ts",
     "admin:create": "tsx src/admin/cli.ts",
+    "ai:eval": "tsx src/ai/evaluation/cli.ts",
     "privacy:retention": "tsx src/privacy/cli.ts retention",
     "privacy:deletions": "tsx src/privacy/cli.ts deletions"
   },

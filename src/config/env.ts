@@ -90,6 +90,16 @@ function buildConfig(env: NodeJS.ProcessEnv) {
         inputPerMillion: floatOrNull(env.OPENAI_PRICE_INPUT_PER_1M),
         outputPerMillion: floatOrNull(env.OPENAI_PRICE_OUTPUT_PER_1M),
       },
+
+      /**
+       * Порог, ниже которого прогон оценки считается проваленным (§81).
+       *
+       * Не сто процентов: относительно части дел люди тоже расходятся во
+       * мнениях, и недостижимый порог просто отключают. Нарушение запретов
+       * при этом проваливает прогон при любой точности — это брак, а не
+       * статистика.
+       */
+      evalMinAccuracy: floatOrNull(env.AI_EVAL_MIN_ACCURACY) ?? 0.8,
     },
 
     otp: {

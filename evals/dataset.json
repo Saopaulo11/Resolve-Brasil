@@ -1,0 +1,106 @@
+{
+  "_aviso": "CONJUNTO SINTÉTICO PARA AVALIAÇÃO (§81, §82). Nenhum destes casos é real. Nenhuma empresa citada existe: todas trazem a palavra «Exemplo» no nome, e o carregador recusa o arquivo se alguma não trouxer. Estes registros nunca entram no banco, na analytics nem em qualquer número apresentado como resultado do produto.",
+  "version": 1,
+  "cases": [
+    {
+      "id": "eval-001",
+      "synthetic": true,
+      "description": "Comprei um fone de ouvido na Loja Exemplo no dia 2 de março, paguei R$ 249,90 por Pix. O prazo de entrega era 10 de março e até hoje nada chegou. O rastreamento não sai de «objeto postado».",
+      "companyName": "Loja Exemplo",
+      "amount": "249.90",
+      "paymentMethod": "PIX",
+      "expectedCategory": "PRODUTO_NAO_RECEBIDO",
+      "note": "Caso direto: prazo vencido e produto não entregue."
+    },
+    {
+      "id": "eval-002",
+      "synthetic": true,
+      "description": "Cancelei a compra de uma cadeira na Móveis Exemplo dentro do prazo de arrependimento. Eles confirmaram o cancelamento por e-mail há 40 dias e o dinheiro não voltou. Paguei R$ 1.180,00 no cartão.",
+      "companyName": "Móveis Exemplo",
+      "amount": "1180.00",
+      "paymentMethod": "CARTAO_CREDITO",
+      "expectedCategory": "REEMBOLSO_NAO_RECEBIDO",
+      "note": "Cancelamento já aceito: o problema é o dinheiro que não voltou."
+    },
+    {
+      "id": "eval-003",
+      "synthetic": true,
+      "description": "Apareceu na minha fatura uma cobrança de R$ 89,90 da Streaming Exemplo que eu nunca contratei. Vem se repetindo há três meses.",
+      "companyName": "Streaming Exemplo",
+      "amount": "89.90",
+      "paymentMethod": "CARTAO_CREDITO",
+      "expectedCategory": "COBRANCA_INDEVIDA",
+      "note": "Cobrança recorrente sem contratação."
+    },
+    {
+      "id": "eval-004",
+      "synthetic": true,
+      "description": "Pedi o cancelamento do plano da Academia Exemplo por telefone em janeiro, me deram um protocolo, e continuam debitando todo mês. Já liguei quatro vezes.",
+      "companyName": "Academia Exemplo",
+      "amount": null,
+      "paymentMethod": null,
+      "expectedCategory": "CANCELAMENTO_NAO_REALIZADO",
+      "note": "Cancelamento pedido e não executado — diferente de cobrança nunca contratada."
+    },
+    {
+      "id": "eval-005",
+      "synthetic": true,
+      "description": "A geladeira que comprei na Eletro Exemplo chegou com a porta amassada e não gela direito. Faz duas semanas que abri chamado e ninguém veio olhar.",
+      "companyName": "Eletro Exemplo",
+      "amount": null,
+      "paymentMethod": null,
+      "expectedCategory": "PRODUTO_COM_DEFEITO",
+      "note": "Produto entregue, mas com defeito — não é «não recebido»."
+    },
+    {
+      "id": "eval-006",
+      "synthetic": true,
+      "description": "Contratei a Mudanças Exemplo para mudar meus móveis no dia 5. Paguei metade adiantado, R$ 600,00 no Pix. No dia combinado não apareceu ninguém e agora não atendem.",
+      "companyName": "Mudanças Exemplo",
+      "amount": "600.00",
+      "paymentMethod": "PIX",
+      "expectedCategory": "SERVICO_NAO_PRESTADO",
+      "note": "Serviço contratado e não executado."
+    },
+    {
+      "id": "eval-007",
+      "synthetic": true,
+      "description": "Comprei um celular na TecnoExemplo pelo site. Pagaram o Pix, mandaram o código de rastreio, mas o código não existe nos Correios. O site saiu do ar depois disso.",
+      "companyName": "TecnoExemplo",
+      "amount": null,
+      "paymentMethod": "PIX",
+      "expectedCategory": "PRODUTO_NAO_RECEBIDO",
+      "note": "Sinais de golpe: o modelo deve marcar risco, não acusar a empresa."
+    },
+    {
+      "id": "eval-008",
+      "synthetic": true,
+      "description": "Minha passagem com a Viagens Exemplo foi cancelada pela empresa e me ofereceram voucher. Eu quero o dinheiro de volta, foram R$ 2.340,00 no cartão.",
+      "companyName": "Viagens Exemplo",
+      "amount": "2340.00",
+      "paymentMethod": "CARTAO_CREDITO",
+      "expectedCategory": "REEMBOLSO_NAO_RECEBIDO",
+      "note": "Voucher oferecido no lugar de reembolso."
+    },
+    {
+      "id": "eval-009",
+      "synthetic": true,
+      "description": "Estou com um problema com a Telecom Exemplo, mas não sei explicar direito. Tem uma coisa na conta que não entendi e o atendimento não ajudou.",
+      "companyName": "Telecom Exemplo",
+      "amount": null,
+      "paymentMethod": null,
+      "expectedCategory": "OUTRO",
+      "note": "Relato vago de propósito: o modelo deve pedir informação, não adivinhar categoria com confiança alta."
+    },
+    {
+      "id": "eval-010",
+      "synthetic": true,
+      "description": "Comprei um notebook na Loja Exemplo em 12 de abril por R$ 3.499,00 no Pix, prazo de entrega 25 de abril. Recebi a caixa vazia, lacre violado. Abri reclamação no mesmo dia, protocolo 884512360077, e a empresa respondeu que o produto consta como entregue.",
+      "companyName": "Loja Exemplo",
+      "amount": "3499.00",
+      "paymentMethod": "PIX",
+      "expectedCategory": "PRODUTO_NAO_RECEBIDO",
+      "note": "Traz um número de protocolo real do caso: serve para checar que o modelo não inventa outro."
+    }
+  ]
+}
