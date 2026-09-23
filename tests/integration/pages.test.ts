@@ -66,10 +66,20 @@ describe("публичные страницы", () => {
 });
 
 describe("здоровье стенда", () => {
-  it("без базы честно отвечает 503 с причиной", async () => {
+  // Смысл проверки — поведение без базы. С заданным DATABASE_URL проверять
+  // нечего, и «упало» здесь означало бы только то, что база настроена.
+  it.skipIf(process.env.DATABASE_URL)("без базы честно отвечает 503 с причиной", async () => {
     const response = await request(app).get("/health");
     expect(response.status).toBe(503);
     expect(response.body.checks.database.ok).toBe(false);
     expect(response.body.checks.database.detail).toContain("DATABASE_URL");
+  });
+
+  it.skipIf(!process.env.DATABASE_URL)("с базой отвечает 200", async () => {
+    const response = await request(app).get("/health");
+    expect(response.status).toBe(200);
+    expect(response.body.checks.database.ok).toBe(true);
+    // §79: заглушка модели — рабочее состояние стенда, но не «всё хорошо».
+    expect(response.body.checks).toHaveProperty("ai");
   });
 });

@@ -8,6 +8,27 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+
+    # База нужна ровно для одного набора — реализаций на Prisma. Без неё он
+    # пропускается, и расхождение между хранилищами и схемой обнаружилось бы
+    # только в production.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: resolve_brasil
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resolve_brasil
+      SESSION_SECRET: chave-de-ci-com-mais-de-32-caracteres-ok
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,6 +43,15 @@ jobs:
 
       - run: npm run db:generate
 
+      # Миграции обязаны накатываться на пустую базу. Если этот шаг упал,
+      # деплой упадёт так же — лучше здесь.
+      - run: npm run db:deploy
+
+      # Схема и миграции обязаны совпадать. Расхождение означает правку
+      # schema.prisma без миграции: в production такая правка не применится.
+      - name: Проверка расхождения схемы и миграций
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
       - run: npm run lint
 
       - run: npm run typecheck
@@ -32,3 +62,6 @@ jobs:
       # Если этот шаг начнёт падать без них — значит появился код, который
       # читает конфигурацию на уровне модуля вместо вызова loadConfig().
       - run: npm run build
+        env:
+          DATABASE_URL: ""
+          SESSION_SECRET: ""
