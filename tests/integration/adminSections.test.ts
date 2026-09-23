@@ -21,6 +21,7 @@ const PASSWORD = "senha-forte-para-teste-2026";
 
 const SECOES = [
   "/admin/usuarios",
+  "/admin/empresas",
   "/admin/documentos",
   "/admin/ia",
   "/admin/fontes",
@@ -121,6 +122,23 @@ describe("доступ к разделам (§51)", () => {
     );
     expect(
       (await request(harness.app).get("/admin/documentos").set("Cookie", cookies)).status,
+    ).toBe(403);
+  });
+
+  it("аналитик видит справочник компаний, поддержка — нет", async () => {
+    // Названия компаний не персональные данные, но связка с делами — уже
+    // материал для аналитики, а не для поддержки.
+    await criarAdmin("ANALYST");
+    const cookies = await entrar();
+    expect(
+      (await request(harness.app).get("/admin/empresas").set("Cookie", cookies)).status,
+    ).toBe(200);
+
+    harness = createHarness();
+    await criarAdmin("SUPPORT");
+    const suporte = await entrar();
+    expect(
+      (await request(harness.app).get("/admin/empresas").set("Cookie", suporte)).status,
     ).toBe(403);
   });
 
@@ -282,6 +300,44 @@ describe("раздел фонтов и расхода модели", () => {
     expect(response.text).toContain("preços não configurados");
     expect(response.text).toContain("classifyCase");
     expect(response.text).toContain("1.200");
+  });
+});
+
+describe("справочник компаний (§85, §86)", () => {
+  it("пустой список не заполняется выдумкой", async () => {
+    const response = await abrir("OWNER", "/admin/empresas");
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("Nenhuma empresa registrada");
+    expect(response.text).toContain("não é um cadastro de empresas do mercado");
+  });
+
+  it("показывает слово, по которому определена отрасль", async () => {
+    await harness.companies.create({
+      canonicalName: "Banco Exemplo S.A.",
+      normalized: "banco exemplo",
+      industry: "BANKING",
+    });
+
+    const response = await abrir("OWNER", "/admin/empresas");
+
+    expect(response.text).toContain("Banco Exemplo S.A.");
+    expect(response.text).toContain("Bancos");
+    // Без слова-основания ошибку правила невозможно заметить.
+    expect(response.text).toContain("banco");
+  });
+
+  it("неопределённая отрасль подписана как неопределённая", async () => {
+    await harness.companies.create({
+      canonicalName: "Exemplo Tecnologia",
+      normalized: "exemplo tecnologia",
+      industry: "OTHER",
+    });
+
+    const response = await abrir("OWNER", "/admin/empresas");
+
+    expect(response.text).toContain("Não identificado");
+    expect(response.text).not.toContain("Outros setores");
   });
 });
 

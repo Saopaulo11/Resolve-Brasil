@@ -1,7 +1,10 @@
 import { aiProvider } from "../ai";
 import { AiError } from "../ai/openai/client";
 import { recordAiRequest } from "../ai/aiRequestLog";
-import type { CaseRecord } from "../cases/caseStore";
+import { refreshProjection } from "../analytics/pipeline";
+import type { CaseFieldsUpdate, CaseRecord } from "../cases/caseStore";
+import { fieldsFromFacts } from "../cases/factFields";
+import { resolveCompany } from "../companies/companyService";
 import type { DocumentKind } from "../generated/prisma/enums";
 import { trackEvent } from "../analytics/events";
 import { logger } from "../utils/logger";
@@ -270,6 +273,8 @@ export async function reviewFact(input: {
 
   if (input.decision === "rejeitar") {
     await facts.updateStatus(fact.id, "REJECTED", fact.value, now);
+    // Отклонение тоже меняет картину: подтверждённое раньше могло уйти.
+    await applyConfirmedFacts(input.caseRecord.id);
     return true;
   }
 
@@ -277,11 +282,66 @@ export async function reviewFact(input: {
     const value = (input.correctedValue ?? "").trim();
     if (value.length === 0 || value.length > 500) return false;
     await facts.updateStatus(fact.id, "USER_CORRECTED", value, now);
+    await applyConfirmedFacts(input.caseRecord.id);
     return true;
   }
 
   await facts.updateStatus(fact.id, "CONFIRMED", fact.value, now);
+  await applyConfirmedFacts(input.caseRecord.id);
   return true;
+}
+
+/**
+ * Переносит подтверждённые факты в поля дела (§26, §85).
+ *
+ * До этого подтверждение оставалось только в списке фактов: дело не знало
+ * ни компании, ни суммы, ни способа оплаты. Из-за этого срез по компании
+ * не находил ни одного дела, а отрасль в аналитике оставалась пустой не
+ * потому, что её не определили, а потому, что компанию некуда было
+ * записать.
+ *
+ * Пересчитывается весь набор, а не одно поле: пользователь мог отклонить
+ * подтверждённое раньше, и тогда поле обязано опустеть, а не остаться от
+ * прошлого решения.
+ */
+async function applyConfirmedFacts(caseId: string): Promise<void> {
+  const { cases } = stores();
+
+  const confirmed = await confirmedFacts(caseId);
+  const parsed = fieldsFromFacts(confirmed);
+
+  /**
+   * Набор собирается целиком, с явными null.
+   *
+   * Иначе отклонённый факт оставлял бы поле от прошлого решения: человек
+   * убрал сумму из дела, а дело её помнит — и она уходит в аналитику.
+   */
+  const update: CaseFieldsUpdate = {
+    companyName: parsed.companyName ?? null,
+    companyId: null,
+    companyNormalized: null,
+    amount: parsed.amount ?? null,
+    purchaseDate: parsed.purchaseDate ?? null,
+    promisedDate: parsed.promisedDate ?? null,
+    // Способ оплаты не обнуляется в null: в схеме это перечисление без
+    // пустого значения, и «неизвестно» у него называется DESCONHECIDO.
+    paymentMethod: parsed.paymentMethod ?? "DESCONHECIDO",
+  };
+
+  if (parsed.companyName) {
+    const company = await resolveCompany(parsed.companyName);
+    if (company) {
+      update.companyId = company.id;
+      update.companyNormalized = company.normalized;
+    }
+  }
+
+  await cases.setFields(caseId, update);
+
+  // Слепок в аналитике пересобирается: иначе компания и сумма появятся в
+  // деле, но не в отчёте, и расхождение никто не заметит.
+  const updated = await cases.findById(caseId);
+  if (updated) await refreshProjection(updated);
 }
 
 /** Подтверждённые факты дела — только они уходят модели как факты (§5). */

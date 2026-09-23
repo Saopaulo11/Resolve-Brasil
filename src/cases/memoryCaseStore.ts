@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { CaseCategory, CaseStatus } from "../generated/prisma/enums";
 import type {
   CaseEventRecord,
+  CaseFieldsUpdate,
   CaseMessageRecord,
   CaseRecord,
   CaseStore,
@@ -148,6 +149,13 @@ export class MemoryCaseStore implements CaseStore {
     const record = this.cases.get(caseId);
     if (!record) return;
     record.status = status;
+    record.updatedAt = new Date();
+  }
+
+  async setFields(caseId: string, update: CaseFieldsUpdate): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    Object.assign(record, update);
     record.updatedAt = new Date();
   }
 

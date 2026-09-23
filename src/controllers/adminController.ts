@@ -6,6 +6,7 @@ import { permissionsFor, ROLE_LABELS } from "../admin/rbac";
 import { internalReport } from "../analytics/aggregation";
 import { findCategoryByValue } from "../cases/categories";
 import { FEEDBACK_REASON_LABELS } from "../cases/feedbackLabels";
+import { detectIndustry, INDUSTRY_LABELS } from "../companies/industry";
 import { statusDefinition } from "../cases/status";
 import { loadConfig } from "../config/env";
 import { DOCUMENT_KIND_LABELS } from "../documents/labels";
@@ -628,4 +629,57 @@ export function configuracoes(req: Request, res: Response, next: NextFunction): 
   ];
 
   adminPage(req, res, "admin/configuracoes", { title: "Configurações — Administração", grupos }, next);
+}
+
+// --- Empresas ---------------------------------------------------------------
+
+/**
+ * §85, §86. Справочник компаний и их отрасли.
+ *
+ * Справочника настоящих компаний у нас нет: записи появляются только из
+ * того, что назвали пользователи. Рядом с отраслью показывается слово, по
+ * которому она определена, — без него ошибку правила невозможно заметить:
+ * отрасль выглядит одинаково достоверно и когда угадана, и когда взята из
+ * названия.
+ */
+export async function empresas(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const { companies } = stores();
+  const list = await companies.listAll(LIST_LIMIT);
+
+  const rows = await Promise.all(
+    list.map(async (company) => {
+      const guess = detectIndustry(company.canonicalName);
+      const aliases = await companies.listAliases(company.id);
+
+      return {
+        nome: company.canonicalName,
+        normalizado: company.normalized,
+        setor: INDUSTRY_LABELS[company.industry],
+        identificado: company.industry !== "OTHER",
+        // Слово из названия, давшее отрасль. Пусто — значит не определено.
+        evidencia: guess.evidence,
+        apelidos: aliases.map((alias) => ({
+          texto: alias.alias,
+          revisado: alias.reviewed,
+        })),
+        criadoEm: company.createdAt.toLocaleDateString("pt-BR"),
+      };
+    }),
+  );
+
+  adminPage(
+    req,
+    res,
+    "admin/empresas",
+    {
+      title: "Empresas — Administração",
+      limite: LIST_LIMIT,
+      empresas: rows,
+    },
+    next,
+  );
 }

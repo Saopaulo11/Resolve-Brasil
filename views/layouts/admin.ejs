@@ -37,6 +37,9 @@
               <% if (adminPermissions.includes("ai.view")) { %>
                 <li><a href="/admin/ia">IA</a></li>
               <% } %>
+              <% if (adminPermissions.includes("companies.view")) { %>
+                <li><a href="/admin/empresas">Empresas</a></li>
+              <% } %>
               <% if (adminPermissions.includes("sources.manage")) { %>
                 <li><a href="/admin/fontes">Fontes</a></li>
               <% } %>

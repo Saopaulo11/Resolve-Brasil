@@ -5,6 +5,7 @@ import {
 } from "../admin/memoryAdminStore";
 import { MemoryAiRequestStore } from "../ai/aiRequestStore";
 import { MemoryAnalyticsStore } from "../analytics/memoryAnalyticsStore";
+import { MemoryCompanyStore } from "../companies/companyStore";
 import { MemoryCaseStore } from "../cases/memoryCaseStore";
 import { MemoryFeedbackStore } from "../cases/memoryFeedbackStore";
 import {
@@ -54,6 +55,7 @@ export type MemoryStores = Stores & {
   deletionRequests: MemoryDeletionRequestStore;
   feedback: MemoryFeedbackStore;
   aiRequests: MemoryAiRequestStore;
+  companies: MemoryCompanyStore;
 };
 
 export function createMemoryStores(): MemoryStores {
@@ -76,5 +78,6 @@ export function createMemoryStores(): MemoryStores {
     deletionRequests: new MemoryDeletionRequestStore(),
     feedback: new MemoryFeedbackStore(),
     aiRequests: new MemoryAiRequestStore(),
+    companies: new MemoryCompanyStore(),
   };
 }

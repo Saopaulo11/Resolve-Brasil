@@ -119,7 +119,30 @@ export interface CaseStore {
     category: CaseCategory,
     subcategory: string | null,
   ): Promise<void>;
+  /**
+   * Поля дела из подтверждённых фактов (§26).
+   *
+   * Передаются только те поля, которые человек подтвердил: пустой объект
+   * ничего не меняет, а отсутствующее поле остаётся прежним.
+   */
+  setFields(caseId: string, update: CaseFieldsUpdate): Promise<void>;
 }
+
+/**
+ * Компания разрешается отдельно, поэтому идентификатор приходит готовым.
+ *
+ * null — это «поле опустело», а не «не трогать». Отклонив подтверждённый
+ * раньше факт, человек обязан иметь возможность убрать его из дела.
+ */
+export type CaseFieldsUpdate = {
+  companyName?: string | null;
+  companyId?: string | null;
+  companyNormalized?: string | null;
+  amount?: string | null;
+  paymentMethod?: PaymentMethod;
+  purchaseDate?: Date | null;
+  promisedDate?: Date | null;
+};
 
 /** Prisma отдаёт Decimal; наружу он не выходит. */
 type PrismaCaseRow = Omit<CaseRecord, "amount"> & { amount: unknown };
@@ -236,5 +259,10 @@ export class PrismaCaseStore implements CaseStore {
       where: { id: caseId },
       data: { category, subcategory, status: "EM_ANALISE" },
     });
+  }
+
+  async setFields(caseId: string, update: CaseFieldsUpdate): Promise<void> {
+    if (Object.keys(update).length === 0) return;
+    await db().case.update({ where: { id: caseId }, data: update });
   }
 }

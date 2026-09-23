@@ -77,6 +77,7 @@ export function buildRouter(): Router {
   router.get("/admin/usuarios", requirePermission("users.list"), admin.usuarios);
   router.get("/admin/documentos", requirePermission("documents.list"), admin.documentos);
   router.get("/admin/ia", requirePermission("ai.view"), admin.ia);
+  router.get("/admin/empresas", requirePermission("companies.view"), admin.empresas);
   router.get("/admin/fontes", requirePermission("sources.manage"), admin.fontes);
   router.get("/admin/avaliacoes", requirePermission("feedback.view"), admin.avaliacoes);
   router.get(

@@ -1,0 +1,75 @@
+<section class="section">
+  <div class="container">
+    <h1>Empresas</h1>
+    <p class="lede">Até <%= limite %> empresas citadas pelos usuários.</p>
+
+    <div class="panel">
+      <%# §82: справочника настоящих компаний нет — только то, что назвали
+          пользователи. §86: отрасль берётся из названия, и слово, давшее
+          ответ, показано рядом — иначе ошибку правила не заметить. %>
+      <p class="small muted">
+        Esta lista não é um cadastro de empresas do mercado: ela contém
+        apenas os nomes que os próprios usuários informaram. O setor é
+        deduzido do que a empresa diz no próprio nome, e a palavra que levou
+        a essa conclusão aparece ao lado. «Não identificado» significa que
+        nenhuma regra se aplicou — não que a empresa seja de outro setor.
+      </p>
+
+      <% if (empresas.length === 0) { %>
+        <p class="muted">Nenhuma empresa registrada ainda.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Nome</th>
+                <th scope="col">Forma normalizada</th>
+                <th scope="col">Setor</th>
+                <th scope="col">Pela palavra</th>
+                <th scope="col">Outras grafias</th>
+                <th scope="col">Desde</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% empresas.forEach(function (empresa) { %>
+                <tr>
+                  <td><%= empresa.nome %></td>
+                  <td><code><%= empresa.normalizado %></code></td>
+                  <td>
+                    <% if (empresa.identificado) { %>
+                      <%= empresa.setor %>
+                    <% } else { %>
+                      <span class="muted"><%= empresa.setor %></span>
+                    <% } %>
+                  </td>
+                  <td><%= empresa.evidencia || "—" %></td>
+                  <td>
+                    <% if (empresa.apelidos.length === 0) { %>
+                      —
+                    <% } else { %>
+                      <% empresa.apelidos.forEach(function (apelido) { %>
+                        <span class="tag tag--<%= apelido.revisado ? "concluido" : "neutro" %>">
+                          <%= apelido.texto %>
+                        </span>
+                      <% }); %>
+                    <% } %>
+                  </td>
+                  <td><%= empresa.criadoEm %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <%# Автоматическое объединение по похожести однажды склеит две
+            разные компании, и разъединить их потом будет нечем. %>
+        <p class="small muted">
+          Grafias diferentes são registradas, mas não unem nada sozinhas: a
+          união só vale depois que uma pessoa marca a grafia como conferida.
+          Juntar empresas por semelhança de nome acaba juntando duas
+          diferentes, e separá-las depois não é possível.
+        </p>
+      <% } %>
+    </div>
+  </div>
+</section>

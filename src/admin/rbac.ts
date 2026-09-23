@@ -20,6 +20,7 @@ export type Permission =
   | "notifications.view"
   | "settings.view"
   | "ai.view"
+  | "companies.view"
   /**
    * Перечень документов: тип, размер, состояние, дата. Без имени файла и
    * без содержимого. Имя файла — уже персональные данные: «cpf-joao.pdf»
@@ -36,6 +37,7 @@ const ANALYST_PERMISSIONS: readonly Permission[] = [
   "analytics.view",
   "ai.view",
   "feedback.view",
+  "companies.view",
 ];
 
 const SUPPORT_PERMISSIONS: readonly Permission[] = [

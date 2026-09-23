@@ -373,3 +373,124 @@ describe("подтверждение фактов (§26)", () => {
     expect(sent).not.toContain("R$ 349,90");
   });
 });
+
+/**
+ * §26, §85, §86.
+ *
+ * Раньше подтверждение оставалось только в списке фактов: дело не знало ни
+ * компании, ни суммы. Из-за этого срез по компании не находил ни одного
+ * дела, а отрасль в аналитике оставалась пустой не потому, что её не
+ * определили, а потому, что компанию некуда было записать.
+ */
+describe("подтверждённые факты становятся полями дела", () => {
+  beforeEach(async () => {
+    // Без соли слепок в аналитику не пишется вовсе — и проверять было бы
+    // нечего (§55).
+    process.env.SESSION_SECRET = "segredo-de-teste-com-mais-de-32-caracteres";
+    useOpenAi();
+    await setup();
+    await upload(PDF_BYTES, "comprovante.pdf", "application/pdf");
+    setOpenAiClient(
+      stub({
+        output_text: JSON.stringify({
+          fields: [
+            { field: "company", value: "Loja Exemplo S.A.", confidence: 0.94 },
+            { field: "amount", value: "R$ 349,90", confidence: 0.88 },
+            { field: "payment_method", value: "Pix", confidence: 0.9 },
+            { field: "purchase_date", value: "02/03/2026", confidence: 0.85 },
+          ],
+          notes: [],
+        }),
+      }),
+    );
+
+    const page = await openPage(harness.app, `/caso/${publicId}`, cookies);
+    const caseRecord = await harness.cases.findByPublicId(publicId);
+    const documents = await harness.documents.listForCase(caseRecord!.id);
+    await request(harness.app)
+      .post(`/caso/${publicId}/documentos/${documents[0]?.id}/extrair`)
+      .set("Cookie", page.cookies)
+      .type("form")
+      .send({ _csrf: page.token });
+  });
+
+  async function confirmarTodos() {
+    const caseRecord = await harness.cases.findByPublicId(publicId);
+    const facts = await harness.facts.listForCase(caseRecord!.id);
+
+    for (const fact of facts) {
+      const page = await openPage(harness.app, `/caso/${publicId}`, cookies);
+      await request(harness.app)
+        .post(`/caso/${publicId}/fatos/${fact.id}`)
+        .set("Cookie", page.cookies)
+        .type("form")
+        .send({ _csrf: page.token, decisao: "confirmar" });
+    }
+  }
+
+  it("неподтверждённый факт полем дела не становится", async () => {
+    // §5: догадка модели в поле выглядит ровно как факт, и отличить их
+    // потом будет нечем.
+    const caseRecord = await harness.cases.findByPublicId(publicId);
+    expect(caseRecord?.companyName).toBeNull();
+    expect(caseRecord?.amount).toBeNull();
+  });
+
+  it("подтверждение переносит компанию, сумму, оплату и дату", async () => {
+    await confirmarTodos();
+
+    const caseRecord = await harness.cases.findByPublicId(publicId);
+    expect(caseRecord?.companyName).toBe("Loja Exemplo S.A.");
+    expect(caseRecord?.amount).toBe("349.90");
+    expect(caseRecord?.paymentMethod).toBe("PIX");
+    expect(caseRecord?.purchaseDate?.toISOString().slice(0, 10)).toBe("2026-03-02");
+  });
+
+  it("компания заводится в справочнике в нормализованном виде", async () => {
+    await confirmarTodos();
+
+    const caseRecord = await harness.cases.findByPublicId(publicId);
+    expect(caseRecord?.companyNormalized).toBe("loja exemplo");
+
+    const empresa = await harness.companies.findByNormalized("loja exemplo");
+    expect(empresa?.canonicalName).toBe("Loja Exemplo S.A.");
+    // «Loja» — розница: компания сказала это о себе сама в названии (§86).
+    expect(empresa?.industry).toBe("RETAIL");
+  });
+
+  it("компания и отрасль доезжают до аналитики", async () => {
+    await confirmarTodos();
+
+    const [slice] = await harness.analytics.listReal();
+    expect(slice?.companyNormalized).toBe("loja exemplo");
+    expect(slice?.industry).toBe("RETAIL");
+    expect(slice?.amountBucket).not.toBeNull();
+  });
+
+  afterEach(() => {
+    delete process.env.SESSION_SECRET;
+  });
+
+  it("отклонение подтверждённого очищает поле", async () => {
+    // Иначе поле осталось бы от прошлого решения, и человек не смог бы
+    // убрать то, что сам же и подтвердил.
+    await confirmarTodos();
+
+    const caseRecord = await harness.cases.findByPublicId(publicId);
+    const facts = await harness.facts.listForCase(caseRecord!.id);
+    const amountFact = facts.find((fact) => fact.field === "amount");
+
+    const page = await openPage(harness.app, `/caso/${publicId}`, cookies);
+    await request(harness.app)
+      .post(`/caso/${publicId}/fatos/${amountFact!.id}`)
+      .set("Cookie", page.cookies)
+      .type("form")
+      .send({ _csrf: page.token, decisao: "rejeitar" });
+
+    const depois = await harness.cases.findByPublicId(publicId);
+    expect(depois?.amount).toBeNull();
+    // Остальное при этом на месте.
+    expect(depois?.companyName).toBe("Loja Exemplo S.A.");
+  });
+});
+

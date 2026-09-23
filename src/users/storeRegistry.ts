@@ -23,6 +23,7 @@ import {
   type LoginAttemptStore,
 } from "../admin/adminStore";
 import { PrismaAiRequestStore, type AiRequestStore } from "../ai/aiRequestStore";
+import { PrismaCompanyStore, type CompanyStore } from "../companies/companyStore";
 import { PrismaAnalyticsStore, type AnalyticsStore } from "../analytics/analyticsStore";
 import { PrismaFeedbackStore, type FeedbackStore } from "../cases/feedbackStore";
 import {
@@ -70,6 +71,7 @@ export type Stores = {
   deletionRequests: DeletionRequestStore;
   feedback: FeedbackStore;
   aiRequests: AiRequestStore;
+  companies: CompanyStore;
 };
 
 let instance: Stores | null = null;
@@ -95,6 +97,7 @@ function build(): Stores {
       deletionRequests: new PrismaDeletionRequestStore(),
       feedback: new PrismaFeedbackStore(),
       aiRequests: new PrismaAiRequestStore(),
+      companies: new PrismaCompanyStore(),
     };
   }
 

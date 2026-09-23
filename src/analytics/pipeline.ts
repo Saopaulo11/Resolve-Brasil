@@ -46,17 +46,26 @@ export async function refreshProjection(
   }
 
   try {
-    const { users, analytics } = stores();
+    const { users, analytics, companies } = stores();
 
     const owner = caseRecord.userId ? await users.findById(caseRecord.userId) : null;
     const isDemo = owner?.phone === DEMO_PHONE;
 
+    /**
+     * §86. Отрасль берётся у компании дела, а не угадывается по обращению.
+     *
+     * Компании нет или её отрасль не определилась — остаётся OTHER. Это
+     * «не определено», а не «прочее»: в отчёте эти две вещи читаются
+     * по-разному, и смешивать их нельзя.
+     */
+    const company = caseRecord.companyNormalized
+      ? await companies.findByNormalized(caseRecord.companyNormalized)
+      : null;
+
     await analytics.upsert(
       projectCase({
         caseRecord,
-        // §86: отрасль появится вместе с нормализацией компаний. Пока OTHER —
-        // это честное «не определено», а не догадка.
-        industry: "OTHER",
+        industry: company?.industry ?? "OTHER",
         secret,
         confidence: options.confidence ?? null,
         isDemo,
