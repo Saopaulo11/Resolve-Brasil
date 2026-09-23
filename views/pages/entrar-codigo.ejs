@@ -1,0 +1,64 @@
+<section class="section">
+  <div class="container container--narrow">
+    <h1>Confirme o código</h1>
+    <p class="lede">
+      Enviamos um código para <strong><%= phoneMasked %></strong>.
+    </p>
+
+    <div class="panel">
+      <form method="post" action="/entrar/codigo" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="next" value="<%= nextUrl %>" />
+
+        <div class="field <%= errors.code ? 'field--invalid' : '' %>">
+          <label for="code">Código recebido</label>
+          <input
+            type="text"
+            id="code"
+            name="code"
+            required
+            autocomplete="one-time-code"
+            inputmode="numeric"
+            <%# autocomplete="one-time-code" позволяет системе подставить код из SMS %>
+            aria-describedby="<%= errors.code ? 'code-error' : '' %>"
+            <%= errors.code ? 'aria-invalid="true"' : '' %>
+          />
+          <% if (errors.code) { %>
+            <p class="field__error" id="code-error"><%= errors.code %></p>
+          <% } %>
+        </div>
+
+        <%# §17: согласие на маркетинг — отдельная галочка, по умолчанию снятая.
+            Вход по телефону сам по себе согласия на рассылку не означает. %>
+        <div class="field field--check">
+          <input
+            type="checkbox"
+            id="marketing"
+            name="marketing"
+            <%= values.marketing ? 'checked' : '' %>
+          />
+          <label for="marketing" class="label--inline"><%= marketingLabel %></label>
+        </div>
+        <p class="field__hint">
+          Avisos sobre o seu caso são enviados de qualquer forma — essa opção é
+          só para novidades e dicas, e pode ser desativada quando quiser.
+        </p>
+
+        <button type="submit" class="btn btn--primary btn--block">Confirmar</button>
+      </form>
+    </div>
+
+    <form method="post" action="/entrar" class="resend">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="next" value="<%= nextUrl %>" />
+      <input type="hidden" name="phone" value="<%= phoneMasked %>" />
+      <button type="submit" class="btn btn--secondary btn--block">
+        Não recebi o código
+      </button>
+    </form>
+
+    <p class="small muted">
+      <a href="/entrar">Usar outro número</a>
+    </p>
+  </div>
+</section>

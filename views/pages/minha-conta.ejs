@@ -1,0 +1,89 @@
+<section class="section">
+  <div class="container">
+    <h1>Minha conta</h1>
+
+    <% if (saved) { %>
+      <p class="flash" role="status">Preferências salvas.</p>
+    <% } %>
+
+    <h2 id="meus-casos">Meus casos</h2>
+    <div class="panel">
+      <% if (cases.length === 0) { %>
+        <p class="muted">Você ainda não tem casos.</p>
+        <a class="btn btn--primary" href="/">Contar o que aconteceu</a>
+      <% } %>
+    </div>
+
+    <h2 id="meus-dados">Meus dados</h2>
+    <div class="panel">
+      <dl class="rows">
+        <div class="row">
+          <dt>Telefone</dt>
+          <dd><%= phoneMasked %></dd>
+        </div>
+        <div class="row">
+          <dt>Conta criada em</dt>
+          <dd><%= memberSince %></dd>
+        </div>
+      </dl>
+      <p class="small muted">
+        Não pedimos CPF, endereço nem dados bancários para criar sua conta.
+      </p>
+    </div>
+
+    <h2 id="notificacoes">Notificações</h2>
+    <div class="panel">
+      <form method="post" action="/minha-conta/notificacoes">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field field--check">
+          <input
+            type="checkbox"
+            id="case-notifications"
+            checked
+            disabled
+          />
+          <label for="case-notifications" class="label--inline">
+            Avisos sobre os meus casos
+          </label>
+        </div>
+        <p class="field__hint">
+          Avisos sobre o andamento do seu caso são parte do serviço e não podem
+          ser desativados aqui.
+        </p>
+
+        <div class="field field--check">
+          <input
+            type="checkbox"
+            id="marketing"
+            name="marketing"
+            <%= marketingConsent ? 'checked' : '' %>
+          />
+          <label for="marketing" class="label--inline"><%= marketingLabel %></label>
+        </div>
+
+        <button type="submit" class="btn btn--primary">Salvar</button>
+      </form>
+    </div>
+
+    <h2 id="privacidade">Privacidade</h2>
+    <div class="panel">
+      <p>
+        Veja o que coletamos e quais são seus direitos na
+        <a href="/privacidade">Política de privacidade</a>.
+      </p>
+      <p class="notice">
+        <strong>Em construção.</strong> Exportação e exclusão de dados pela
+        própria conta entram nas próximas etapas do desenvolvimento.
+      </p>
+    </div>
+
+    <h2 id="sair">Sair</h2>
+    <div class="panel">
+      <form method="post" action="/sair">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn--secondary">Sair da conta</button>
+      </form>
+    </div>
+  </div>
+</section>

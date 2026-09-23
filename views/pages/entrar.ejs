@@ -1,0 +1,43 @@
+<section class="section">
+  <div class="container container--narrow">
+    <h1>Entrar</h1>
+    <p class="lede">
+      Informe seu telefone. Enviaremos um código para confirmar que é você.
+      Não usamos senha.
+    </p>
+
+    <div class="panel">
+      <form method="post" action="/entrar" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="next" value="<%= nextUrl %>" />
+
+        <div class="field <%= errors.phone ? 'field--invalid' : '' %>">
+          <label for="phone">Telefone com DDD</label>
+          <p class="field__hint" id="phone-hint">Exemplo: (11) 98765-4321</p>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            required
+            autocomplete="tel-national"
+            inputmode="tel"
+            value="<%= values.phone || '' %>"
+            aria-describedby="phone-hint <%= errors.phone ? 'phone-error' : '' %>"
+            <%= errors.phone ? 'aria-invalid="true"' : '' %>
+          />
+          <% if (errors.phone) { %>
+            <p class="field__error" id="phone-error"><%= errors.phone %></p>
+          <% } %>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Enviar código</button>
+      </form>
+    </div>
+
+    <p class="small muted">
+      Ao continuar, você concorda com os
+      <a href="/termos">Termos de uso</a> e a
+      <a href="/privacidade">Política de privacidade</a>.
+    </p>
+  </div>
+</section>

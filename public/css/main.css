@@ -469,3 +469,81 @@ input:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Вход и личный кабинет (PHASE 2) -------------------------------------- */
+
+.container--narrow {
+  max-width: 32rem;
+}
+
+/* Галочка и подпись рядом: подпись — часть области нажатия (§73). */
+.field--check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-bottom: 0.5rem;
+}
+
+.field--check input[type="checkbox"] {
+  /* 24px — минимум, в который попадают пальцем без промаха. */
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--green-text);
+}
+
+.label--inline {
+  font-weight: 400;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.field--check input:disabled + .label--inline {
+  color: var(--text-muted);
+}
+
+.resend {
+  margin-top: 1rem;
+}
+
+.flash {
+  background: #e8f6ee;
+  border: 1px solid #a8d8bd;
+  border-left: 4px solid var(--green-text);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  color: #14532d;
+  font-weight: 500;
+}
+
+.rows {
+  margin: 0;
+}
+
+.rows .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.rows .row:first-child {
+  border-top: none;
+}
+
+.rows dt {
+  flex: 0 0 10rem;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.rows dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.section h2 {
+  margin-top: 2rem;
+}

@@ -17,6 +17,15 @@
           <a href="/sobre"
              <%= currentPath === '/sobre' ? 'aria-current="page"' : '' %>>Sobre</a>
         </li>
+        <li>
+          <% if (typeof userId !== 'undefined' && userId) { %>
+            <a href="/minha-conta"
+               <%= currentPath === '/minha-conta' ? 'aria-current="page"' : '' %>>Minha conta</a>
+          <% } else { %>
+            <a href="/entrar"
+               <%= currentPath === '/entrar' ? 'aria-current="page"' : '' %>>Entrar</a>
+          <% } %>
+        </li>
       </ul>
     </nav>
   </div>

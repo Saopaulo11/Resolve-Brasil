@@ -1,15 +1,18 @@
 import { Router } from "express";
 
+import * as account from "../controllers/accountController";
+import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import { findCategoryBySlug } from "../cases/categories";
+import { otpRequestRateLimit } from "../middleware/rateLimit";
+import { requireAuth } from "../middleware/session";
 
 /**
- * Публичные маршруты (§74).
+ * Маршруты приложения (§74).
  *
- * Личный кабинет (/minha-conta), вход (/entrar) и админка (/admin) приходят
- * на PHASE 2 и PHASE 10.
+ * Админка (/admin) приходит на PHASE 10.
  */
 export function buildRouter(): Router {
   const router = Router();
@@ -32,6 +35,24 @@ export function buildRouter(): Router {
   });
 
   router.post("/caso/novo", cases.criar);
+
+  // §64 перечисляет /privacy и /terms по-английски, §74 — те же страницы
+  // по-португальски. Каноничны португальские, английские ведут на них:
+  // две разные страницы с одним текстом разъедутся при первой же правке.
+  router.get("/privacy", (_req, res) => res.redirect(301, "/privacidade"));
+  router.get("/terms", (_req, res) => res.redirect(301, "/termos"));
+
+  // --- Вход (§15) ---
+  router.get("/entrar", auth.telefoneForm);
+  router.post("/entrar", otpRequestRateLimit(), auth.enviarCodigo);
+  router.get("/entrar/codigo", auth.codigoForm);
+  router.post("/entrar/codigo", auth.confirmarCodigo);
+  router.post("/sair", auth.sair);
+
+  // --- Личный кабинет (§18) ---
+  router.get("/minha-conta", requireAuth(), account.minhaConta);
+  router.post("/minha-conta/notificacoes", requireAuth(), account.atualizarMarketing);
+  router.post("/marketing/unsubscribe", requireAuth(), account.cancelarMarketing);
 
   return router;
 }

@@ -17,7 +17,7 @@
   </head>
   <body>
     <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-    <%- include('../partials/header', { currentPath: currentPath }) %>
+    <%- include('../partials/header', { currentPath: currentPath, userId: typeof userId !== 'undefined' ? userId : null }) %>
     <main id="conteudo">
       <%- body %>
     </main>

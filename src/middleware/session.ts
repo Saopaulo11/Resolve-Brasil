@@ -1,7 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 import { loadConfig } from "../config/env";
-import { isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
 import { resolveSession, touchSession, type SessionInfo } from "../services/session";
 
@@ -24,9 +23,6 @@ export function attachSession(): RequestHandler {
     next: NextFunction,
   ) {
     res.locals.user = null;
-
-    // Без базы сессий нет — но страницы всё равно должны отдаваться.
-    if (!isDatabaseConfigured()) return next();
 
     const token = req.signedCookies?.[config.session.cookieName] as string | undefined;
     if (!token) return next();

@@ -51,6 +51,11 @@ export function otpProvider(): OtpProvider {
   );
 }
 
+/** Для тестов: подставить провайдер, перехватывающий код. */
+export function setOtpProvider(custom: OtpProvider): void {
+  instance = custom;
+}
+
 export function resetOtpProviderCache(): void {
   instance = null;
 }
