@@ -32,7 +32,8 @@ export function errorHandler(
 ): void {
   const isCsrf = error.message === "CSRF_TOKEN_INVALIDO";
   const isUpload = error.message === "UPLOAD_REJEITADO";
-  const status = isCsrf ? 403 : isUpload ? 413 : 500;
+  const isForbidden = error.message === "ADMIN_SEM_PERMISSAO";
+  const status = isCsrf ? 403 : isUpload ? 413 : isForbidden ? 403 : 500;
 
   logger().error({ err: error, path: req.path, status }, "erro na requisição");
 

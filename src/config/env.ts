@@ -121,6 +121,17 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       maxFileSizeBytes: intOr(env.STORAGE_MAX_FILE_SIZE_BYTES, 10 * 1024 * 1024),
     },
 
+    admin: {
+      /**
+       * Сессия админа живёт часами, а не месяцем, как пользовательская:
+       * её компрометация стоит несравнимо дороже.
+       */
+      sessionMaxAgeHours: intOr(env.ADMIN_SESSION_MAX_AGE_HOURS, 8),
+      /** Сколько неудачных попыток подряд блокируют вход (§51, §66). */
+      maxLoginFailures: intOr(env.ADMIN_MAX_LOGIN_FAILURES, 5),
+      loginWindowMinutes: intOr(env.ADMIN_LOGIN_WINDOW_MINUTES, 15),
+    },
+
     reminders: {
       /**
        * Сколько раз пытаться отправить напоминание. Без предела неудачная

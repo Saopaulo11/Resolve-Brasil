@@ -69,6 +69,12 @@ export class MemoryCaseStore implements CaseStore {
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 
+  async listRecent(limit: number): Promise<CaseRecord[]> {
+    return [...this.cases.values()]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
   async publicIdExists(publicId: string): Promise<boolean> {
     return (await this.findByPublicId(publicId)) !== null;
   }

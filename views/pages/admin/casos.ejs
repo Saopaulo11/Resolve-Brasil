@@ -1,0 +1,36 @@
+<section class="section">
+  <div class="container">
+    <h1>Casos</h1>
+    <p class="lede">Últimos <%= limite %> casos registrados.</p>
+
+    <div class="panel">
+      <%# §51: ни текста обращения, ни телефона, ни документов. Показанное
+          однажды показано навсегда. %>
+      <p class="small muted">
+        Esta lista não mostra o relato, o telefone nem os documentos. Seu
+        acesso a esta página fica registrado.
+      </p>
+
+      <% if (casos.length === 0) { %>
+        <p class="muted">Nenhum caso registrado.</p>
+      <% } else { %>
+        <ul class="case-list">
+          <% casos.forEach(function (caso) { %>
+            <li class="case-card">
+              <span class="case-card__title"><%= caso.publicId %></span>
+              <dl class="rows">
+                <div class="row"><dt>Categoria</dt><dd><%= caso.categoria %></dd></div>
+                <div class="row"><dt>Empresa</dt><dd><%= caso.empresa %></dd></div>
+                <div class="row">
+                  <dt>Status</dt>
+                  <dd><span class="tag tag--<%= caso.statusTone %>"><%= caso.status %></span></dd>
+                </div>
+                <div class="row"><dt>Criado em</dt><dd><%= caso.criadoEm %></dd></div>
+              </dl>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</section>

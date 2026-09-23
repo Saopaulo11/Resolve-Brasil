@@ -94,8 +94,11 @@ export type AuditEntry = {
   ipPrefix: string | null;
 };
 
+export type AuditRecord = AuditEntry & { id: string; createdAt: Date };
+
 export interface AuditStore {
   record(entry: AuditEntry): Promise<void>;
+  list(limit: number): Promise<AuditRecord[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,6 +180,14 @@ export class PrismaFactStore implements FactStore {
 }
 
 export class PrismaAuditStore implements AuditStore {
+  async list(limit: number): Promise<AuditRecord[]> {
+    const rows = await db().auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    return rows as unknown as AuditRecord[];
+  }
+
   async record(entry: AuditEntry): Promise<void> {
     await db().auditLog.create({
       data: {

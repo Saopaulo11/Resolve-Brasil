@@ -100,6 +100,8 @@ export interface CaseStore {
   findByPublicId(publicId: string): Promise<CaseRecord | null>;
   findById(caseId: string): Promise<CaseRecord | null>;
   listForUser(userId: string): Promise<CaseRecord[]>;
+  /** Последние дела — для админки. Текст обращения наружу не выносится. */
+  listRecent(limit: number): Promise<CaseRecord[]>;
   publicIdExists(publicId: string): Promise<boolean>;
   attachToUser(caseId: string, userId: string): Promise<void>;
   addEvent(input: CreateEventInput): Promise<CaseEventRecord>;
@@ -142,6 +144,14 @@ export class PrismaCaseStore implements CaseStore {
     const rows = await db().case.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
+    });
+    return rows.map((row) => toRecord(row as unknown as PrismaCaseRow));
+  }
+
+  async listRecent(limit: number): Promise<CaseRecord[]> {
+    const rows = await db().case.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
     });
     return rows.map((row) => toRecord(row as unknown as PrismaCaseRow));
   }

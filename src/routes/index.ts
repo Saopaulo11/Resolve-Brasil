@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import * as account from "../controllers/accountController";
+import * as admin from "../controllers/adminController";
 import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
 import * as documents from "../controllers/documentsController";
@@ -10,6 +11,7 @@ import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import { findCategoryBySlug } from "../cases/categories";
 import { aiRateLimit, otpRequestRateLimit } from "../middleware/rateLimit";
+import { requirePermission } from "../middleware/adminSession";
 import { requireAuth } from "../middleware/session";
 
 /**
@@ -56,6 +58,20 @@ export function buildRouter(): Router {
     documents.extrair,
   );
   router.post("/caso/:publicId/fatos/:factId", requireAuth(), documents.revisarFato);
+
+  // --- Администрирование (§50, §51) ---
+  //
+  // Вход отдельный от пользовательского: своя кука, своя таблица сессий,
+  // свой срок жизни. Каждый раздел закрыт конкретным правом, а не общей
+  // проверкой «это админ».
+  router.get("/admin/entrar", admin.entrarForm);
+  router.post("/admin/entrar", admin.entrar);
+  router.post("/admin/sair", admin.sair);
+
+  router.get("/admin", requirePermission("dashboard.view"), admin.painel);
+  router.get("/admin/casos", requirePermission("cases.list"), admin.casos);
+  router.get("/admin/analytics", requirePermission("analytics.view"), admin.analytics);
+  router.get("/admin/auditoria", requirePermission("audit.view"), admin.auditoria);
 
   // --- Напоминания (§37) ---
   router.post("/caso/:publicId/lembretes", requireAuth(), reminders.criar);

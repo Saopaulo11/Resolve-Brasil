@@ -1,0 +1,26 @@
+<section class="section">
+  <div class="container">
+    <h1>Registros de acesso</h1>
+    <p class="lede">Últimos <%= limite %> registros.</p>
+
+    <div class="panel">
+      <% if (registros.length === 0) { %>
+        <p class="muted">Nenhum registro.</p>
+      <% } else { %>
+        <ul class="case-list">
+          <% registros.forEach(function (registro) { %>
+            <li class="case-card">
+              <span class="case-card__title"><%= registro.acao %></span>
+              <dl class="rows">
+                <div class="row"><dt>Tipo</dt><dd><%= registro.tipo %></dd></div>
+                <div class="row"><dt>Entidade</dt><dd><%= registro.entidade %></dd></div>
+                <div class="row"><dt>Quando</dt><dd><%= registro.quando %></dd></div>
+                <div class="row"><dt>Rede</dt><dd><%= registro.rede %></dd></div>
+              </dl>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</section>

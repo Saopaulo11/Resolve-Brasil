@@ -5,6 +5,7 @@ import express, { type Express } from "express";
 import pinoHttp from "pino-http";
 
 import { loadConfig } from "./config/env";
+import { attachAdmin } from "./middleware/adminSession";
 import { attachSession } from "./middleware/session";
 import { csrfProtection } from "./middleware/csrf";
 import { errorHandler, notFound } from "./middleware/errors";
@@ -76,6 +77,7 @@ export function createApp(): Express {
   app.use(cookieParser(resolveCookieSecret()));
   app.use(csrfProtection());
   app.use(attachSession());
+  app.use(attachAdmin());
 
   app.use(buildRouter());
 

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { ExtractionStatus, FactStatus } from "../generated/prisma/enums";
 import type {
   AuditEntry,
+  AuditRecord,
   AuditStore,
   CaseFactRecord,
   CreateDocumentInput,
@@ -117,9 +118,15 @@ export class MemoryFactStore implements FactStore {
 }
 
 export class MemoryAuditStore implements AuditStore {
-  readonly entries: AuditEntry[] = [];
+  readonly entries: AuditRecord[] = [];
 
   async record(entry: AuditEntry): Promise<void> {
-    this.entries.push(entry);
+    this.entries.push({ ...entry, id: randomUUID(), createdAt: new Date() });
+  }
+
+  async list(limit: number): Promise<AuditRecord[]> {
+    return [...this.entries]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
   }
 }

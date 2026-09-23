@@ -1,0 +1,39 @@
+<section class="section">
+  <div class="container">
+    <h1>Painel</h1>
+
+    <div class="panel">
+      <dl class="rows">
+        <div class="row"><dt>Casos</dt><dd><%= resumo.total %></dd></div>
+        <div class="row"><dt>Resolvidos</dt><dd><%= resumo.resolved %></dd></div>
+        <div class="row"><dt>Em aberto</dt><dd><%= resumo.unresolved %></dd></div>
+        <div class="row"><dt>Escalados</dt><dd><%= resumo.escalated %></dd></div>
+        <div class="row">
+          <dt>Taxa de escalonamento</dt>
+          <dd>
+            <% if (resumo.escalationRate === null) { %>
+              <span class="muted">— amostra menor que <%= minGroupSize %></span>
+            <% } else { %>
+              <%= Math.round(resumo.escalationRate * 100) %>%
+            <% } %>
+          </dd>
+        </div>
+        <div class="row">
+          <dt>Mediana até resolver</dt>
+          <dd>
+            <% if (resumo.medianResolutionDays === null) { %>
+              <span class="muted">— poucos casos resolvidos</span>
+            <% } else { %>
+              <%= resumo.medianResolutionDays %> dias
+            <% } %>
+          </dd>
+        </div>
+      </dl>
+      <%# §57: проценты на крошечной выборке вводят в заблуждение сильнее,
+          чем прочерк — поэтому их здесь просто нет. %>
+      <p class="small muted">
+        Percentuais só aparecem com amostra de pelo menos <%= minGroupSize %> casos.
+      </p>
+    </div>
+  </div>
+</section>

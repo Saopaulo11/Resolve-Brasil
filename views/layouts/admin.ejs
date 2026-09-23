@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= title %></title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="icon" href="/images/brand/icon.svg" type="image/svg+xml" />
+  </head>
+  <body class="admin">
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href="/admin" aria-label="Administração">
+          <img src="/images/brand/logo-horizontal.svg" alt="Resolve Brasil"
+               width="140" height="32" />
+        </a>
+
+        <% if (adminEmail) { %>
+          <nav class="admin-nav" aria-label="Administração">
+            <ul>
+              <li><a href="/admin">Painel</a></li>
+              <% if (adminPermissions.includes("cases.list")) { %>
+                <li><a href="/admin/casos">Casos</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("analytics.view")) { %>
+                <li><a href="/admin/analytics">Analytics</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("audit.view")) { %>
+                <li><a href="/admin/auditoria">Acessos</a></li>
+              <% } %>
+            </ul>
+          </nav>
+        <% } %>
+      </div>
+    </header>
+
+    <main id="conteudo">
+      <%- body %>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <% if (adminEmail) { %>
+          <p class="small muted">
+            <%= adminEmail %> · <%= adminRole %>
+          </p>
+          <form method="post" action="/admin/sair">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="btn btn--secondary">Sair</button>
+          </form>
+        <% } %>
+        <p class="site-footer__legal">
+          Área administrativa. Todo acesso a dados de usuários é registrado.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

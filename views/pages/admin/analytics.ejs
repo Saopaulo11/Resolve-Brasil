@@ -1,0 +1,41 @@
+<section class="section">
+  <div class="container">
+    <h1>Analytics</h1>
+    <p class="lede">
+      Casos registrados no Resolve Brasil. Não é uma amostra do país.
+    </p>
+
+    <% grupos.forEach(function (grupo) { %>
+      <div class="panel">
+        <h2><%= grupo.titulo %></h2>
+
+        <% if (grupo.dados.buckets.length === 0) { %>
+          <p class="muted">Nenhum grupo atingiu o tamanho mínimo.</p>
+        <% } else { %>
+          <dl class="rows">
+            <% grupo.dados.buckets.forEach(function (bucket) { %>
+              <div class="row">
+                <dt><%= bucket.key %></dt>
+                <dd><%= bucket.count %></dd>
+              </div>
+            <% }); %>
+          </dl>
+        <% } %>
+
+        <% if (grupo.dados.suppressedGroups > 0) { %>
+          <%# Скрытое не молчит: иначе читатель сложит доли до ста процентов. %>
+          <p class="small muted">
+            <%= grupo.dados.suppressedGroups %> grupo(s) ocultado(s) com
+            <%= grupo.dados.suppressedCount %> caso(s): menos de
+            <%= grupo.dados.minGroupSize %> observações.
+          </p>
+        <% } %>
+      </div>
+    <% }); %>
+
+    <p class="small muted">
+      Apresentar estes números como estatística do Brasil seria afirmar o que
+      não sabemos.
+    </p>
+  </div>
+</section>

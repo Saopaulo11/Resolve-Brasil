@@ -16,6 +16,8 @@ export const VIEWS_ROOT = path.resolve(__dirname, "../../views");
 export type PageLocals = Record<string, unknown> & {
   title: string;
   description: string;
+  /** Макет. По умолчанию публичный; админка использует свой. */
+  layout?: "base" | "admin";
 };
 
 export function renderPage(
@@ -43,7 +45,9 @@ export function renderPage(
       fail?.(error);
       return;
     }
-    res.render(path.join("layouts", "base"), { ...base, body: html }, (layoutError, page) => {
+    const layout = locals.layout === "admin" ? "admin" : "base";
+
+    res.render(path.join("layouts", layout), { ...base, body: html }, (layoutError, page) => {
       if (layoutError) {
         fail?.(layoutError);
         return;

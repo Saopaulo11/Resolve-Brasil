@@ -1,3 +1,8 @@
+import {
+  MemoryAdminSessionStore,
+  MemoryAdminUserStore,
+  MemoryLoginAttemptStore,
+} from "../admin/memoryAdminStore";
 import { MemoryAnalyticsStore } from "../analytics/memoryAnalyticsStore";
 import { MemoryCaseStore } from "../cases/memoryCaseStore";
 import {
@@ -40,6 +45,9 @@ export type MemoryStores = Stores & {
   reminders: MemoryReminderStore;
   notifications: MemoryNotificationStore;
   analytics: MemoryAnalyticsStore;
+  admins: MemoryAdminUserStore;
+  adminSessions: MemoryAdminSessionStore;
+  loginAttempts: MemoryLoginAttemptStore;
 };
 
 export function createMemoryStores(): MemoryStores {
@@ -56,5 +64,8 @@ export function createMemoryStores(): MemoryStores {
     reminders: new MemoryReminderStore(),
     notifications: new MemoryNotificationStore(),
     analytics: new MemoryAnalyticsStore(),
+    admins: new MemoryAdminUserStore(),
+    adminSessions: new MemoryAdminSessionStore(),
+    loginAttempts: new MemoryLoginAttemptStore(),
   };
 }
