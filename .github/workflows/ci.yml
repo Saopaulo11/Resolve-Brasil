@@ -19,8 +19,11 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: resolve_brasil
         ports: ["5432:5432"]
+        # -U обязателен: без него проверка идёт от root, которого в базе нет.
+        # Она всё равно проходит — сервер ответил, — но каждые десять секунд
+        # пишет FATAL в лог, и настоящая поломка утонет в этом шуме.
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d resolve_brasil"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
