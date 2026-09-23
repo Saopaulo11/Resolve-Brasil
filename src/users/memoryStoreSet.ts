@@ -1,3 +1,4 @@
+import { MemoryAnalyticsStore } from "../analytics/memoryAnalyticsStore";
 import { MemoryCaseStore } from "../cases/memoryCaseStore";
 import {
   MemoryAuditStore,
@@ -38,6 +39,7 @@ export type MemoryStores = Stores & {
   sources: MemorySourceStore;
   reminders: MemoryReminderStore;
   notifications: MemoryNotificationStore;
+  analytics: MemoryAnalyticsStore;
 };
 
 export function createMemoryStores(): MemoryStores {
@@ -53,5 +55,6 @@ export function createMemoryStores(): MemoryStores {
     sources: new MemorySourceStore(),
     reminders: new MemoryReminderStore(),
     notifications: new MemoryNotificationStore(),
+    analytics: new MemoryAnalyticsStore(),
   };
 }

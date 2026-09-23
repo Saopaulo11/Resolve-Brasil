@@ -4,6 +4,7 @@ import { buildCaseContext } from "../ai/context";
 import { AiError } from "../ai/openai/client";
 import type { CompanyResponseInput } from "../ai/providers/AIProvider";
 import { trackEvent } from "../analytics/events";
+import { refreshProjection } from "../analytics/pipeline";
 import { confirmedFacts } from "../documents/documentService";
 import { uploadDocument, UPLOAD_MESSAGES, type UploadError } from "../documents/documentService";
 import { logger } from "../utils/logger";
@@ -83,6 +84,10 @@ export async function recordCompanyResponse(input: {
   });
 
   await cases.setStatus(input.caseRecord.id, "RESPOSTA_RECEBIDA");
+
+  const updated = await cases.findById(input.caseRecord.id);
+  if (updated) await refreshProjection(updated);
+
   void trackEvent("response_uploaded", { userId: input.userId });
 
   const context = buildCaseContext({

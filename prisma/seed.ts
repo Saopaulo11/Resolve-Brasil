@@ -8,10 +8,9 @@
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 
+import { DEMO_PHONE } from "../src/analytics/pipeline";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { generatePublicCaseId } from "../src/utils/ids";
-
-const DEMO_PHONE = "+5511900000000";
 const DEMO_COMPANY = "DEMO — Empresa de Teste";
 
 async function main(): Promise<void> {

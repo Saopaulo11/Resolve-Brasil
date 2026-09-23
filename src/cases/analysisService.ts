@@ -8,6 +8,7 @@ import type { MessageType } from "../generated/prisma/enums";
 import { confirmedFacts } from "../documents/documentService";
 import { usableSourceOptions } from "../sources/sourceService";
 import { trackEvent } from "../analytics/events";
+import { refreshProjection } from "../analytics/pipeline";
 import { logger } from "../utils/logger";
 import { stores } from "../users/storeRegistry";
 import type { CaseEventRecord, CaseMessageRecord, CaseRecord } from "./caseStore";
@@ -160,6 +161,11 @@ async function applyClassification(
     classification.category as never,
     classification.subcategory,
   );
+
+  const updated = await stores().cases.findById(caseRecord.id);
+  if (updated) {
+    await refreshProjection(updated, { confidence: classification.confidence });
+  }
 
   void trackEvent("case_category_changed", {
     userId,

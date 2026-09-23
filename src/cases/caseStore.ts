@@ -23,6 +23,7 @@ export type CaseRecord = {
   category: CaseCategory | null;
   subcategory: string | null;
   companyName: string | null;
+  companyNormalized: string | null;
   description: string;
   amount: string | null;
   currency: string;
@@ -33,6 +34,9 @@ export type CaseRecord = {
   currentStep: string | null;
   escalationLevel: EscalationLevel;
   priority: CasePriority;
+  /// Грубая география для аналитики. Точный адрес не хранится (§56).
+  state: string | null;
+  cityBucket: string | null;
   createdAt: Date;
   updatedAt: Date;
   closedAt: Date | null;

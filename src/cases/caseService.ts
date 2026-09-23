@@ -1,5 +1,6 @@
 import type { CaseCategory } from "../generated/prisma/enums";
 import { trackEvent } from "../analytics/events";
+import { refreshProjection } from "../analytics/pipeline";
 import { generatePublicCaseId } from "../utils/ids";
 import { stores } from "../users/storeRegistry";
 import type { CaseEventRecord, CaseRecord } from "./caseStore";
@@ -54,6 +55,10 @@ export async function createCase(input: {
     source: "USER_FACT",
   });
 
+  // Consumer Intelligence закладывается с первого дела (§53), но остаётся
+  // невидимым для пользователя и не содержит ничего, ведущего к нему.
+  await refreshProjection(created);
+
   void trackEvent("case_created", { userId: input.userId });
   if (input.category) {
     void trackEvent("case_category_created", {
@@ -83,7 +88,12 @@ export async function attachCaseToUser(
   if (found.userId !== null) return found.userId === userId ? found : null;
 
   await cases.attachToUser(found.id, userId);
-  return cases.findByPublicId(publicId);
+
+  const attached = await cases.findByPublicId(publicId);
+  // Владелец сменился — слепок пересчитывается: от него зависит признак
+  // демонстрационного дела.
+  if (attached) await refreshProjection(attached);
+  return attached;
 }
 
 export async function listCases(userId: string): Promise<CaseRecord[]> {

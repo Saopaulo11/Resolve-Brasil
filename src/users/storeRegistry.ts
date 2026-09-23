@@ -14,6 +14,7 @@ import {
   type ReminderStore,
 } from "../notifications/reminderStore";
 import { PrismaSourceStore, type SourceStore } from "../sources/sourceStore";
+import { PrismaAnalyticsStore, type AnalyticsStore } from "../analytics/analyticsStore";
 import { loadConfig } from "../config/env";
 import { isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
@@ -48,6 +49,7 @@ export type Stores = {
   sources: SourceStore;
   reminders: ReminderStore;
   notifications: NotificationStore;
+  analytics: AnalyticsStore;
 };
 
 let instance: Stores | null = null;
@@ -66,6 +68,7 @@ function build(): Stores {
       sources: new PrismaSourceStore(),
       reminders: new PrismaReminderStore(),
       notifications: new PrismaNotificationStore(),
+      analytics: new PrismaAnalyticsStore(),
     };
   }
 
