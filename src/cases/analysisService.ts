@@ -6,7 +6,7 @@ import type { OfficialSourceOption } from "../ai/providers/AIProvider";
 import { loadConfig } from "../config/env";
 import type { MessageType } from "../generated/prisma/enums";
 import { confirmedFacts } from "../documents/documentService";
-import { db, isDatabaseConfigured } from "../services/db";
+import { usableSourceOptions } from "../sources/sourceService";
 import { trackEvent } from "../analytics/events";
 import { logger } from "../utils/logger";
 import { stores } from "../users/storeRegistry";
@@ -41,20 +41,15 @@ const MESSAGE_TITLE: Record<AnalysisKind, string> = {
 };
 
 /**
- * Официальные источники для плана действий (§29).
+ * Официальные источники для плана действий (§29, §32).
  *
- * Модель выбирает только из этого списка. Пустой список — законное
+ * Модель выбирает только из этого списка, и в него попадают лишь
+ * подтверждённые и не устаревшие источники. Пустой список — законное
  * состояние: план тогда честно скажет, что процедуру подтвердить не удалось.
  */
 async function officialSources(): Promise<OfficialSourceOption[]> {
-  if (!isDatabaseConfigured()) return [];
   try {
-    const rows = await db().officialSource.findMany({
-      where: { active: true },
-      select: { organization: true, title: true, url: true },
-      take: 20,
-    });
-    return rows;
+    return await usableSourceOptions();
   } catch (error) {
     logger().warn({ err: error }, "falha ao ler fontes oficiais");
     return [];

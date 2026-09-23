@@ -103,13 +103,36 @@ export class OpenAIProvider implements AIProvider {
     sources: OfficialSourceOption[],
   ): Promise<AiResult<ActionPlan>> {
     const prompt = buildActionPlanPrompt(context, sources);
-    return runStructured({
+    const result = await runStructured({
       operation: "createActionPlan",
       promptVersion: ACTION_PLAN_PROMPT_VERSION,
       schemaName: "action_plan",
       schema: actionPlanSchema,
       ...prompt,
     });
+
+    // Тот же рубеж, что и в поиске источников: схема проверяет форму URL,
+    // а не происхождение. Ссылка, которой мы не давали, отбрасывается —
+    // в плане действий выдуманный gov.br опаснее всего, потому что там он
+    // выглядит как подтверждение процедуры (§30).
+    const allowed = new Set(sources.map((source) => source.url));
+    const filtered = result.data.sources.filter((source) => allowed.has(source.url));
+    const dropped = result.data.sources.length - filtered.length;
+
+    return {
+      data: {
+        ...result.data,
+        sources: filtered,
+        uncertainties:
+          dropped > 0
+            ? [
+                ...result.data.uncertainties,
+                "Não foi possível confirmar essa informação em uma fonte oficial.",
+              ]
+            : result.data.uncertainties,
+      },
+      meta: result.meta,
+    };
   }
 
   async createDraft(context: CaseContext): Promise<AiResult<Draft>> {

@@ -18,7 +18,9 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "sources:import": "tsx src/sources/cli.ts import",
+    "sources:verify": "tsx src/sources/cli.ts verify"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

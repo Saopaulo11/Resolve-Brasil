@@ -13,6 +13,8 @@ import {
   type FactStore,
 } from "../documents/documentStore";
 import { PrismaCaseStore, type CaseStore } from "../cases/caseStore";
+import { MemorySourceStore } from "../sources/memorySourceStore";
+import { PrismaSourceStore, type SourceStore } from "../sources/sourceStore";
 import { loadConfig } from "../config/env";
 import { isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
@@ -49,6 +51,7 @@ export type Stores = {
   documents: DocumentStore;
   facts: FactStore;
   audit: AuditStore;
+  sources: SourceStore;
 };
 
 let instance: Stores | null = null;
@@ -64,6 +67,7 @@ function build(): Stores {
       documents: new PrismaDocumentStore(),
       facts: new PrismaFactStore(),
       audit: new PrismaAuditStore(),
+      sources: new PrismaSourceStore(),
     };
   }
 
@@ -89,6 +93,7 @@ function build(): Stores {
     documents: new MemoryDocumentStore(),
     facts: new MemoryFactStore(),
     audit: new MemoryAuditStore(),
+    sources: new MemorySourceStore(),
   };
 }
 

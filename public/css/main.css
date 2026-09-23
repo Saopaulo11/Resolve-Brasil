@@ -788,3 +788,30 @@ input[type="file"] {
   padding: 0.5rem 1rem;
   font-size: 0.9375rem;
 }
+
+/* --- Официальные источники (PHASE 6) -------------------------------------- */
+
+.source-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.source {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  border-left: 3px solid var(--blue);
+  padding-left: 0.875rem;
+}
+
+/* Адрес показывается целиком: человек должен видеть, куда ведёт ссылка,
+   прежде чем поверить, что это официальный источник. */
+.source__url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}

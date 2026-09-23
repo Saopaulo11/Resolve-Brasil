@@ -15,6 +15,7 @@ import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status"
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
 import { isValidPublicCaseId } from "../utils/ids";
+import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
 
 /**
@@ -180,6 +181,9 @@ export async function ver(
           statusTone: FACT_STATUS_TONE[fact.status],
           confidence: fact.confidence === null ? null : Math.round(fact.confidence * 100),
         })),
+      // §31: у каждого источника показывается дата, когда его в последний
+      // раз открывали. Без неё ссылка выглядит вечно актуальной.
+      fonteVerificada: await sourceVerificationDates(latest("PLANO_DE_ACAO")),
       classificacao: latest("CLASSIFICACAO"),
       perguntas: latest("PERGUNTAS"),
       plano: latest("PLANO_DE_ACAO"),
@@ -188,6 +192,30 @@ export async function ver(
     },
     next,
   );
+}
+
+/**
+ * Даты последней проверки для источников, попавших в план.
+ *
+ * Берутся из нашей базы, а не из ответа модели: дату проверки модель знать
+ * не может, а выдуманная дата — это ровно то, что §32 запрещает.
+ */
+async function sourceVerificationDates(
+  plan: unknown,
+): Promise<Record<string, string>> {
+  const sources = (plan as { sources?: Array<{ url?: unknown }> } | null)?.sources;
+  if (!Array.isArray(sources) || sources.length === 0) return {};
+
+  const stored = await usableSources();
+  const byUrl = new Map(stored.map((source) => [source.url, source.lastVerifiedAt]));
+
+  const dates: Record<string, string> = {};
+  for (const source of sources) {
+    if (typeof source.url !== "string") continue;
+    const verifiedAt = byUrl.get(source.url);
+    if (verifiedAt) dates[source.url] = verifiedAt.toLocaleDateString("pt-BR");
+  }
+  return dates;
 }
 
 const ANALYSIS_KINDS: readonly AnalysisKind[] = [

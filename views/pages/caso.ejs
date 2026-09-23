@@ -271,12 +271,20 @@
 
         <% if (plano.sources.length > 0) { %>
           <h4>Fontes oficiais</h4>
-          <ul>
+          <ul class="source-list">
             <% plano.sources.forEach(function (source) { %>
-              <li>
+              <li class="source">
+                <span class="tag tag--fonte">Fonte oficial</span>
                 <a href="<%= source.url %>" rel="noopener noreferrer" target="_blank">
                   <%= source.organization %> — <%= source.title %>
                 </a>
+                <span class="source__url"><%= source.url %></span>
+                <%# §31: без даты проверки ссылка выглядит вечно актуальной. %>
+                <% if (fonteVerificada[source.url]) { %>
+                  <span class="small muted">
+                    Verificada em <%= fonteVerificada[source.url] %>
+                  </span>
+                <% } %>
               </li>
             <% }); %>
           </ul>

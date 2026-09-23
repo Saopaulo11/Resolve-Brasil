@@ -15,6 +15,7 @@ import {
   MemoryUserStore,
 } from "../../src/users/memoryStores";
 import { setOtpProvider } from "../../src/users/otpProvider";
+import { MemorySourceStore } from "../../src/sources/memorySourceStore";
 import { setStores } from "../../src/users/storeRegistry";
 import type { OtpProvider } from "../../src/users/otpProvider";
 
@@ -46,6 +47,7 @@ export type Harness = {
   documents: MemoryDocumentStore;
   facts: MemoryFactStore;
   audit: MemoryAuditStore;
+  sources: MemorySourceStore;
 };
 
 /** Свежее приложение с хранилищами в памяти — каждый тест изолирован. */
@@ -58,8 +60,9 @@ export function createHarness(): Harness {
   const documents = new MemoryDocumentStore();
   const facts = new MemoryFactStore();
   const audit = new MemoryAuditStore();
+  const sources = new MemorySourceStore();
 
-  setStores({ users, otp, sessions, consents, cases, documents, facts, audit });
+  setStores({ users, otp, sessions, consents, cases, documents, facts, audit, sources });
 
   const otpProvider = new CapturingOtpProvider();
   setOtpProvider(otpProvider);
@@ -75,6 +78,7 @@ export function createHarness(): Harness {
     documents,
     facts,
     audit,
+    sources,
   };
 }
 

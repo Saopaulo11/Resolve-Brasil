@@ -1,0 +1,55 @@
+{
+  "_leia_antes": [
+    "Список источников-кандидатов (§29).",
+    "",
+    "Ничто отсюда НЕ считается подтверждённым при импорте: источник заводится",
+    "с active=false и пустой датой проверки. Пока `npm run sources:verify` не",
+    "откроет адрес, источник не существует ни для пользователя, ни для модели.",
+    "",
+    "Здесь намеренно только главные страницы учреждений. Ссылки на конкретные",
+    "процедуры не включены: машина подтверждает доступность адреса, но не то,",
+    "что страница описывает заявленное. Такие ссылки добавляет человек,",
+    "который их открыл и прочитал.",
+    "",
+    "Адрес обязан быть https и находиться в зоне .gov.br, .jus.br или .leg.br —",
+    "иначе импорт его отвергнет."
+  ],
+  "sources": [
+    {
+      "organization": "Consumidor.gov.br",
+      "title": "Consumidor.gov.br — plataforma oficial de reclamações",
+      "url": "https://www.consumidor.gov.br/",
+      "category": "consumidor"
+    },
+    {
+      "organization": "Banco Central do Brasil",
+      "title": "Banco Central do Brasil — página oficial",
+      "url": "https://www.bcb.gov.br/",
+      "category": "financeiro"
+    },
+    {
+      "organization": "Governo Federal",
+      "title": "Portal gov.br — serviços do Governo Federal",
+      "url": "https://www.gov.br/",
+      "category": "geral"
+    },
+    {
+      "organization": "Anatel",
+      "title": "Anatel — Agência Nacional de Telecomunicações",
+      "url": "https://www.gov.br/anatel/pt-br",
+      "category": "telecom"
+    },
+    {
+      "organization": "INSS",
+      "title": "INSS — Instituto Nacional do Seguro Social",
+      "url": "https://www.gov.br/inss/pt-br",
+      "category": "previdencia"
+    },
+    {
+      "organization": "Receita Federal",
+      "title": "Receita Federal — página oficial",
+      "url": "https://www.gov.br/receitafederal/pt-br",
+      "category": "tributario"
+    }
+  ]
+}

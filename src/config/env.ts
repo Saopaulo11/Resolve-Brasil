@@ -121,6 +121,18 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       maxFileSizeBytes: intOr(env.STORAGE_MAX_FILE_SIZE_BYTES, 10 * 1024 * 1024),
     },
 
+    sources: {
+      /**
+       * Через сколько дней проверка источника считается устаревшей (§32).
+       *
+       * Официальные процедуры и адреса страниц меняются. Источник, который
+       * никто не открывал полгода, нельзя показывать как подтверждённый —
+       * он и станет тем самым «выдуманным» для пользователя.
+       */
+      maxAgeDays: intOr(env.SOURCE_MAX_AGE_DAYS, 180),
+      verifyTimeoutMs: intOr(env.SOURCE_VERIFY_TIMEOUT_MS, 15_000),
+    },
+
     analytics: {
       // §57: сегменты меньше этого размера не показываются вообще.
       minGroupSize: intOr(env.ANALYTICS_MIN_GROUP_SIZE, 25),
