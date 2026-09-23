@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      # Ключей Supabase здесь намеренно нет: сборка не должна их требовать.
+      # Если этот шаг начнёт падать без них, значит появился код, который
+      # читает конфигурацию на уровне модуля вместо вызова (см. lib/supabase/env.ts).
+      - run: npm run build
