@@ -161,6 +161,7 @@ export type CaseFieldsUpdate = {
   companyName?: string | null;
   companyId?: string | null;
   companyNormalized?: string | null;
+  state?: string | null;
   amount?: string | null;
   paymentMethod?: PaymentMethod;
   purchaseDate?: Date | null;

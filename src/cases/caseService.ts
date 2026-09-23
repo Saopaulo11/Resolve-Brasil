@@ -126,6 +126,28 @@ export async function getCaseForUser(
 }
 
 /**
+ * Штат, в котором человек ведёт дело (§57).
+ *
+ * Спрашивается, а не выводится: по IP получается адрес провайдера, а не
+ * человека, и для выбора Procon это хуже пустоты. Город не спрашивается
+ * вовсе — вместе с суммой, категорией и месяцем он опознаёт человека не
+ * хуже имени (§55).
+ */
+export async function setCaseState(input: {
+  caseRecord: CaseRecord;
+  uf: string;
+}): Promise<CaseRecord | null> {
+  const { cases } = stores();
+  if (input.caseRecord.state === input.uf) return input.caseRecord;
+
+  await cases.setFields(input.caseRecord.id, { state: input.uf });
+
+  const updated = await cases.findById(input.caseRecord.id);
+  if (updated) await refreshProjection(updated);
+  return updated;
+}
+
+/**
  * Ситуация с Pix (§36).
  *
  * Выбирает человек. Отличить мошенничество от коммерческого спора по

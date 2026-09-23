@@ -6,11 +6,13 @@ import {
   ESCALATION_ORDER,
   getCaseForUser,
   reopenCase,
+  setCaseState,
   setPixSituation,
   type CaseOutcome,
   type EscalationStep,
 } from "../cases/caseService";
 import { isPixSituation, pixSituationDefinition } from "../cases/pix";
+import { isBrazilianState } from "../cases/states";
 import { ESCALATION_LABELS } from "../cases/status";
 import { isValidPublicCaseId } from "../utils/ids";
 
@@ -79,6 +81,26 @@ export async function reabrir(
   if (!found) return next();
 
   await reopenCase(found.case);
+  res.redirect(303, `/caso/${found.case.publicId}`);
+}
+
+export async function definirEstado(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) return;
+
+  const found = await resolveCase(req, userId);
+  if (!found) return next();
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  // Код, которого нет в списке, не принимается: дело ушло бы в канал,
+  // которого не существует.
+  if (!isBrazilianState(body.estado)) return next();
+
+  await setCaseState({ caseRecord: found.case, uf: body.estado });
   res.redirect(303, `/caso/${found.case.publicId}`);
 }
 

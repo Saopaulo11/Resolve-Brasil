@@ -36,6 +36,8 @@ export type CaseContext = {
   paymentMethod: string | null;
   /// Ситуация с Pix, выбранная человеком (§36). Не выводится моделью.
   pixSituation: string | null;
+  /// Штат (UF). Нужен, потому что Procon у каждого штата свой.
+  state: string | null;
   purchaseDate: string | null;
   promisedDate: string | null;
   status: string;

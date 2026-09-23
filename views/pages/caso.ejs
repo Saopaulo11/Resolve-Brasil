@@ -19,7 +19,40 @@
           <dt>Canal atual</dt>
           <dd><%= escalationLabel %></dd>
         </div>
+        <div class="row">
+          <dt>Estado</dt>
+          <dd><%= estadoNome || "Não informado" %></dd>
+        </div>
       </dl>
+    </div>
+
+    <div class="panel">
+      <h3>Seu estado</h3>
+      <%# §57: спрашивается только штат. Procon у каждого штата свой, и без
+          него «куда идти» ответить нельзя. Города нет и не будет: вместе с
+          суммой и категорией он опознаёт человека не хуже имени (§55). %>
+      <p class="muted small">
+        O Procon é estadual, então o estado muda para onde o caso pode ir.
+        Não perguntamos sua cidade nem seu endereço.
+      </p>
+
+      <form method="post" action="/caso/<%= caso.publicId %>/estado">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="">Prefiro não informar</option>
+            <% estados.forEach(function (estado) { %>
+              <option value="<%= estado.uf %>" <%= estadoAtual === estado.uf ? "selected" : "" %>>
+                <%= estado.name %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn--secondary">Salvar estado</button>
+      </form>
     </div>
 
     <div class="panel">

@@ -18,6 +18,7 @@ import {
 } from "../cases/caseService";
 import { stores } from "../users/storeRegistry";
 import { PIX_SITUATIONS, pixSituationDefinition } from "../cases/pix";
+import { BRAZILIAN_STATES, stateName } from "../cases/states";
 import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
@@ -183,6 +184,11 @@ export async function ver(
       // работу, а эскалация показывает только следующий шаг — остальные
       // каналы остаются доступны, но не навязываются.
       encerrado: isClosedStatus(found.case.status),
+      // §57: только штат. Город не спрашивается — вместе с суммой и
+      // категорией он опознаёт человека не хуже имени.
+      estados: BRAZILIAN_STATES,
+      estadoAtual: found.case.state,
+      estadoNome: stateName(found.case.state),
       // §36: вопрос о Pix показывается только там, где платили через Pix.
       pix: found.case.paymentMethod === "PIX"
         ? {

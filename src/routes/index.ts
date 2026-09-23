@@ -102,6 +102,7 @@ export function buildRouter(): Router {
   router.post("/caso/:publicId/reabrir", requireAuth(), outcome.reabrir);
   router.post("/caso/:publicId/escalar", requireAuth(), outcome.escalar);
   router.post("/caso/:publicId/pix", requireAuth(), outcome.situacaoPix);
+  router.post("/caso/:publicId/estado", requireAuth(), outcome.definirEstado);
 
   // --- Ответ компании (§35) ---
   router.post("/caso/:publicId/resposta", requireAuth(), aiRateLimit(), responses.receber);

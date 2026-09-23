@@ -58,6 +58,7 @@ export type PromptCaseContext = {
   currency: string;
   paymentMethod: string | null;
   pixSituation: string | null;
+  state: string | null;
   purchaseDate: string | null;
   promisedDate: string | null;
   status: string;
@@ -99,6 +100,7 @@ ${line("Empresa", context.companyName)}
 ${line("Valor", context.amount ? `${context.amount} ${context.currency}` : null)}
 ${line("Forma de pagamento", context.paymentMethod)}
 ${line("Situação do Pix (informada pelo usuário)", context.pixSituation)}
+${line("Estado (UF)", context.state)}
 ${line("Data da compra", context.purchaseDate)}
 ${line("Prazo prometido", context.promisedDate)}
 ${line("Status", context.status)}
