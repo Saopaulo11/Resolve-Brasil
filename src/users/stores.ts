@@ -51,6 +51,8 @@ export interface UserStore {
   create(phone: string): Promise<UserRecord>;
   markPhoneVerified(userId: string): Promise<void>;
   setMarketing(userId: string, update: MarketingUpdate): Promise<void>;
+  /** Безвозвратно. Каскадом уходят сессии, согласия, напоминания, уведомления. */
+  deleteUser(userId: string): Promise<void>;
 }
 
 export interface OtpStore {
@@ -126,6 +128,10 @@ export class PrismaUserStore implements UserStore {
       where: { id: userId },
       data: { phoneVerified: true },
     });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await db().user.delete({ where: { id: userId } });
   }
 
   async setMarketing(userId: string, update: MarketingUpdate): Promise<void> {

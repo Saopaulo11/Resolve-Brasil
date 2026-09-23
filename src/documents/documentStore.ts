@@ -70,6 +70,10 @@ export interface DocumentStore {
     error: string | null,
   ): Promise<void>;
   softDelete(documentId: string, at: Date): Promise<void>;
+  /** Безвозвратно. Файл из хранилища удаляется отдельно. */
+  hardDelete(documentId: string): Promise<void>;
+  /** Документы старше указанной даты — для сроков хранения (§65). */
+  listOlderThan(before: Date, limit: number): Promise<DocumentRecord[]>;
 }
 
 export interface FactStore {
@@ -99,6 +103,8 @@ export type AuditRecord = AuditEntry & { id: string; createdAt: Date };
 export interface AuditStore {
   record(entry: AuditEntry): Promise<void>;
   list(limit: number): Promise<AuditRecord[]>;
+  /** Срок хранения журнала (§65). Возвращает число удалённых записей. */
+  deleteOlderThan(before: Date): Promise<number>;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +142,17 @@ export class PrismaDocumentStore implements DocumentStore {
     await db().document.update({
       where: { id: documentId },
       data: { deletedAt: at },
+    });
+  }
+
+  async hardDelete(documentId: string): Promise<void> {
+    await db().document.delete({ where: { id: documentId } });
+  }
+
+  async listOlderThan(before: Date, limit: number): Promise<DocumentRecord[]> {
+    return db().document.findMany({
+      where: { createdAt: { lt: before } },
+      take: limit,
     });
   }
 }
@@ -186,6 +203,13 @@ export class PrismaAuditStore implements AuditStore {
       take: limit,
     });
     return rows as unknown as AuditRecord[];
+  }
+
+  async deleteOlderThan(before: Date): Promise<number> {
+    const result = await db().auditLog.deleteMany({
+      where: { createdAt: { lt: before } },
+    });
+    return result.count;
   }
 
   async record(entry: AuditEntry): Promise<void> {

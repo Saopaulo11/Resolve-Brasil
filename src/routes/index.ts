@@ -9,6 +9,7 @@ import * as reminders from "../controllers/remindersController";
 import * as responses from "../controllers/responseController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
+import * as privacy from "../controllers/privacyController";
 import { findCategoryBySlug } from "../cases/categories";
 import { aiRateLimit, otpRequestRateLimit } from "../middleware/rateLimit";
 import { requirePermission } from "../middleware/adminSession";
@@ -101,6 +102,12 @@ export function buildRouter(): Router {
   router.get("/minha-conta", requireAuth(), account.minhaConta);
   router.post("/minha-conta/notificacoes", requireAuth(), account.atualizarMarketing);
   router.post("/marketing/unsubscribe", requireAuth(), account.cancelarMarketing);
+
+  // --- Центр приватности (§64) ---
+  router.get("/minha-conta/privacidade", requireAuth(), privacy.centro);
+  router.get("/minha-conta/dados.json", requireAuth(), privacy.exportar);
+  router.post("/privacy/request", requireAuth(), privacy.solicitarExclusao);
+  router.post("/minha-conta/exclusao/cancelar", requireAuth(), privacy.cancelarExclusao);
 
   return router;
 }

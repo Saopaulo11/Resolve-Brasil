@@ -14,6 +14,7 @@ import {
   MemoryNotificationStore,
   MemoryReminderStore,
 } from "../notifications/memoryReminderStore";
+import { MemoryDeletionRequestStore } from "../privacy/memoryPrivacyStore";
 import { MemorySourceStore } from "../sources/memorySourceStore";
 import {
   MemoryConsentStore,
@@ -48,6 +49,7 @@ export type MemoryStores = Stores & {
   admins: MemoryAdminUserStore;
   adminSessions: MemoryAdminSessionStore;
   loginAttempts: MemoryLoginAttemptStore;
+  deletionRequests: MemoryDeletionRequestStore;
 };
 
 export function createMemoryStores(): MemoryStores {
@@ -67,5 +69,6 @@ export function createMemoryStores(): MemoryStores {
     admins: new MemoryAdminUserStore(),
     adminSessions: new MemoryAdminSessionStore(),
     loginAttempts: new MemoryLoginAttemptStore(),
+    deletionRequests: new MemoryDeletionRequestStore(),
   };
 }

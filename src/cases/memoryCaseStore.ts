@@ -87,6 +87,22 @@ export class MemoryCaseStore implements CaseStore {
     }
   }
 
+  async deleteCase(caseId: string): Promise<void> {
+    this.cases.delete(caseId);
+    for (const [id, event] of this.events) {
+      if (event.caseId === caseId) this.events.delete(id);
+    }
+    for (const [id, message] of this.messages) {
+      if (message.caseId === caseId) this.messages.delete(id);
+    }
+  }
+
+  async listClosedBefore(before: Date, limit: number): Promise<CaseRecord[]> {
+    return [...this.cases.values()]
+      .filter((item) => item.closedAt !== null && item.closedAt.getTime() < before.getTime())
+      .slice(0, limit);
+  }
+
   async addEvent(input: CreateEventInput): Promise<CaseEventRecord> {
     const event: CaseEventRecord = {
       id: randomUUID(),

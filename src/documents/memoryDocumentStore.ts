@@ -68,6 +68,16 @@ export class MemoryDocumentStore implements DocumentStore {
     const record = this.documents.get(documentId);
     if (record) record.deletedAt = at;
   }
+
+  async hardDelete(documentId: string): Promise<void> {
+    this.documents.delete(documentId);
+  }
+
+  async listOlderThan(before: Date, limit: number): Promise<DocumentRecord[]> {
+    return [...this.documents.values()]
+      .filter((doc) => doc.createdAt.getTime() < before.getTime())
+      .slice(0, limit);
+  }
 }
 
 export class MemoryFactStore implements FactStore {
@@ -122,6 +132,16 @@ export class MemoryAuditStore implements AuditStore {
 
   async record(entry: AuditEntry): Promise<void> {
     this.entries.push({ ...entry, id: randomUUID(), createdAt: new Date() });
+  }
+
+  async deleteOlderThan(before: Date): Promise<number> {
+    const kept = this.entries.filter(
+      (entry) => entry.createdAt.getTime() >= before.getTime(),
+    );
+    const removed = this.entries.length - kept.length;
+    this.entries.length = 0;
+    this.entries.push(...kept);
+    return removed;
   }
 
   async list(limit: number): Promise<AuditRecord[]> {

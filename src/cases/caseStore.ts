@@ -104,6 +104,10 @@ export interface CaseStore {
   listRecent(limit: number): Promise<CaseRecord[]>;
   publicIdExists(publicId: string): Promise<boolean>;
   attachToUser(caseId: string, userId: string): Promise<void>;
+  /** Безвозвратно. Каскадом уходят события, документы, сообщения и факты. */
+  deleteCase(caseId: string): Promise<void>;
+  /** Дела, закрытые раньше указанной даты — для сроков хранения (§65). */
+  listClosedBefore(before: Date, limit: number): Promise<CaseRecord[]>;
   addEvent(input: CreateEventInput): Promise<CaseEventRecord>;
   listEvents(caseId: string): Promise<CaseEventRecord[]>;
   addMessage(input: CreateMessageInput): Promise<CaseMessageRecord>;
@@ -171,6 +175,18 @@ export class PrismaCaseStore implements CaseStore {
       where: { id: caseId, userId: null },
       data: { userId },
     });
+  }
+
+  async deleteCase(caseId: string): Promise<void> {
+    await db().case.delete({ where: { id: caseId } });
+  }
+
+  async listClosedBefore(before: Date, limit: number): Promise<CaseRecord[]> {
+    const rows = await db().case.findMany({
+      where: { closedAt: { not: null, lt: before } },
+      take: limit,
+    });
+    return rows.map((row) => toRecord(row as unknown as PrismaCaseRow));
   }
 
   async addEvent(input: CreateEventInput): Promise<CaseEventRecord> {

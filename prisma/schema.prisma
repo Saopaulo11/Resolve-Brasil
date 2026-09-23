@@ -138,6 +138,13 @@ enum FactStatus {
   REJECTED
 }
 
+/// Состояние запроса на удаление данных (§64).
+enum DeletionStatus {
+  PENDENTE
+  CANCELADO
+  EXECUTADO
+}
+
 enum ConsentType {
   TERMS
   PRIVACY
@@ -254,6 +261,7 @@ model User {
   consents      Consent[]
   notifications Notification[]
   sessions      Session[]
+  deletionRequests DeletionRequest[]
 
   @@index([createdAt])
   @@map("users")
@@ -557,6 +565,31 @@ model Consent {
 
   @@index([userId, type])
   @@map("consents")
+}
+
+/// Запрос на удаление данных (§64).
+///
+/// Не удаляем сразу намеренно. Во-первых, дело может быть в разгаре, и
+/// человек лишится того, ради чего пришёл. Во-вторых, захваченная учётная
+/// запись иначе позволяет стереть всё одним нажатием, и владелец узнаёт об
+/// этом слишком поздно. Отсрочка даёт возможность отменить.
+model DeletionRequest {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  status      DeletionStatus @default(PENDENTE)
+  reason      String?
+  requestedAt DateTime       @default(now()) @map("requested_at")
+  /// Когда запрос можно исполнять. До этого момента его можно отменить.
+  executeAfter DateTime      @map("execute_after")
+  cancelledAt DateTime?      @map("cancelled_at")
+  executedAt  DateTime?      @map("executed_at")
+  ipPrefix    String?        @map("ip_prefix")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, executeAfter])
+  @@index([userId])
+  @@map("deletion_requests")
 }
 
 /// §52.

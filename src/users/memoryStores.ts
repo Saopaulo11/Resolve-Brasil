@@ -58,6 +58,13 @@ export class MemoryUserStore implements UserStore {
     if (user) user.phoneVerified = true;
   }
 
+  async deleteUser(userId: string): Promise<void> {
+    const user = this.byId.get(userId);
+    if (!user) return;
+    this.byId.delete(userId);
+    this.byPhone.delete(user.phone);
+  }
+
   async setMarketing(userId: string, update: MarketingUpdate): Promise<void> {
     const user = this.byId.get(userId);
     if (!user) return;

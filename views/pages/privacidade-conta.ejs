@@ -1,0 +1,93 @@
+<section class="section">
+  <div class="container container--narrow">
+    <h1>Privacidade</h1>
+    <p class="lede">
+      Aqui você vê o que guardamos sobre você, leva seus dados embora e pede
+      a exclusão da conta.
+    </p>
+
+    <% if (aviso) { %>
+      <p class="flash flash--aviso" role="status"><%= aviso %></p>
+    <% } %>
+
+    <div class="panel">
+      <h2>Levar meus dados</h2>
+      <p>
+        Um arquivo com sua conta, seus casos, a linha do tempo, as mensagens e
+        a lista de documentos enviados.
+      </p>
+      <p class="small muted">
+        O conteúdo dos arquivos enviados não vai no pacote — ele ficaria com
+        dezenas de megabytes. Cada documento pode ser baixado na página do
+        caso correspondente.
+      </p>
+      <a class="btn btn--primary" href="/minha-conta/dados.json">Baixar meus dados</a>
+    </div>
+
+    <div class="panel">
+      <h2>Por quanto tempo guardamos</h2>
+      <dl class="rows">
+        <div class="row">
+          <dt>Documentos</dt>
+          <dd><%= retencao.documentos %> dias</dd>
+        </div>
+        <div class="row">
+          <dt>Casos encerrados</dt>
+          <dd><%= retencao.casos %> dias</dd>
+        </div>
+      </dl>
+      <%# §65: срок считается от закрытия дела — открытое живёт, сколько нужно. %>
+      <p class="small muted">
+        O prazo dos casos conta a partir do encerramento. Um caso em andamento
+        continua enquanto você precisar dele.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h2>Excluir minha conta</h2>
+
+      <% if (exclusaoPendente) { %>
+        <p class="flash flash--aviso">
+          Pedido registrado em <%= exclusaoPendente.solicitadaEm %>.
+          A exclusão será feita a partir de <%= exclusaoPendente.executaApos %>.
+        </p>
+        <p>
+          Até lá, você pode desistir. Depois disso, não há como recuperar.
+        </p>
+        <form method="post" action="/minha-conta/exclusao/cancelar">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn--primary">Cancelar o pedido</button>
+        </form>
+      <% } else { %>
+        <p>
+          Seus casos, documentos e mensagens são apagados. Isso não tem volta.
+        </p>
+        <p class="small muted">
+          A exclusão acontece <%= prazoDias %> dias depois do pedido. Esse prazo
+          existe para que você possa desistir — e para que ninguém apague tudo
+          antes que você perceba.
+        </p>
+
+        <form method="post" action="/privacy/request">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <div class="field">
+            <label for="motivo">Motivo (opcional)</label>
+            <input type="text" id="motivo" name="motivo" maxlength="500" />
+          </div>
+
+          <div class="field">
+            <label for="confirmacao">Para confirmar, escreva EXCLUIR</label>
+            <%# Подтверждение словом, а не галочкой: удаление необратимо. %>
+            <input type="text" id="confirmacao" name="confirmacao" required
+                   autocomplete="off" />
+          </div>
+
+          <button type="submit" class="btn btn--secondary">Pedir exclusão</button>
+        </form>
+      <% } %>
+    </div>
+
+    <p><a href="/minha-conta">← Voltar para minha conta</a></p>
+  </div>
+</section>

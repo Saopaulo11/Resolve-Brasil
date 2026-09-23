@@ -168,6 +168,17 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       auditDays: intOr(env.AUDIT_RETENTION_DAYS, 730),
     },
 
+    privacy: {
+      /**
+       * Отсрочка исполнения запроса на удаление, дни (§64).
+       *
+       * Нужна не для удержания: захваченная учётная запись иначе позволяет
+       * стереть всё одним нажатием, и владелец узнаёт слишком поздно. За
+       * это время он успевает отменить.
+       */
+      deletionGraceDays: intOr(env.DELETION_GRACE_DAYS, 7),
+    },
+
     rateLimits: {
       globalPerMinute: intOr(env.RATE_LIMIT_GLOBAL_PER_MINUTE, 300),
       aiPerUserPerHour: intOr(env.RATE_LIMIT_AI_PER_USER_PER_HOUR, 60),

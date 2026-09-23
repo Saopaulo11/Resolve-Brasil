@@ -23,6 +23,10 @@ import {
   type LoginAttemptStore,
 } from "../admin/adminStore";
 import { PrismaAnalyticsStore, type AnalyticsStore } from "../analytics/analyticsStore";
+import {
+  PrismaDeletionRequestStore,
+  type DeletionRequestStore,
+} from "../privacy/privacyStore";
 import { loadConfig } from "../config/env";
 import { isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
@@ -61,6 +65,7 @@ export type Stores = {
   admins: AdminUserStore;
   adminSessions: AdminSessionStore;
   loginAttempts: LoginAttemptStore;
+  deletionRequests: DeletionRequestStore;
 };
 
 let instance: Stores | null = null;
@@ -83,6 +88,7 @@ function build(): Stores {
       admins: new PrismaAdminUserStore(),
       adminSessions: new PrismaAdminSessionStore(),
       loginAttempts: new PrismaLoginAttemptStore(),
+      deletionRequests: new PrismaDeletionRequestStore(),
     };
   }
 

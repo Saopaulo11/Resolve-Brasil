@@ -23,7 +23,9 @@
     "sources:verify": "tsx src/sources/cli.ts verify",
     "reminders:dispatch": "tsx src/notifications/cli.ts",
     "analytics:report": "tsx src/analytics/cli.ts",
-    "admin:create": "tsx src/admin/cli.ts"
+    "admin:create": "tsx src/admin/cli.ts",
+    "privacy:retention": "tsx src/privacy/cli.ts retention",
+    "privacy:deletions": "tsx src/privacy/cli.ts deletions"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
