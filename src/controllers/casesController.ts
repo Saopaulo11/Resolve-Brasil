@@ -9,7 +9,13 @@ import {
   FACT_STATUS_TONE,
   fieldLabel,
 } from "../documents/labels";
-import { createCase, getCaseForUser } from "../cases/caseService";
+import {
+  createCase,
+  ESCALATION_ORDER,
+  getCaseForUser,
+  isClosedStatus,
+  nextEscalation,
+} from "../cases/caseService";
 import { stores } from "../users/storeRegistry";
 import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
 import { loadConfig } from "../config/env";
@@ -182,6 +188,16 @@ export async function ver(
       statusHint: status.hint,
       statusTone: status.tone,
       escalationLabel: ESCALATION_LABELS[found.case.escalationLevel],
+      // §19, §36: закрытое дело не предлагает действий, кроме возврата в
+      // работу, а эскалация показывает только следующий шаг — остальные
+      // каналы остаются доступны, но не навязываются.
+      encerrado: isClosedStatus(found.case.status),
+      canais: ESCALATION_ORDER.filter((level) => level !== "NENHUM").map((level) => ({
+        valor: level,
+        rotulo: ESCALATION_LABELS[level],
+        atual: level === found.case.escalationLevel,
+        sugerido: level === nextEscalation(found.case.escalationLevel),
+      })),
       amountFormatted: formatBRL(found.case.amount),
       timeline: found.timeline,
       documentos: documentList.map((document) => ({

@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import * as account from "../controllers/accountController";
 import * as admin from "../controllers/adminController";
+import * as outcome from "../controllers/outcomeController";
 import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
 import * as documents from "../controllers/documentsController";
@@ -97,6 +98,9 @@ export function buildRouter(): Router {
 
   // --- Оценка ответа AI (§52) ---
   router.post("/caso/:publicId/avaliar", requireAuth(), feedback.avaliar);
+  router.post("/caso/:publicId/encerrar", requireAuth(), outcome.encerrar);
+  router.post("/caso/:publicId/reabrir", requireAuth(), outcome.reabrir);
+  router.post("/caso/:publicId/escalar", requireAuth(), outcome.escalar);
 
   // --- Ответ компании (§35) ---
   router.post("/caso/:publicId/resposta", requireAuth(), aiRateLimit(), responses.receber);

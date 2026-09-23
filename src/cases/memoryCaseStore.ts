@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import type { CaseCategory, CaseStatus } from "../generated/prisma/enums";
+import type {
+  CaseCategory,
+  CaseStatus,
+  EscalationLevel,
+} from "../generated/prisma/enums";
 import type {
   CaseEventRecord,
   CaseFieldsUpdate,
@@ -47,6 +51,7 @@ export class MemoryCaseStore implements CaseStore {
       cityBucket: null,
       createdAt: now,
       updatedAt: now,
+      actualResolutionDate: null,
       closedAt: null,
     };
     this.cases.set(record.id, record);
@@ -148,6 +153,36 @@ export class MemoryCaseStore implements CaseStore {
   async setStatus(caseId: string, status: CaseStatus): Promise<void> {
     const record = this.cases.get(caseId);
     if (!record) return;
+    record.status = status;
+    record.updatedAt = new Date();
+  }
+
+  async close(caseId: string, status: CaseStatus, at: Date): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    record.status = status;
+    record.closedAt = at;
+    record.actualResolutionDate = at;
+    record.updatedAt = new Date();
+  }
+
+  async reopen(caseId: string, status: CaseStatus): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    record.status = status;
+    record.closedAt = null;
+    record.actualResolutionDate = null;
+    record.updatedAt = new Date();
+  }
+
+  async setEscalation(
+    caseId: string,
+    level: EscalationLevel,
+    status: CaseStatus,
+  ): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    record.escalationLevel = level;
     record.status = status;
     record.updatedAt = new Date();
   }

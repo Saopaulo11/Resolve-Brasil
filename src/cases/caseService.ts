@@ -124,3 +124,148 @@ export async function getCaseForUser(
 
   return { case: found, timeline: await cases.listEvents(found.id) };
 }
+
+// --- Завершение и эскалация -------------------------------------------------
+
+/**
+ * Исход дела словами пользователя (§19).
+ *
+ * Два исхода, и оба честные. «Resolvido» — проблема решена. «Encerrado» —
+ * человек прекращает вести дело, решения не случилось. Сводить их к одному
+ * нельзя: иначе в отчёте каждое брошенное дело будет выглядеть успехом.
+ */
+export type CaseOutcome = "resolvido" | "encerrado";
+
+const OUTCOME_STATUS = {
+  resolvido: "RESOLVIDO",
+  encerrado: "ENCERRADO",
+} as const;
+
+const OUTCOME_TITLE = {
+  resolvido: "Caso marcado como resolvido",
+  encerrado: "Caso encerrado sem solução",
+} as const;
+
+export function isClosedStatus(status: CaseRecord["status"]): boolean {
+  return status === "RESOLVIDO" || status === "ENCERRADO";
+}
+
+/**
+ * Закрыть дело.
+ *
+ * Отмечает сам человек, а не мы: у нас нет способа узнать, вернулись ли
+ * деньги. Поэтому это USER_FACT, а не вывод (§5).
+ *
+ * Вместе со статусом ставится дата закрытия. Без неё срок хранения (§65)
+ * не наступает никогда — закрытое дело остаётся в базе навсегда, — а
+ * медиана времени до решения не считается вовсе.
+ */
+export async function closeCase(input: {
+  caseRecord: CaseRecord;
+  outcome: CaseOutcome;
+}): Promise<CaseRecord | null> {
+  const { cases } = stores();
+  if (isClosedStatus(input.caseRecord.status)) return null;
+
+  const now = new Date();
+  await cases.close(input.caseRecord.id, OUTCOME_STATUS[input.outcome], now);
+
+  await cases.addEvent({
+    caseId: input.caseRecord.id,
+    type: "caso_encerrado",
+    title: OUTCOME_TITLE[input.outcome],
+    description: null,
+    eventDate: now,
+    source: "USER_FACT",
+  });
+
+  const updated = await cases.findById(input.caseRecord.id);
+  if (updated) await refreshProjection(updated);
+
+  void trackEvent(
+    input.outcome === "resolvido" ? "case_resolved" : "resolution_status_changed",
+    { userId: input.caseRecord.userId },
+  );
+
+  return updated;
+}
+
+/** Вернуть дело в работу: закрыл по ошибке или проблема вернулась. */
+export async function reopenCase(caseRecord: CaseRecord): Promise<CaseRecord | null> {
+  const { cases } = stores();
+  if (!isClosedStatus(caseRecord.status)) return null;
+
+  await cases.reopen(caseRecord.id, "PRECISA_DE_ACAO");
+
+  await cases.addEvent({
+    caseId: caseRecord.id,
+    type: "caso_reaberto",
+    title: "Caso reaberto",
+    description: null,
+    eventDate: new Date(),
+    source: "USER_FACT",
+  });
+
+  const updated = await cases.findById(caseRecord.id);
+  if (updated) await refreshProjection(updated);
+
+  void trackEvent("resolution_status_changed", { userId: caseRecord.userId });
+  return updated;
+}
+
+/**
+ * Порядок каналов (§33, §36).
+ *
+ * Это обычная последовательность, а не обязательная процедура: человек
+ * вправе пойти сразу в Procon, и мы это запишем. Порядок нужен только
+ * чтобы подсказать следующий шаг, а не чтобы запретить остальные.
+ */
+export const ESCALATION_ORDER = [
+  "NENHUM",
+  "EMPRESA",
+  "SAC",
+  "OUVIDORIA",
+  "CONSUMIDOR_GOV",
+  "ORGAO_COMPETENTE",
+] as const;
+
+export type EscalationStep = (typeof ESCALATION_ORDER)[number];
+
+export function nextEscalation(current: EscalationStep): EscalationStep | null {
+  const index = ESCALATION_ORDER.indexOf(current);
+  if (index < 0 || index >= ESCALATION_ORDER.length - 1) return null;
+  return ESCALATION_ORDER[index + 1] ?? null;
+}
+
+/**
+ * Отметить, что дело ушло на другой канал.
+ *
+ * Обращается человек — мы не подаём жалобу за него и не представляем его
+ * (§3). Здесь только запись того, что он сделал сам.
+ */
+export async function escalateCase(input: {
+  caseRecord: CaseRecord;
+  level: EscalationStep;
+  label: string;
+}): Promise<CaseRecord | null> {
+  const { cases } = stores();
+  if (input.level === "NENHUM") return null;
+  if (isClosedStatus(input.caseRecord.status)) return null;
+
+  await cases.setEscalation(input.caseRecord.id, input.level, "ESCALADO");
+
+  await cases.addEvent({
+    caseId: input.caseRecord.id,
+    type: "caso_escalado",
+    title: `Caso levado para: ${input.label}`,
+    description: null,
+    eventDate: new Date(),
+    source: "USER_FACT",
+  });
+
+  const updated = await cases.findById(input.caseRecord.id);
+  if (updated) await refreshProjection(updated);
+
+  void trackEvent("case_escalated", { userId: input.caseRecord.userId });
+  return updated;
+}

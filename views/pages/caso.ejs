@@ -487,6 +487,72 @@
       </div>
     <% } %>
 
+    <h2 id="desfecho">Como está o caso</h2>
+
+    <% if (encerrado) { %>
+      <div class="panel">
+        <p>Este caso está encerrado.</p>
+        <%# Закрыл по ошибке или проблема вернулась — дело возвращается в
+            работу, а не заводится заново: история нужна целиком. %>
+        <p class="muted small">
+          Se o problema voltou, ou se você encerrou sem querer, dá para
+          retomar de onde parou.
+        </p>
+        <form method="post" action="/caso/<%= caso.publicId %>/reabrir">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn--secondary">Reabrir caso</button>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="panel">
+        <h3>Levei o caso para outro canal</h3>
+        <%# §3: обращается человек. Мы не подаём жалобу за него и не
+            представляем его — только записываем то, что он сделал сам. %>
+        <p class="muted small">
+          Quem registra a reclamação é você. Aqui a gente apenas anota para
+          onde o caso foi, para acompanhar o prazo e o que veio depois.
+        </p>
+
+        <form method="post" action="/caso/<%= caso.publicId %>/escalar">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <div class="field">
+            <label for="canal">Canal</label>
+            <select id="canal" name="canal">
+              <% canais.forEach(function (canal) { %>
+                <option value="<%= canal.valor %>" <%= canal.sugerido ? "selected" : "" %>>
+                  <%= canal.rotulo %><%= canal.atual ? " (canal atual)" : "" %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn--secondary">Registrar canal</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Encerrar o caso</h3>
+        <%# §19: два исхода, и оба честные. Свести их к одному значило бы
+            считать каждое брошенное дело успехом. %>
+        <p class="muted small">
+          Marque como resolvido só se o problema foi realmente resolvido.
+          Encerrar sem solução também é uma resposta — e é assim que ela
+          aparece nos números.
+        </p>
+
+        <form method="post" action="/caso/<%= caso.publicId %>/encerrar" class="actions">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" name="desfecho" value="resolvido" class="btn btn--primary">
+            Foi resolvido
+          </button>
+          <button type="submit" name="desfecho" value="encerrado" class="btn btn--secondary">
+            Encerrar sem solução
+          </button>
+        </form>
+      </div>
+    <% } %>
+
     <p><a href="/minha-conta#meus-casos">← Voltar para meus casos</a></p>
   </div>
 </section>

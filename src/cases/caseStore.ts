@@ -39,6 +39,8 @@ export type CaseRecord = {
   cityBucket: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Дата, когда дело закрылось. Нужна для медианы времени до решения. */
+  actualResolutionDate: Date | null;
   closedAt: Date | null;
 };
 
@@ -126,6 +128,16 @@ export interface CaseStore {
    * ничего не меняет, а отсутствующее поле остаётся прежним.
    */
   setFields(caseId: string, update: CaseFieldsUpdate): Promise<void>;
+  /**
+   * Завершение дела (§19, §65).
+   *
+   * closedAt ставится вместе со статусом, а не отдельно: без даты закрытия
+   * срок хранения не наступает никогда, и дело остаётся в базе навсегда.
+   */
+  close(caseId: string, status: CaseStatus, at: Date): Promise<void>;
+  /** Возврат закрытого дела в работу: дата закрытия снимается. */
+  reopen(caseId: string, status: CaseStatus): Promise<void>;
+  setEscalation(caseId: string, level: EscalationLevel, status: CaseStatus): Promise<void>;
 }
 
 /**
@@ -264,5 +276,30 @@ export class PrismaCaseStore implements CaseStore {
   async setFields(caseId: string, update: CaseFieldsUpdate): Promise<void> {
     if (Object.keys(update).length === 0) return;
     await db().case.update({ where: { id: caseId }, data: update });
+  }
+
+  async close(caseId: string, status: CaseStatus, at: Date): Promise<void> {
+    await db().case.update({
+      where: { id: caseId },
+      data: { status, closedAt: at, actualResolutionDate: at },
+    });
+  }
+
+  async reopen(caseId: string, status: CaseStatus): Promise<void> {
+    await db().case.update({
+      where: { id: caseId },
+      data: { status, closedAt: null, actualResolutionDate: null },
+    });
+  }
+
+  async setEscalation(
+    caseId: string,
+    level: EscalationLevel,
+    status: CaseStatus,
+  ): Promise<void> {
+    await db().case.update({
+      where: { id: caseId },
+      data: { escalationLevel: level, status },
+    });
   }
 }
