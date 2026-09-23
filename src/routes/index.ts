@@ -4,6 +4,7 @@ import * as account from "../controllers/accountController";
 import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
 import * as documents from "../controllers/documentsController";
+import * as responses from "../controllers/responseController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import { findCategoryBySlug } from "../cases/categories";
@@ -54,6 +55,9 @@ export function buildRouter(): Router {
     documents.extrair,
   );
   router.post("/caso/:publicId/fatos/:factId", requireAuth(), documents.revisarFato);
+
+  // --- Ответ компании (§35) ---
+  router.post("/caso/:publicId/resposta", requireAuth(), aiRateLimit(), responses.receber);
 
   // §64 перечисляет /privacy и /terms по-английски, §74 — те же страницы
   // по-португальски. Каноничны португальские, английские ведут на них:

@@ -69,10 +69,17 @@ export type OfficialSourceOption = {
   url: string;
 };
 
-export type CompanyResponseInput = {
-  /// Текст ответа компании — вставленный пользователем или распознанный.
-  text: string;
-};
+/**
+ * Ответ компании (§35).
+ *
+ * Человек приносит его как придётся: вставляет текст из письма, скидывает
+ * скриншот переписки или PDF. Требовать перепечатать текст со скриншота —
+ * верный способ потерять пользователя на самом важном шаге, поэтому оба
+ * пути равноправны.
+ */
+export type CompanyResponseInput =
+  | { kind: "texto"; text: string }
+  | { kind: "documento"; filename: string; mimeType: string; data: Buffer };
 
 export type AiCallMeta = {
   provider: "openai" | "anthropic" | "mock";

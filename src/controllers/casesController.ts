@@ -188,6 +188,7 @@ export async function ver(
       perguntas: latest("PERGUNTAS"),
       plano: latest("PLANO_DE_ACAO"),
       rascunho: latest("RASCUNHO"),
+      analiseResposta: latest("ANALISE_DE_RESPOSTA"),
       aviso: typeof req.query.aviso === "string" ? req.query.aviso : null,
     },
     next,

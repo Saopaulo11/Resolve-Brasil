@@ -102,6 +102,7 @@ export interface CaseStore {
   listEvents(caseId: string): Promise<CaseEventRecord[]>;
   addMessage(input: CreateMessageInput): Promise<CaseMessageRecord>;
   listMessages(caseId: string): Promise<CaseMessageRecord[]>;
+  setStatus(caseId: string, status: CaseStatus): Promise<void>;
   /** Меняется только когда классификация достаточно уверенна (§87). */
   setClassification(
     caseId: string,
@@ -190,6 +191,10 @@ export class PrismaCaseStore implements CaseStore {
       orderBy: { createdAt: "asc" },
     });
     return rows as unknown as CaseMessageRecord[];
+  }
+
+  async setStatus(caseId: string, status: CaseStatus): Promise<void> {
+    await db().case.update({ where: { id: caseId }, data: { status } });
   }
 
   async setClassification(

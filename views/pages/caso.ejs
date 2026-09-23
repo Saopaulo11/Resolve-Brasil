@@ -335,6 +335,79 @@
       </div>
     <% } %>
 
+    <h2 id="resposta">Recebi uma resposta</h2>
+
+    <div class="panel">
+      <p class="muted small">
+        A empresa respondeu? Cole o texto ou envie o print, o e-mail ou o PDF.
+        Vamos mostrar o que foi dito, o que ficou sem resposta e o que dá para
+        fazer em seguida.
+      </p>
+
+      <form method="post" action="/caso/<%= caso.publicId %>/resposta"
+            enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field">
+          <label for="texto-resposta">Texto da resposta</label>
+          <textarea id="texto-resposta" name="texto" rows="6"
+                    maxlength="20000"
+                    placeholder="Cole aqui o que a empresa respondeu."></textarea>
+        </div>
+
+        <div class="field">
+          <label for="arquivo-resposta">Ou envie um arquivo</label>
+          <p class="field__hint">Print da conversa, e-mail em PDF, foto da carta.</p>
+          <input type="file" id="arquivo-resposta" name="arquivo"
+                 accept=".pdf,.jpg,.jpeg,.png,.webp" />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Analisar resposta</button>
+      </form>
+    </div>
+
+    <% if (analiseResposta) { %>
+      <div class="panel">
+        <h3>O que a empresa respondeu</h3>
+        <p><%= analiseResposta.what_company_said %></p>
+
+        <h4>O que isso significa</h4>
+        <p><%= analiseResposta.what_it_means %></p>
+
+        <% if (analiseResposta.what_is_missing.length > 0) { %>
+          <h4>O que ainda não foi respondido</h4>
+          <ul>
+            <% analiseResposta.what_is_missing.forEach(function (item) { %>
+              <li><%= item %></li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <% if (analiseResposta.possible_next_action) { %>
+          <h4>Próxima ação possível</h4>
+          <p><%= analiseResposta.possible_next_action %></p>
+          <%# §3: это предположение, а не обязанность компании и не гарантия. %>
+          <p class="tag tag--ai">Sugestão da IA</p>
+        <% } %>
+
+        <% if (analiseResposta.suggested_reply) { %>
+          <h4>Resposta sugerida</h4>
+          <label class="sr-only" for="reply-body">Resposta sugerida</label>
+          <textarea id="reply-body" rows="8" readonly><%= analiseResposta.suggested_reply %></textarea>
+          <p>
+            <button type="button" class="btn btn--secondary" data-copy="#reply-body">
+              Copiar
+            </button>
+          </p>
+          <p class="small muted">
+            Revise antes de enviar. O envio é feito por você.
+          </p>
+        <% } %>
+
+        <%- include('../partials/ai-disclaimer') %>
+      </div>
+    <% } %>
+
     <p><a href="/minha-conta#meus-casos">← Voltar para meus casos</a></p>
   </div>
 </section>

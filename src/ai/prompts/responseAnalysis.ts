@@ -4,7 +4,7 @@ export const RESPONSE_ANALYSIS_PROMPT_VERSION = "1";
 
 export function buildResponseAnalysisPrompt(
   context: PromptCaseContext,
-  companyResponse: string,
+  companyResponse: string | null,
 ) {
   return {
     instructions: `${SYSTEM_RULES}
@@ -20,9 +20,16 @@ Regras:
 - Não invente o que a empresa teria dito. Se o texto estiver truncado ou ilegível, diga isso em "what_is_missing".
 
 ${LENGTH_HINTS}`,
-    input: `${renderCaseContext(context)}
+    // Текст ответа — когда пользователь его вставил. Когда он прислал
+    // файл, сюда идёт только контекст дела, а сам файл прикладывается
+    // отдельной частью запроса.
+    input: companyResponse
+      ? `${renderCaseContext(context)}
 
 RESPOSTA RECEBIDA DA EMPRESA (texto enviado pelo usuário):
-${companyResponse}`,
+${companyResponse}`
+      : `${renderCaseContext(context)}
+
+A RESPOSTA DA EMPRESA ESTÁ NO ARQUIVO ANEXADO.`,
   };
 }

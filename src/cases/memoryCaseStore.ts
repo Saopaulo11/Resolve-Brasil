@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import type { CaseCategory } from "../generated/prisma/enums";
+import type { CaseCategory, CaseStatus } from "../generated/prisma/enums";
 import type {
   CaseEventRecord,
   CaseMessageRecord,
@@ -117,6 +117,13 @@ export class MemoryCaseStore implements CaseStore {
     return [...this.messages.values()]
       .filter((message) => message.caseId === caseId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  async setStatus(caseId: string, status: CaseStatus): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    record.status = status;
+    record.updatedAt = new Date();
   }
 
   async setClassification(

@@ -54,7 +54,11 @@ import type {
  * не загружается в постоянное хранилище провайдера — вместе с store: false
  * это значит, что копии документа у него не остаётся.
  */
-function documentPart(document: DocumentInput): Record<string, unknown> {
+function documentPart(document: {
+  filename: string;
+  mimeType: string;
+  data: Buffer;
+}): Record<string, unknown> {
   const base64 = document.data.toString("base64");
   const dataUrl = `data:${document.mimeType};base64,${base64}`;
 
@@ -150,13 +154,34 @@ export class OpenAIProvider implements AIProvider {
     context: CaseContext,
     response: CompanyResponseInput,
   ): Promise<AiResult<ResponseAnalysis>> {
-    const prompt = buildResponseAnalysisPrompt(context, response.text);
-    return runStructured({
+    const prompt = buildResponseAnalysisPrompt(
+      context,
+      response.kind === "texto" ? response.text : null,
+    );
+
+    const call = {
       operation: "analyzeResponse",
       promptVersion: RESPONSE_ANALYSIS_PROMPT_VERSION,
       schemaName: "response_analysis",
       schema: responseAnalysisSchema,
-      ...prompt,
+      instructions: prompt.instructions,
+    };
+
+    if (response.kind === "texto") {
+      return runStructured({ ...call, input: prompt.input });
+    }
+
+    return runStructured({
+      ...call,
+      input: [
+        {
+          role: "user",
+          content: [
+            { type: "input_text", text: prompt.input },
+            documentPart(response),
+          ],
+        },
+      ],
     });
   }
 
