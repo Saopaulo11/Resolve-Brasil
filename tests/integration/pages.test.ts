@@ -23,6 +23,18 @@ describe("публичные страницы", () => {
     expect(response.text).toContain(heading);
   });
 
+  it.each([
+    ["/privacy", "/privacidade"],
+    ["/terms", "/termos"],
+  ])("%s ведёт на %s", async (alias, canonico) => {
+    // §64 называет эти адреса по-английски, §74 — по-португальски.
+    // Каноничны португальские: две страницы с одним текстом разъедутся
+    // при первой же правке.
+    const response = await request(app).get(alias);
+    expect(response.status).toBe(301);
+    expect(response.headers.location).toBe(canonico);
+  });
+
   it("главная на бразильском португальском", async () => {
     const response = await request(app).get("/");
     expect(response.text).toContain('<html lang="pt-BR"');
