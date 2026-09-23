@@ -1,0 +1,58 @@
+<section class="section">
+  <div class="container">
+    <h1>Documentos</h1>
+    <p class="lede">Últimos <%= limite %> arquivos enviados.</p>
+
+    <div class="panel">
+      <%# §25, §51: ни имени файла, ни содержимого. Имя файла уже говорит
+          достаточно — «cpf-joao.pdf» это персональные данные. %>
+      <p class="small muted">
+        Esta lista mostra apenas tipo, tamanho e estado. O nome do arquivo
+        não aparece: ele costuma dizer o que há dentro e de quem é, e isso
+        já é dado pessoal. O conteúdo não é acessível por nenhum perfil
+        administrativo. Seu acesso a esta página fica registrado.
+      </p>
+
+      <% if (documentos.length === 0) { %>
+        <p class="muted">Nenhum documento enviado.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Tipo</th>
+                <th scope="col">Formato</th>
+                <th scope="col">Tamanho</th>
+                <th scope="col">Leitura</th>
+                <th scope="col">Verificação</th>
+                <th scope="col">Enviado em</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% documentos.forEach(function (documento) { %>
+                <tr>
+                  <td>
+                    <%= documento.tipo %>
+                    <% if (documento.excluido) { %>
+                      <span class="tag tag--neutro">Excluído</span>
+                    <% } %>
+                  </td>
+                  <td><%= documento.formato %></td>
+                  <td><%= documento.tamanhoKb %> KB</td>
+                  <td><%= documento.extracao %></td>
+                  <td><%= documento.verificacao %></td>
+                  <td><%= documento.criadoEm %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <%# §25: «não verificado» — это честное состояние, а не «чисто». %>
+        <p class="small muted">
+          «Não verificado» significa que nenhum antivírus foi executado sobre
+          o arquivo — não que ele esteja limpo.
+        </p>
+      <% } %>
+    </div>
+  </div>
+</section>

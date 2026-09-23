@@ -1,0 +1,97 @@
+<section class="section">
+  <div class="container">
+    <h1>Chamadas de IA</h1>
+    <p class="lede">Consumo dos últimos <%= janelaDias %> dias.</p>
+
+    <div class="panel">
+      <dl class="rows">
+        <div class="row"><dt>Chamadas</dt><dd><%= totais.chamadas %></dd></div>
+        <div class="row"><dt>Falhas</dt><dd><%= totais.falhas %></dd></div>
+        <div class="row">
+          <dt>Tokens de entrada</dt>
+          <dd><%= totais.inputTokens.toLocaleString("pt-BR") %></dd>
+        </div>
+        <div class="row">
+          <dt>Tokens de saída</dt>
+          <dd><%= totais.outputTokens.toLocaleString("pt-BR") %></dd>
+        </div>
+        <div class="row">
+          <dt>Custo estimado</dt>
+          <dd>
+            <%# §45: без заданных цен стоимость не выдумывается. %>
+            <% if (totais.custo === null) { %>
+              <span class="muted">— preços não configurados</span>
+            <% } else { %>
+              US$ <%= totais.custo.toFixed(2) %>
+            <% } %>
+          </dd>
+        </div>
+        <div class="row">
+          <dt>Latência média</dt>
+          <dd>
+            <% if (totais.latenciaMediaMs === null) { %>
+              <span class="muted">—</span>
+            <% } else { %>
+              <%= totais.latenciaMediaMs %> ms
+            <% } %>
+          </dd>
+        </div>
+      </dl>
+      <p class="small muted">
+        O custo é uma estimativa calculada a partir dos preços configurados,
+        não a fatura do provedor.
+      </p>
+    </div>
+
+    <h2>Últimas chamadas</h2>
+
+    <div class="panel">
+      <%# §45: только метрики. Ни запроса, ни ответа, ни ключа. %>
+      <p class="small muted">
+        Este registro guarda apenas métricas. O texto enviado ao modelo, a
+        resposta recebida e as chaves de acesso não são armazenados aqui.
+      </p>
+
+      <% if (chamadas.length === 0) { %>
+        <p class="muted">Nenhuma chamada registrada.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Quando</th>
+                <th scope="col">Operação</th>
+                <th scope="col">Provedor</th>
+                <th scope="col">Modelo</th>
+                <th scope="col">Entrada</th>
+                <th scope="col">Saída</th>
+                <th scope="col">Latência</th>
+                <th scope="col">Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% chamadas.forEach(function (chamada) { %>
+                <tr>
+                  <td><%= chamada.quando %></td>
+                  <td><%= chamada.operacao %></td>
+                  <td><%= chamada.provedor %></td>
+                  <td><%= chamada.modelo %></td>
+                  <td><%= chamada.entrada === null ? "—" : chamada.entrada %></td>
+                  <td><%= chamada.saida === null ? "—" : chamada.saida %></td>
+                  <td><%= chamada.latencia === null ? "—" : chamada.latencia + " ms" %></td>
+                  <td>
+                    <% if (chamada.sucesso) { %>
+                      <span class="tag tag--concluido">OK</span>
+                    <% } else { %>
+                      <span class="tag tag--aviso"><%= chamada.erro || "Falhou" %></span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>

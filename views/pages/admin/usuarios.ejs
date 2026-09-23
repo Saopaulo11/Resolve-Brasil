@@ -1,0 +1,46 @@
+<section class="section">
+  <div class="container">
+    <h1>Usuários</h1>
+    <p class="lede">
+      <%= total %> cadastrados. Mostrando os <%= limite %> mais recentes.
+    </p>
+
+    <div class="panel">
+      <%# §51: телефон только последними цифрами, имени и дел здесь нет. %>
+      <p class="small muted">
+        O telefone aparece apenas pelos últimos dígitos, o suficiente para
+        conferir com quem você está falando. Esta lista não mostra nome,
+        relato nem documentos. Seu acesso a esta página fica registrado.
+      </p>
+
+      <% if (usuarios.length === 0) { %>
+        <p class="muted">Nenhum usuário cadastrado.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Telefone</th>
+                <th scope="col">Telefone confirmado</th>
+                <th scope="col">Casos</th>
+                <th scope="col">Novidades</th>
+                <th scope="col">Cadastro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% usuarios.forEach(function (usuario) { %>
+                <tr>
+                  <td><%= usuario.telefone %></td>
+                  <td><%= usuario.verificado ? "Sim" : "Não" %></td>
+                  <td><%= usuario.casos %></td>
+                  <td><%= usuario.marketing ? "Aceitou" : "Não aceitou" %></td>
+                  <td><%= usuario.criadoEm %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>

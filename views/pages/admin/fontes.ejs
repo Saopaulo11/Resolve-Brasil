@@ -1,0 +1,48 @@
+<section class="section">
+  <div class="container">
+    <h1>Fontes oficiais</h1>
+    <p class="lede">
+      Verificação válida por <%= maxAgeDays %> dias.
+    </p>
+
+    <div class="panel">
+      <%# §30–§32: непроверенный источник для системы не существует. %>
+      <p class="small muted">
+        Uma fonte só chega ao usuário e ao modelo depois de ser aberta e
+        confirmada. Sem verificação, ou com verificação vencida, ela fica
+        fora — um link não confirmado para um site oficial é pior que
+        nenhum link, porque parece uma confirmação.
+      </p>
+
+      <% if (fontes.length === 0) { %>
+        <p class="muted">Nenhuma fonte cadastrada.</p>
+        <p class="small muted">
+          A lista começa vazia de propósito: nenhuma fonte foi inventada
+          para preenchê-la.
+        </p>
+      <% } else { %>
+        <ul class="source-list">
+          <% fontes.forEach(function (fonte) { %>
+            <li class="source">
+              <span class="tag tag--<%= fonte.estado.tom %>"><%= fonte.estado.rotulo %></span>
+              <span><%= fonte.organizacao %> — <%= fonte.titulo %></span>
+              <span class="source__url"><%= fonte.url %></span>
+              <% if (fonte.verificadaEm) { %>
+                <span class="small muted">Verificada em <%= fonte.verificadaEm %></span>
+              <% } else { %>
+                <span class="small muted">Nunca verificada</span>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+
+      <%# Проверка ходит во внешнюю сеть — это задача по расписанию,
+          а не кнопка в интерфейсе. %>
+      <p class="small muted">
+        A verificação é executada pelo comando <code>npm run sources:verify</code>,
+        que abre cada endereço. Ela não é disparada por esta página.
+      </p>
+    </div>
+  </div>
+</section>

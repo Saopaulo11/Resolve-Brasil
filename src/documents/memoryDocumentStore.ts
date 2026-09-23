@@ -78,6 +78,12 @@ export class MemoryDocumentStore implements DocumentStore {
       .filter((doc) => doc.createdAt.getTime() < before.getTime())
       .slice(0, limit);
   }
+
+  async listRecent(limit: number): Promise<DocumentRecord[]> {
+    return [...this.documents.values()]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
 }
 
 export class MemoryFactStore implements FactStore {

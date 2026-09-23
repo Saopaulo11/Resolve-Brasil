@@ -1,7 +1,8 @@
-import rateLimit from "express-rate-limit";
-import type { RequestHandler } from "express";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import type { Request, RequestHandler } from "express";
 
 import { loadConfig } from "../config/env";
+import { parseBrazilianPhone } from "../utils/phone";
 
 /**
  * Ограничение частоты (§46, §66).
@@ -13,6 +14,15 @@ import { loadConfig } from "../config/env";
  */
 function message(text: string) {
   return { error: text };
+}
+
+/**
+ * Ключ по адресу. Сырой IP как ключ бесполезен против IPv6: там у одного
+ * абонента обычно целая /64, и он меняет адрес столько раз, сколько нужно.
+ * ipKeyGenerator сводит адрес к подсети; для IPv4 это сам адрес.
+ */
+function addressKey(req: Request): string {
+  return `ip:${ipKeyGenerator(req.ip ?? "")}`;
 }
 
 /** Общий потолок на весь трафик — защита от простого флуда. */
@@ -39,8 +49,14 @@ export function otpRequestRateLimit(): RequestHandler {
     standardHeaders: "draft-7",
     legacyHeaders: false,
     keyGenerator: (req) => {
+      // Номер приводится к единому виду: иначе «11987654321»,
+      // «+5511987654321» и «(11) 98765-4321» получат по своей корзине,
+      // и лимит обходится одной запятой в поле ввода.
       const phone = (req.body as Record<string, unknown> | undefined)?.phone;
-      return typeof phone === "string" && phone.length > 0 ? `phone:${phone}` : `ip:${req.ip}`;
+      if (typeof phone !== "string" || phone.length === 0) return addressKey(req);
+
+      const parsed = parseBrazilianPhone(phone);
+      return parsed.ok ? `phone:${parsed.e164}` : addressKey(req);
     },
     message: message("Muitas tentativas. Aguarde antes de pedir um novo código."),
   });
@@ -54,7 +70,7 @@ export function aiRateLimit(): RequestHandler {
     limit: config.rateLimits.aiPerUserPerHour,
     standardHeaders: "draft-7",
     legacyHeaders: false,
-    keyGenerator: (req) => req.session?.userId ?? `ip:${req.ip}`,
+    keyGenerator: (req) => req.session?.userId ?? addressKey(req),
     message: message("Limite de análises atingido. Tente novamente mais tarde."),
   });
 }

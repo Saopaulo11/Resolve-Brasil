@@ -1,0 +1,46 @@
+<section class="section">
+  <div class="container">
+    <h1>Configurações</h1>
+    <p class="lede">Valores em vigor neste processo.</p>
+
+    <div class="panel">
+      <%# §41: значение секрета не показывается никому и никогда. Экран
+          настроек с ключом превращает любой вход в админку в утечку ключа. %>
+      <p class="notice">
+        Chaves de acesso nunca são exibidas aqui, para nenhum perfil. Esta
+        página mostra apenas se cada uma está configurada ou não.
+      </p>
+    </div>
+
+    <% grupos.forEach(function (grupo) { %>
+      <h2><%= grupo.titulo %></h2>
+      <div class="panel">
+        <dl class="rows">
+          <% grupo.itens.forEach(function (item) { %>
+            <div class="row">
+              <dt><%= item.nome %></dt>
+              <dd>
+                <% if (item.ok === true) { %>
+                  <span class="tag tag--concluido"><%= item.valor %></span>
+                <% } else if (item.ok === false) { %>
+                  <span class="tag tag--aviso"><%= item.valor %></span>
+                <% } else { %>
+                  <%= item.valor %>
+                <% } %>
+              </dd>
+            </div>
+          <% }); %>
+        </dl>
+      </div>
+    <% }); %>
+
+    <div class="panel">
+      <p class="small muted">
+        Para alterar qualquer valor desta página, mude a variável de ambiente
+        correspondente e reinicie o serviço. Não há edição pela interface: uma
+        configuração alterada por clique não deixa rastro no histórico do
+        projeto.
+      </p>
+    </div>
+  </div>
+</section>

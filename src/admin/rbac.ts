@@ -16,37 +16,58 @@ export type Permission =
   | "sources.manage"
   | "audit.view"
   | "admins.manage"
+  | "feedback.view"
+  | "notifications.view"
+  | "settings.view"
+  | "ai.view"
+  /**
+   * Перечень документов: тип, размер, состояние, дата. Без имени файла и
+   * без содержимого. Имя файла — уже персональные данные: «cpf-joao.pdf»
+   * говорит достаточно.
+   */
+  | "documents.list"
+  /** Содержимое документов. Не выдаётся никому — см. GRANTED_TO_NOBODY. */
   | "documents.read";
 
+const VIEWER_PERMISSIONS: readonly Permission[] = ["dashboard.view"];
+
+const ANALYST_PERMISSIONS: readonly Permission[] = [
+  ...VIEWER_PERMISSIONS,
+  "analytics.view",
+  "ai.view",
+  "feedback.view",
+];
+
+const SUPPORT_PERMISSIONS: readonly Permission[] = [
+  ...VIEWER_PERMISSIONS,
+  "cases.list",
+  "cases.detail",
+  "documents.list",
+  "feedback.view",
+];
+
+const ADMIN_PERMISSIONS: readonly Permission[] = [
+  // Набор строится из предыдущих намеренно: так дыра в середине лестницы
+  // ролей становится невозможной, а не просто маловероятной.
+  ...new Set<Permission>([
+    ...ANALYST_PERMISSIONS,
+    ...SUPPORT_PERMISSIONS,
+    "users.list",
+    "sources.manage",
+    "audit.view",
+    "notifications.view",
+    "settings.view",
+  ]),
+];
+
 const ROLE_PERMISSIONS: Record<AdminRole, readonly Permission[]> = {
-  VIEWER: ["dashboard.view"],
-
-  ANALYST: ["dashboard.view", "analytics.view"],
-
-  SUPPORT: ["dashboard.view", "cases.list", "cases.detail"],
-
-  ADMIN: [
-    "dashboard.view",
-    "analytics.view",
-    "cases.list",
-    "cases.detail",
-    "users.list",
-    "sources.manage",
-    "audit.view",
-  ],
-
+  VIEWER: VIEWER_PERMISSIONS,
+  ANALYST: ANALYST_PERMISSIONS,
+  SUPPORT: SUPPORT_PERMISSIONS,
+  ADMIN: ADMIN_PERMISSIONS,
   // Владелец управляет администраторами — но и он не получает доступа к
-  // документам пользователей (см. ниже).
-  OWNER: [
-    "dashboard.view",
-    "analytics.view",
-    "cases.list",
-    "cases.detail",
-    "users.list",
-    "sources.manage",
-    "audit.view",
-    "admins.manage",
-  ],
+  // содержимому документов пользователей (см. ниже).
+  OWNER: [...ADMIN_PERMISSIONS, "admins.manage"],
 };
 
 /**

@@ -1,0 +1,50 @@
+<%
+/*
+  §52. Оценка привязана к конкретному сообщению, а не к делу: «не помогло»
+  без указания, что именно не помогло, ни о чём не говорит.
+*/
+%>
+<% if (mensagemId) { %>
+  <div class="rating" id="avaliacao-<%= mensagemId %>">
+    <% if (avaliados.includes(mensagemId)) { %>
+      <p class="small muted">Obrigado pela avaliação.</p>
+    <% } else { %>
+      <p class="rating__question">Essa orientação ajudou?</p>
+      <form method="post" action="/caso/<%= publicId %>/avaliar" class="rating__form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="mensagem" value="<%= mensagemId %>" />
+
+        <div class="actions">
+          <button type="submit" name="avaliacao" value="SIM" class="btn btn--secondary">
+            <span aria-hidden="true">👍</span> Sim
+          </button>
+          <button type="submit" name="avaliacao" value="NAO" class="btn btn--secondary">
+            <span aria-hidden="true">👎</span> Não
+          </button>
+        </div>
+
+        <details class="rating__details">
+          <summary>O que estava errado?</summary>
+          <div class="field">
+            <label class="sr-only" for="motivo-<%= mensagemId %>">O que estava errado?</label>
+            <select id="motivo-<%= mensagemId %>" name="motivo">
+              <option value="INFORMACAO_INCORRETA">Informação incorreta</option>
+              <option value="NAO_ENTENDI">Não entendi</option>
+              <option value="NAO_RESOLVEU">Não resolveu meu problema</option>
+              <option value="FONTE_NAO_AJUDOU">Fonte não ajudou</option>
+              <option value="OUTRO">Outro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="comentario-<%= mensagemId %>">Comentário (opcional)</label>
+            <input type="text" id="comentario-<%= mensagemId %>" name="comentario"
+                   maxlength="1000" />
+          </div>
+          <p class="field__hint">
+            Escolha o motivo e toque em «Não» acima para enviar.
+          </p>
+        </details>
+      </form>
+    <% } %>
+  </div>
+<% } %>

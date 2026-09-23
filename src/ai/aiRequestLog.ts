@@ -1,6 +1,6 @@
 import { loadConfig } from "../config/env";
-import { db, isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
+import { stores } from "../users/storeRegistry";
 import type { AiCallMeta } from "./providers/AIProvider";
 
 /**
@@ -37,23 +37,18 @@ const PROVIDER_MAP = {
 
 /** Запись о вызове. Возвращает id, чтобы связать её с сообщением. */
 export async function recordAiRequest(meta: AiCallMeta): Promise<string | null> {
-  if (!isDatabaseConfigured()) return null;
-
   try {
-    const created = await db().aiRequest.create({
-      data: {
-        provider: PROVIDER_MAP[meta.provider],
-        model: meta.model,
-        operation: meta.operation,
-        promptVersion: meta.promptVersion,
-        inputTokens: meta.inputTokens,
-        outputTokens: meta.outputTokens,
-        estimatedCost: estimateCost(meta.inputTokens, meta.outputTokens),
-        latencyMs: meta.latencyMs,
-        success: meta.success,
-        errorCode: meta.errorCode,
-      },
-      select: { id: true },
+    const created = await stores().aiRequests.create({
+      provider: PROVIDER_MAP[meta.provider],
+      model: meta.model,
+      operation: meta.operation,
+      promptVersion: meta.promptVersion,
+      inputTokens: meta.inputTokens,
+      outputTokens: meta.outputTokens,
+      estimatedCost: estimateCost(meta.inputTokens, meta.outputTokens),
+      latencyMs: meta.latencyMs,
+      success: meta.success,
+      errorCode: meta.errorCode,
     });
     return created.id;
   } catch (error) {

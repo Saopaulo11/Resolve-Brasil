@@ -66,6 +66,8 @@ export type CreateNotificationInput = {
 export interface NotificationStore {
   record(input: CreateNotificationInput): Promise<NotificationRecord>;
   listForUser(userId: string, limit: number): Promise<NotificationRecord[]>;
+  /** Для админки (§50): доставка без содержимого сообщений. */
+  listRecent(limit: number): Promise<NotificationRecord[]>;
 }
 
 export class PrismaReminderStore implements ReminderStore {
@@ -142,6 +144,26 @@ export class PrismaNotificationStore implements NotificationStore {
       where: { userId },
       orderBy: { createdAt: "desc" },
       take: limit,
+    });
+    return rows as unknown as NotificationRecord[];
+  }
+
+  async listRecent(limit: number): Promise<NotificationRecord[]> {
+    // payload не выбирается намеренно: в нём текст сообщения, а админке
+    // для наблюдения за доставкой он не нужен (§51).
+    const rows = await db().notification.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        userId: true,
+        channel: true,
+        purpose: true,
+        template: true,
+        status: true,
+        error: true,
+        createdAt: true,
+      },
     });
     return rows as unknown as NotificationRecord[];
   }

@@ -144,9 +144,31 @@ export async function ver(
   const documentList = await documents.listForCase(found.case.id);
   const factList = await facts.listForCase(found.case.id);
 
-  /** Последний результат каждого вида: старые остаются в истории дела. */
-  const latest = (type: string) =>
-    [...messages].reverse().find((message) => message.type === type)?.metadata ?? null;
+  /**
+   * Последний результат каждого вида: старые остаются в истории дела.
+   *
+   * Возвращается вместе с идентификатором сообщения — к нему привязывается
+   * оценка пользователя (§52). Без идентификатора нельзя понять, что именно
+   * человек оценил.
+   */
+  const latestMessage = (type: string) =>
+    [...messages].reverse().find((message) => message.type === type) ?? null;
+
+  const latest = (type: string) => latestMessage(type)?.metadata ?? null;
+
+  const avaliados = new Set(
+    (
+      await Promise.all(
+        messages
+          .filter((message) => message.direction === "ASSISTANT")
+          .map(async (message) =>
+            (await stores().feedback.findForMessage(message.id, userId))
+              ? message.id
+              : null,
+          ),
+      )
+    ).filter((id): id is string => id !== null),
+  );
 
   renderPage(
     req,
@@ -190,6 +212,13 @@ export async function ver(
       plano: latest("PLANO_DE_ACAO"),
       rascunho: latest("RASCUNHO"),
       analiseResposta: latest("ANALISE_DE_RESPOSTA"),
+      // Идентификаторы для формы оценки и отметка о том, что уже оценено.
+      mensagemId: {
+        classificacao: latestMessage("CLASSIFICACAO")?.id ?? null,
+        plano: latestMessage("PLANO_DE_ACAO")?.id ?? null,
+        analiseResposta: latestMessage("ANALISE_DE_RESPOSTA")?.id ?? null,
+      },
+      avaliados: [...avaliados],
       presets: PRESETS,
       lembretes: (await listReminders(found.case.id)).map((reminder) => ({
         id: reminder.id,

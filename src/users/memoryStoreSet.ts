@@ -3,8 +3,10 @@ import {
   MemoryAdminUserStore,
   MemoryLoginAttemptStore,
 } from "../admin/memoryAdminStore";
+import { MemoryAiRequestStore } from "../ai/aiRequestStore";
 import { MemoryAnalyticsStore } from "../analytics/memoryAnalyticsStore";
 import { MemoryCaseStore } from "../cases/memoryCaseStore";
+import { MemoryFeedbackStore } from "../cases/memoryFeedbackStore";
 import {
   MemoryAuditStore,
   MemoryDocumentStore,
@@ -50,6 +52,8 @@ export type MemoryStores = Stores & {
   adminSessions: MemoryAdminSessionStore;
   loginAttempts: MemoryLoginAttemptStore;
   deletionRequests: MemoryDeletionRequestStore;
+  feedback: MemoryFeedbackStore;
+  aiRequests: MemoryAiRequestStore;
 };
 
 export function createMemoryStores(): MemoryStores {
@@ -70,5 +74,7 @@ export function createMemoryStores(): MemoryStores {
     adminSessions: new MemoryAdminSessionStore(),
     loginAttempts: new MemoryLoginAttemptStore(),
     deletionRequests: new MemoryDeletionRequestStore(),
+    feedback: new MemoryFeedbackStore(),
+    aiRequests: new MemoryAiRequestStore(),
   };
 }

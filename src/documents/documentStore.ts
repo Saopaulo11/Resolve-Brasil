@@ -74,6 +74,8 @@ export interface DocumentStore {
   hardDelete(documentId: string): Promise<void>;
   /** Документы старше указанной даты — для сроков хранения (§65). */
   listOlderThan(before: Date, limit: number): Promise<DocumentRecord[]>;
+  /** Для админки (§50): перечень без содержимого файлов. */
+  listRecent(limit: number): Promise<DocumentRecord[]>;
 }
 
 export interface FactStore {
@@ -154,6 +156,10 @@ export class PrismaDocumentStore implements DocumentStore {
       where: { createdAt: { lt: before } },
       take: limit,
     });
+  }
+
+  async listRecent(limit: number): Promise<DocumentRecord[]> {
+    return db().document.findMany({ orderBy: { createdAt: "desc" }, take: limit });
   }
 }
 

@@ -27,7 +27,10 @@ const SENSITIVE: ReadonlySet<Permission> = new Set([
   "cases.list",
   "cases.detail",
   "users.list",
+  "documents.list",
   "documents.read",
+  "feedback.view",
+  "notifications.view",
   "admins.manage",
 ]);
 

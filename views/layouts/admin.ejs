@@ -28,8 +28,29 @@
               <% if (adminPermissions.includes("analytics.view")) { %>
                 <li><a href="/admin/analytics">Analytics</a></li>
               <% } %>
+              <% if (adminPermissions.includes("users.list")) { %>
+                <li><a href="/admin/usuarios">Usuários</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("documents.list")) { %>
+                <li><a href="/admin/documentos">Documentos</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("ai.view")) { %>
+                <li><a href="/admin/ia">IA</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("sources.manage")) { %>
+                <li><a href="/admin/fontes">Fontes</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("feedback.view")) { %>
+                <li><a href="/admin/avaliacoes">Avaliações</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("notifications.view")) { %>
+                <li><a href="/admin/notificacoes">Notificações</a></li>
+              <% } %>
               <% if (adminPermissions.includes("audit.view")) { %>
                 <li><a href="/admin/auditoria">Acessos</a></li>
+              <% } %>
+              <% if (adminPermissions.includes("settings.view")) { %>
+                <li><a href="/admin/configuracoes">Configurações</a></li>
               <% } %>
             </ul>
           </nav>

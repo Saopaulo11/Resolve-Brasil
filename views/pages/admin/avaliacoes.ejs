@@ -1,0 +1,59 @@
+<section class="section">
+  <div class="container">
+    <h1>Avaliações</h1>
+    <p class="lede">O que os usuários disseram sobre as respostas da IA.</p>
+
+    <div class="panel">
+      <dl class="rows">
+        <div class="row"><dt>Ajudou</dt><dd><%= contagem.sim %></dd></div>
+        <div class="row"><dt>Não ajudou</dt><dd><%= contagem.nao %></dd></div>
+        <div class="row">
+          <dt>Proporção de «ajudou»</dt>
+          <dd>
+            <%# §57: процент на крошечной выборке вводит в заблуждение. %>
+            <% if (proporcaoUtil === null) { %>
+              <span class="muted">— menos de <%= minGroupSize %> avaliações</span>
+            <% } else { %>
+              <%= proporcaoUtil %>%
+            <% } %>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <h2>Últimas avaliações</h2>
+
+    <div class="panel">
+      <%# §51: ни телефона, ни имени — для качества важно что, а не кто. %>
+      <p class="small muted">
+        As avaliações aparecem sem telefone e sem nome: para melhorar a
+        qualidade importa o que não funcionou, não quem escreveu. O
+        comentário é texto livre do usuário e pode conter dados pessoais —
+        seu acesso a esta página fica registrado.
+      </p>
+
+      <% if (avaliacoes.length === 0) { %>
+        <p class="muted">Nenhuma avaliação recebida.</p>
+      <% } else { %>
+        <ul class="feedback-list">
+          <% avaliacoes.forEach(function (item) { %>
+            <li class="feedback">
+              <div class="feedback__head">
+                <span class="tag tag--<%= item.util ? "concluido" : "aviso" %>">
+                  <%= item.avaliacao %>
+                </span>
+                <span class="small muted"><%= item.quando %></span>
+              </div>
+              <% if (item.motivo) { %>
+                <p class="small"><strong>Motivo:</strong> <%= item.motivo %></p>
+              <% } %>
+              <% if (item.comentario) { %>
+                <p class="feedback__comment"><%= item.comentario %></p>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</section>

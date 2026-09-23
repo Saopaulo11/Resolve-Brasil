@@ -5,6 +5,7 @@ import * as admin from "../controllers/adminController";
 import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
 import * as documents from "../controllers/documentsController";
+import * as feedback from "../controllers/feedbackController";
 import * as reminders from "../controllers/remindersController";
 import * as responses from "../controllers/responseController";
 import * as health from "../controllers/healthController";
@@ -73,6 +74,17 @@ export function buildRouter(): Router {
   router.get("/admin/casos", requirePermission("cases.list"), admin.casos);
   router.get("/admin/analytics", requirePermission("analytics.view"), admin.analytics);
   router.get("/admin/auditoria", requirePermission("audit.view"), admin.auditoria);
+  router.get("/admin/usuarios", requirePermission("users.list"), admin.usuarios);
+  router.get("/admin/documentos", requirePermission("documents.list"), admin.documentos);
+  router.get("/admin/ia", requirePermission("ai.view"), admin.ia);
+  router.get("/admin/fontes", requirePermission("sources.manage"), admin.fontes);
+  router.get("/admin/avaliacoes", requirePermission("feedback.view"), admin.avaliacoes);
+  router.get(
+    "/admin/notificacoes",
+    requirePermission("notifications.view"),
+    admin.notificacoes,
+  );
+  router.get("/admin/configuracoes", requirePermission("settings.view"), admin.configuracoes);
 
   // --- Напоминания (§37) ---
   router.post("/caso/:publicId/lembretes", requireAuth(), reminders.criar);
@@ -81,6 +93,9 @@ export function buildRouter(): Router {
     requireAuth(),
     reminders.cancelar,
   );
+
+  // --- Оценка ответа AI (§52) ---
+  router.post("/caso/:publicId/avaliar", requireAuth(), feedback.avaliar);
 
   // --- Ответ компании (§35) ---
   router.post("/caso/:publicId/resposta", requireAuth(), aiRateLimit(), responses.receber);

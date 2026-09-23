@@ -53,6 +53,10 @@ export interface UserStore {
   setMarketing(userId: string, update: MarketingUpdate): Promise<void>;
   /** Безвозвратно. Каскадом уходят сессии, согласия, напоминания, уведомления. */
   deleteUser(userId: string): Promise<void>;
+  /** Для админки (§50). Список без телефона в открытом виде не имеет смысла —
+   *  маскирование делает слой представления, а не хранилище. */
+  listRecent(limit: number): Promise<UserRecord[]>;
+  countAll(): Promise<number>;
 }
 
 export interface OtpStore {
@@ -132,6 +136,14 @@ export class PrismaUserStore implements UserStore {
 
   async deleteUser(userId: string): Promise<void> {
     await db().user.delete({ where: { id: userId } });
+  }
+
+  async listRecent(limit: number): Promise<UserRecord[]> {
+    return db().user.findMany({ orderBy: { createdAt: "desc" }, take: limit });
+  }
+
+  async countAll(): Promise<number> {
+    return db().user.count();
   }
 
   async setMarketing(userId: string, update: MarketingUpdate): Promise<void> {

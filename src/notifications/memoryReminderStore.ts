@@ -103,4 +103,10 @@ export class MemoryNotificationStore implements NotificationStore {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, limit);
   }
+
+  async listRecent(limit: number): Promise<NotificationRecord[]> {
+    return [...this.all]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
 }

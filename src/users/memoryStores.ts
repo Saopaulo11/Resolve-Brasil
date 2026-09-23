@@ -65,6 +65,16 @@ export class MemoryUserStore implements UserStore {
     this.byPhone.delete(user.phone);
   }
 
+  async listRecent(limit: number): Promise<UserRecord[]> {
+    return [...this.byId.values()]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  async countAll(): Promise<number> {
+    return this.byId.size;
+  }
+
   async setMarketing(userId: string, update: MarketingUpdate): Promise<void> {
     const user = this.byId.get(userId);
     if (!user) return;

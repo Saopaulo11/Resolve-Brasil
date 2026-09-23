@@ -231,6 +231,10 @@
         <% } %>
 
         <%- include('../partials/ai-disclaimer') %>
+        <%- include('../partials/avaliacao', {
+              mensagemId: mensagemId.classificacao,
+              publicId: caso.publicId,
+            }) %>
       </div>
     <% } %>
 
@@ -302,6 +306,10 @@
         <% } %>
 
         <%- include('../partials/ai-disclaimer') %>
+        <%- include('../partials/avaliacao', {
+              mensagemId: mensagemId.plano,
+              publicId: caso.publicId,
+            }) %>
       </div>
     <% } %>
 
@@ -472,6 +480,10 @@
         <% } %>
 
         <%- include('../partials/ai-disclaimer') %>
+        <%- include('../partials/avaliacao', {
+              mensagemId: mensagemId.analiseResposta,
+              publicId: caso.publicId,
+            }) %>
       </div>
     <% } %>
 

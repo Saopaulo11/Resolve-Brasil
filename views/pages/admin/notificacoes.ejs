@@ -1,0 +1,61 @@
+<section class="section">
+  <div class="container">
+    <h1>Notificações</h1>
+    <p class="lede">
+      Últimos <%= limite %> envios<% if (falhas > 0) { %> · <%= falhas %> com falha<% } %>.
+    </p>
+
+    <div class="panel">
+      <%# §51: содержимого сообщений здесь нет — для «дошло или нет» оно
+          не нужно, а хранилище доставки не должно становиться копией
+          переписки. %>
+      <p class="small muted">
+        Esta lista acompanha a entrega: canal, modelo, estado e erro. O
+        conteúdo das mensagens não aparece aqui. Seu acesso a esta página
+        fica registrado.
+      </p>
+
+      <% if (notificacoes.length === 0) { %>
+        <p class="muted">Nenhuma notificação enviada.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Quando</th>
+                <th scope="col">Canal</th>
+                <th scope="col">Finalidade</th>
+                <th scope="col">Modelo</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Erro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% notificacoes.forEach(function (item) { %>
+                <tr>
+                  <td><%= item.quando %></td>
+                  <td><%= item.canal %></td>
+                  <td><%= item.proposito %></td>
+                  <td><%= item.modelo %></td>
+                  <td>
+                    <% if (item.falhou) { %>
+                      <span class="tag tag--aviso"><%= item.estado %></span>
+                    <% } else { %>
+                      <%= item.estado %>
+                    <% } %>
+                  </td>
+                  <td><%= item.erro || "—" %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <%# §17: разделение сервисных и маркетинговых сообщений видно и здесь. %>
+        <p class="small muted">
+          «Sobre o caso» são avisos do andamento e não dependem da opção de
+          receber novidades. «Novidades» só são enviadas a quem aceitou.
+        </p>
+      <% } %>
+    </div>
+  </div>
+</section>

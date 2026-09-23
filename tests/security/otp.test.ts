@@ -1,6 +1,7 @@
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { resetConfigCache } from "../../src/config/env";
 import { createHarness, login, openPage, mergeCookies, type Harness } from "../helpers/auth";
 
 let harness: Harness;
@@ -280,5 +281,51 @@ describe("сессия после входа", () => {
       .get("/minha-conta")
       .set("Cookie", cookies);
     expect(response.status).toBe(200);
+  });
+});
+
+
+describe("лимит запросов кода (§66)", () => {
+  afterEach(() => {
+    delete process.env.RATE_LIMIT_OTP_PER_PHONE_PER_HOUR;
+    resetConfigCache();
+  });
+
+  /** Запрос кода без прохождения дальше: интересует только счётчик. */
+  async function pedirCodigo(phone: string) {
+    const page = await openPage(harness.app, "/entrar");
+    return request(harness.app)
+      .post("/entrar")
+      .set("Cookie", page.cookies)
+      .type("form")
+      .send({ _csrf: page.token, phone });
+  }
+
+  it("разные записи одного номера считаются вместе", async () => {
+    // Иначе лимит обходится запятой в поле ввода: «(11) 98765-4321» и
+    // «+5511987654321» — один и тот же человек и один и тот же номер.
+    process.env.RATE_LIMIT_OTP_PER_PHONE_PER_HOUR = "2";
+    resetConfigCache();
+    harness = createHarness();
+
+    await pedirCodigo("11987654321");
+    await pedirCodigo("+55 11 98765-4321");
+    const terceiro = await pedirCodigo("(11) 98765-4321");
+
+    // Третья запись того же номера упирается в лимит, израсходованный
+    // первыми двумя — значит корзина у них одна.
+    expect(terceiro.status).toBe(429);
+  });
+
+  it("другой номер не расходует чужой лимит", async () => {
+    process.env.RATE_LIMIT_OTP_PER_PHONE_PER_HOUR = "1";
+    resetConfigCache();
+    harness = createHarness();
+
+    await pedirCodigo("11987654321");
+    const outro = await pedirCodigo("11912345678");
+
+    expect(outro.status).not.toBe(429);
+    expect(harness.otpProvider.sent).toHaveLength(2);
   });
 });
