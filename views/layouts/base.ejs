@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= title %></title>
+    <meta name="description" content="<%= description %>" />
+    <meta name="theme-color" content="#10243e" />
+    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/images/brand/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/images/brand/icon.svg" />
+    <meta property="og:title" content="<%= title %>" />
+    <meta property="og:description" content="<%= description %>" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+    <%- include('../partials/header', { currentPath: currentPath }) %>
+    <main id="conteudo">
+      <%- body %>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

@@ -1,0 +1,710 @@
+// Resolve Brasil — схема операционной базы (§49).
+//
+// Два правила, на которых держится всё остальное:
+//
+// 1. PostgreSQL — source of truth состояния дела (§91, §92). AI ничего не
+//    хранит: он получает выборку фактов и возвращает структурированный ответ,
+//    который после валидации ложится сюда.
+// 2. Операционные данные и аналитика разделены (§55). В Analytics* моделях
+//    нет и не может быть телефона, CPF, имени, адреса, сырой переписки и
+//    сырых документов — туда попадают только обезличенные агрегаты.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Перечисления
+// ---------------------------------------------------------------------------
+
+/// Три типа информации, которые нельзя смешивать (§5).
+enum FactSource {
+  USER_FACT
+  OFFICIAL_SOURCE
+  AI_SUGGESTION
+}
+
+/// Категории MVP (§11). Расширяется без миграции данных: добавлением значения.
+enum CaseCategory {
+  PRODUTO_NAO_RECEBIDO
+  REEMBOLSO_NAO_RECEBIDO
+  COBRANCA_INDEVIDA
+  CANCELAMENTO_NAO_REALIZADO
+  PRODUTO_COM_DEFEITO
+  SERVICO_NAO_PRESTADO
+  OUTRO
+}
+
+/// Статусы дела (§19).
+enum CaseStatus {
+  NOVO
+  EM_ANALISE
+  AGUARDANDO_USUARIO
+  AGUARDANDO_EMPRESA
+  RESPOSTA_RECEBIDA
+  PRECISA_DE_ACAO
+  ESCALADO
+  RESOLVIDO
+  ENCERRADO
+}
+
+/// Канал эскалации (§33). Порядок не универсален — его выбирает AI под случай.
+enum EscalationLevel {
+  NENHUM
+  EMPRESA
+  SAC
+  OUVIDORIA
+  CONSUMIDOR_GOV
+  ORGAO_COMPETENTE
+}
+
+enum CasePriority {
+  BAIXA
+  NORMAL
+  ALTA
+}
+
+enum PaymentMethod {
+  PIX
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  BOLETO
+  TRANSFERENCIA
+  DINHEIRO
+  OUTRO
+  DESCONHECIDO
+}
+
+/// Классификация ситуации с Pix (§36). MED не назначается автоматически:
+/// для обычного коммерческого спора это неверный путь.
+enum PixSituation {
+  GOLPE_FRAUDE
+  PIX_NAO_RECONHECIDO
+  PRODUTO_NAO_RECEBIDO
+  DESTINATARIO_ERRADO
+  PROBLEMA_BANCARIO
+  DISPUTA_COMERCIAL
+}
+
+enum MessageDirection {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum MessageType {
+  TEXTO
+  CLASSIFICACAO
+  PERGUNTAS
+  PLANO_DE_ACAO
+  RASCUNHO
+  ANALISE_DE_RESPOSTA
+  RESUMO
+  AVISO
+}
+
+enum DocumentKind {
+  NOTA_FISCAL
+  COMPROVANTE_PIX
+  PEDIDO
+  CONTRATO
+  CAPTURA_DE_TELA
+  EMAIL
+  CONVERSA
+  RESPOSTA_DA_EMPRESA
+  OUTRO
+}
+
+enum ExtractionStatus {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDA
+  FALHOU
+  NAO_APLICAVEL
+}
+
+/// Состояние извлечённого факта (§26). AI-извлечение само по себе не истина.
+enum FactStatus {
+  UNCONFIRMED
+  CONFIRMED
+  USER_CORRECTED
+  REJECTED
+}
+
+enum ConsentType {
+  TERMS
+  PRIVACY
+  MARKETING
+  RESEARCH
+}
+
+/// Откуда пришло согласие — нужно, чтобы доказать его происхождение (§63).
+enum ConsentSource {
+  CADASTRO
+  MINHA_CONTA
+  CHECKOUT_CASO
+  IMPORTACAO
+  SUPORTE
+}
+
+enum NotificationChannel {
+  SMS
+  WHATSAPP
+  EMAIL
+  PUSH
+}
+
+/// Сервисные и маркетинговые уведомления разделены (§17).
+enum NotificationPurpose {
+  SERVICO
+  MARKETING
+}
+
+enum NotificationStatus {
+  PENDENTE
+  ENVIADA
+  FALHOU
+  CANCELADA
+}
+
+enum ReminderStatus {
+  AGENDADO
+  ENVIADO
+  CANCELADO
+  CONCLUIDO
+}
+
+enum FeedbackRating {
+  SIM
+  NAO
+}
+
+/// Причины отрицательной оценки (§52).
+enum FeedbackReason {
+  INFORMACAO_INCORRETA
+  NAO_ENTENDI
+  NAO_RESOLVEU
+  FONTE_NAO_AJUDOU
+  OUTRO
+}
+
+enum Industry {
+  ECOMMERCE
+  TELECOM
+  BANKING
+  FINTECH
+  INSURANCE
+  TRAVEL
+  UTILITIES
+  RETAIL
+  SERVICES
+  OTHER
+}
+
+enum AdminRole {
+  VIEWER
+  SUPPORT
+  ANALYST
+  ADMIN
+  OWNER
+}
+
+enum AiProvider {
+  OPENAI
+  ANTHROPIC
+  MOCK
+}
+
+// ---------------------------------------------------------------------------
+// Пользователь и доступ
+// ---------------------------------------------------------------------------
+
+/// §16. Пароля нет намеренно: вход только по телефону и OTP (§15).
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  /// E.164, например +5511987654321. Нормализуется до записи.
+  phone         String   @unique
+  phoneVerified Boolean  @default(false) @map("phone_verified")
+  displayName   String?  @map("display_name")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // §17. Регистрация по телефону не означает согласия на маркетинг —
+  // это отдельные поля и отдельный чекбокс.
+  marketingConsent          Boolean        @default(false) @map("marketing_consent")
+  marketingConsentAt        DateTime?      @map("marketing_consent_at")
+  marketingConsentSource    ConsentSource? @map("marketing_consent_source")
+  marketingUnsubscribedAt   DateTime?      @map("marketing_unsubscribed_at")
+  caseNotifications         Boolean        @default(true) @map("case_notifications")
+  marketingNotifications    Boolean        @default(false) @map("marketing_notifications")
+
+  cases         Case[]
+  documents     Document[]
+  messages      Message[]
+  reminders     Reminder[]
+  feedback      Feedback[]
+  consents      Consent[]
+  notifications Notification[]
+  sessions      Session[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+/// Серверная сессия. Кука хранит только идентификатор и подпись;
+/// сам токен в базе лежит хешем, чтобы дамп базы не давал входа.
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  tokenHash    String   @unique @map("token_hash")
+  userAgent    String?  @map("user_agent")
+  /// Усечённый IP: полный адрес хранить незачем.
+  ipPrefix     String?  @map("ip_prefix")
+  createdAt    DateTime @default(now()) @map("created_at")
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at")
+  expiresAt    DateTime @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// §67. Код хранится хешем, живёт минуты, имеет лимит попыток;
+/// новый код гасит предыдущий.
+model OtpChallenge {
+  id           String    @id @default(uuid()) @db.Uuid
+  phone        String
+  codeHash     String    @map("code_hash")
+  attempts     Int       @default(0)
+  maxAttempts  Int       @map("max_attempts")
+  consumedAt   DateTime? @map("consumed_at")
+  invalidatedAt DateTime? @map("invalidated_at")
+  expiresAt    DateTime  @map("expires_at")
+  ipPrefix     String?   @map("ip_prefix")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@index([phone, createdAt])
+  @@index([expiresAt])
+  @@map("otp_challenges")
+}
+
+// ---------------------------------------------------------------------------
+// Дело
+// ---------------------------------------------------------------------------
+
+/// §21. publicId вида RB-XXXXXX — не последовательный, чтобы по чужому
+/// номеру нельзя было перебрать дела и оценить их количество.
+model Case {
+  id                  String          @id @default(uuid()) @db.Uuid
+  publicId            String          @unique @map("public_id")
+  userId              String?         @map("user_id") @db.Uuid
+  category            CaseCategory?
+  subcategory         String?
+  companyName         String?         @map("company_name")
+  companyNormalized   String?         @map("company_normalized")
+  companyId           String?         @map("company_id") @db.Uuid
+  description         String
+  amount              Decimal?        @db.Decimal(12, 2)
+  currency            String          @default("BRL")
+  paymentMethod       PaymentMethod   @default(DESCONHECIDO) @map("payment_method")
+  pixSituation        PixSituation?   @map("pix_situation")
+  purchaseDate        DateTime?       @map("purchase_date")
+  promisedDate        DateTime?       @map("promised_date")
+  actualResolutionDate DateTime?      @map("actual_resolution_date")
+  status              CaseStatus      @default(NOVO)
+  currentStep         String?         @map("current_step")
+  escalationLevel     EscalationLevel @default(NENHUM) @map("escalation_level")
+  priority            CasePriority    @default(NORMAL)
+  /// Грубая география для аналитики. Точный адрес не хранится.
+  state               String?         @db.VarChar(2)
+  cityBucket          String?         @map("city_bucket")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  closedAt            DateTime?       @map("closed_at")
+
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  company   Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  events    CaseEvent[]
+  documents Document[]
+  messages  Message[]
+  facts     CaseFact[]
+  reminders Reminder[]
+  feedback  Feedback[]
+  sources   CaseSource[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([category])
+  @@index([companyNormalized])
+  @@map("cases")
+}
+
+/// §22. Хронология дела. source говорит, чем подтверждено событие (§5).
+model CaseEvent {
+  id          String     @id @default(uuid()) @db.Uuid
+  caseId      String     @map("case_id") @db.Uuid
+  type        String
+  title       String
+  description String?
+  eventDate   DateTime   @map("event_date")
+  source      FactSource @default(USER_FACT)
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId, eventDate])
+  @@map("case_events")
+}
+
+/// §26, §92. Отдельная таблица фактов: у каждого видно происхождение и то,
+/// подтвердил ли его пользователь. Без этого AI-догадка неотличима от факта.
+model CaseFact {
+  id          String     @id @default(uuid()) @db.Uuid
+  caseId      String     @map("case_id") @db.Uuid
+  documentId  String?    @map("document_id") @db.Uuid
+  field       String
+  value       String
+  source      FactSource
+  status      FactStatus @default(UNCONFIRMED)
+  confidence  Float?
+  confirmedAt DateTime?  @map("confirmed_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  case     Case      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([caseId, field])
+  @@map("case_facts")
+}
+
+/// §24. Файл лежит в приватном хранилище; здесь только ключ и метаданные.
+model Document {
+  id               String           @id @default(uuid()) @db.Uuid
+  caseId           String           @map("case_id") @db.Uuid
+  userId           String?          @map("user_id") @db.Uuid
+  filename         String
+  mimeType         String           @map("mime_type")
+  fileSize         Int              @map("file_size")
+  /// Ключ в приватном хранилище. Публичных URL у документов нет (§25).
+  storageKey       String           @unique @map("storage_key")
+  kind             DocumentKind     @default(OUTRO)
+  extractionStatus ExtractionStatus @default(PENDENTE) @map("extraction_status")
+  extractionError  String?          @map("extraction_error")
+  checksumSha256   String?          @map("checksum_sha256")
+  scanStatus       String?          @map("scan_status")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  deletedAt        DateTime?        @map("deleted_at")
+
+  case  Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  facts CaseFact[]
+
+  @@index([caseId])
+  @@index([extractionStatus])
+  @@map("documents")
+}
+
+/// §39.
+model Message {
+  id        String           @id @default(uuid()) @db.Uuid
+  caseId    String           @map("case_id") @db.Uuid
+  userId    String?          @map("user_id") @db.Uuid
+  direction MessageDirection
+  type      MessageType      @default(TEXTO)
+  content   String
+  metadata  Json?
+  /// Ссылка на запись об AI-вызове: по ней видно модель, стоимость и задержку.
+  aiRequestId String?        @map("ai_request_id") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  case      Case       @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  aiRequest AiRequest? @relation(fields: [aiRequestId], references: [id], onDelete: SetNull)
+  feedback  Feedback[]
+
+  @@index([caseId, createdAt])
+  @@map("messages")
+}
+
+/// §37.
+model Reminder {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  caseId      String?        @map("case_id") @db.Uuid
+  type        String
+  title       String
+  scheduledAt DateTime       @map("scheduled_at")
+  status      ReminderStatus @default(AGENDADO)
+  sentAt      DateTime?      @map("sent_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  case Case? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledAt, status])
+  @@map("reminders")
+}
+
+// ---------------------------------------------------------------------------
+// Официальные источники
+// ---------------------------------------------------------------------------
+
+/// §29. URL не выдумываются: сюда попадает только проверенный адрес,
+/// и у каждой записи есть дата последней проверки.
+model OfficialSource {
+  id             String    @id @default(uuid()) @db.Uuid
+  organization   String
+  title          String
+  url            String    @unique
+  category       String?
+  content        String?
+  lastVerifiedAt DateTime? @map("last_verified_at")
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  cases CaseSource[]
+
+  @@index([organization])
+  @@index([active])
+  @@map("official_sources")
+}
+
+/// Какой источник и к какому утверждению привязан (§31).
+model CaseSource {
+  id        String   @id @default(uuid()) @db.Uuid
+  caseId    String   @map("case_id") @db.Uuid
+  sourceId  String   @map("source_id") @db.Uuid
+  claim     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  case   Case           @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  source OfficialSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, sourceId, claim])
+  @@map("case_sources")
+}
+
+// ---------------------------------------------------------------------------
+// Компании
+// ---------------------------------------------------------------------------
+
+/// §85. Слияние по низкой уверенности запрещено — отсюда confidence
+/// у алиаса и ручная проверка.
+model Company {
+  id            String   @id @default(uuid()) @db.Uuid
+  canonicalName String   @unique @map("canonical_name")
+  normalized    String   @unique
+  industry      Industry @default(OTHER)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  aliases CompanyAlias[]
+  cases   Case[]
+
+  @@map("companies")
+}
+
+model CompanyAlias {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  alias      String
+  normalized String
+  confidence Float    @default(1)
+  /// Пока алиас не проверен человеком, автоматически объединять нельзя.
+  reviewed   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([normalized])
+  @@index([companyId])
+  @@map("company_aliases")
+}
+
+// ---------------------------------------------------------------------------
+// Согласия, обратная связь, уведомления
+// ---------------------------------------------------------------------------
+
+/// §63. Одна галочка не равна согласию на все цели — поэтому тип и версия.
+model Consent {
+  id         String        @id @default(uuid()) @db.Uuid
+  userId     String        @map("user_id") @db.Uuid
+  type       ConsentType
+  version    String
+  accepted   Boolean
+  acceptedAt DateTime      @default(now()) @map("accepted_at")
+  source     ConsentSource
+  ipPrefix   String?       @map("ip_prefix")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("consents")
+}
+
+/// §52.
+model Feedback {
+  id        String          @id @default(uuid()) @db.Uuid
+  userId    String?         @map("user_id") @db.Uuid
+  caseId    String?         @map("case_id") @db.Uuid
+  messageId String?         @map("message_id") @db.Uuid
+  rating    FeedbackRating
+  reason    FeedbackReason?
+  comment   String?
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  case    Case?    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("feedback")
+}
+
+/// §38. purpose отделяет сервисные уведомления от маркетинговых: отказ от
+/// рассылки не должен отключать сообщения о ходе дела.
+model Notification {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  channel   NotificationChannel
+  purpose   NotificationPurpose
+  template  String
+  payload   Json?
+  status    NotificationStatus  @default(PENDENTE)
+  sentAt    DateTime?           @map("sent_at")
+  error     String?
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// AI: учёт вызовов
+// ---------------------------------------------------------------------------
+
+/// §45. Секреты сюда не пишутся — только метрики вызова.
+model AiRequest {
+  id            String     @id @default(uuid()) @db.Uuid
+  provider      AiProvider
+  model         String
+  operation     String
+  promptVersion String?    @map("prompt_version")
+  inputTokens   Int?       @map("input_tokens")
+  outputTokens  Int?       @map("output_tokens")
+  estimatedCost Decimal?   @map("estimated_cost") @db.Decimal(12, 6)
+  latencyMs     Int?       @map("latency_ms")
+  success       Boolean
+  errorCode     String?    @map("error_code")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  messages Message[]
+
+  @@index([createdAt])
+  @@index([provider, model])
+  @@map("ai_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Админка
+// ---------------------------------------------------------------------------
+
+/// §51. RBAC и минимальные права.
+model AdminUser {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         AdminRole @default(VIEWER)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  auditLogs AuditLog[]
+
+  @@map("admin_users")
+}
+
+/// §51. Каждое обращение админа к чувствительным данным логируется.
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  adminUserId String?  @map("admin_user_id") @db.Uuid
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
+  metadata    Json?
+  ipPrefix    String?  @map("ip_prefix")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminUser AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Аналитика (§53–§57)
+// ---------------------------------------------------------------------------
+
+/// §56. Обезличенный слепок дела. Здесь нет и не должно быть телефона,
+/// email, CPF, имени, адреса, сырой переписки, сырых документов и
+/// идентификатора транзакции Pix. Связи с users нет намеренно (§55).
+model AnalyticsCase {
+  id                String           @id @default(uuid()) @db.Uuid
+  /// Месяц, а не дата: точная дата вместе с суммой и городом деанонимизирует.
+  month             String           @db.VarChar(7)
+  state             String?          @db.VarChar(2)
+  cityBucket        String?          @map("city_bucket")
+  category          CaseCategory
+  subcategory       String?
+  industry          Industry         @default(OTHER)
+  companyNormalized String?          @map("company_normalized")
+  /// Диапазон, а не точная сумма.
+  amountBucket      String?          @map("amount_bucket")
+  paymentMethod     PaymentMethod
+  resolutionStatus  CaseStatus       @map("resolution_status")
+  resolutionDays    Int?             @map("resolution_days")
+  escalationLevel   EscalationLevel  @map("escalation_level")
+  /// §87: у записи всегда видно происхождение и уверенность классификации.
+  source            FactSource       @default(AI_SUGGESTION)
+  confidence        Float?
+  /// §82: демо-данные не попадают в продуктовую аналитику.
+  isDemo            Boolean          @default(false) @map("is_demo")
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  @@index([month, category])
+  @@index([companyNormalized])
+  @@index([industry])
+  @@map("analytics_cases")
+}
+
+/// §83, §84. Продуктовые события без персональных данных.
+model AnalyticsEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  /// Псевдоним, а не user_id: связь с личностью не восстанавливается из аналитики.
+  subjectKey String? @map("subject_key")
+  properties Json?
+  isDemo    Boolean  @default(false) @map("is_demo")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([name, createdAt])
+  @@map("analytics_events")
+}

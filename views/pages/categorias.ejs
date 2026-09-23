@@ -1,0 +1,25 @@
+<section class="section">
+  <div class="container">
+    <h1>Categorias</h1>
+    <p class="lede">
+      Estas são as situações atendidas nesta primeira versão. Se a sua não
+      estiver aqui, escolha <strong>Outro problema</strong> e conte com suas
+      palavras.
+    </p>
+
+    <div class="grid grid--2">
+      <% categories.forEach(function (category) { %>
+        <div class="panel">
+          <h2>
+            <span aria-hidden="true"><%= category.icon %></span>
+            <%= category.label %>
+          </h2>
+          <p class="muted"><%= category.description %></p>
+          <a class="btn btn--secondary" href="/?categoria=<%= category.slug %>">
+            Contar meu caso
+          </a>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>

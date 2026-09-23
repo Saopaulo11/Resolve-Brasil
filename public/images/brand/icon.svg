@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Resolve Brasil">
+  <title>Resolve Brasil</title>
+  <!-- Круговой знак из трёх дуг: зелёная, жёлтая, синяя (§72, концепция №7).
+       Разрывы между дугами оставлены намеренно — кольцо читается как цикл,
+       который ещё не замкнут: проблема в процессе решения. -->
+  <g fill="none" stroke-width="8" stroke-linecap="round">
+    <path d="M 32 8 A 24 24 0 0 1 54.55 40.21" stroke="#00994D"/>
+    <path d="M 52.78 44 A 24 24 0 0 1 13.62 47.43" stroke="#F2B705"/>
+    <path d="M 11.22 44 A 24 24 0 0 1 27.83 8.36" stroke="#1B4F9C"/>
+  </g>
+</svg>

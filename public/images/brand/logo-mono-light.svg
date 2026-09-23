@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="Resolve Brasil">
+  <title>Resolve Brasil</title>
+  <g fill="none" stroke-width="8" stroke-linecap="round" stroke="#10243E">
+    <path d="M 32 8 A 24 24 0 0 1 54.55 40.21"/>
+    <path d="M 52.78 44 A 24 24 0 0 1 13.62 47.43"/>
+    <path d="M 11.22 44 A 24 24 0 0 1 27.83 8.36"/>
+  </g>
+  <text x="76" y="41" fill="#10243E"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-size="26" font-weight="700" letter-spacing="-0.5">Resolve Brasil</text>
+</svg>

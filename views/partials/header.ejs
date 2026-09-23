@@ -1,0 +1,23 @@
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="brand" href="/" aria-label="Resolve Brasil — página inicial">
+      <img src="/images/brand/logo-horizontal.svg" alt="Resolve Brasil" width="140" height="32" />
+    </a>
+    <nav class="site-nav" aria-label="Navegação principal">
+      <ul>
+        <li>
+          <a href="/como-funciona"
+             <%= currentPath === '/como-funciona' ? 'aria-current="page"' : '' %>>Como funciona</a>
+        </li>
+        <li>
+          <a href="/categorias"
+             <%= currentPath === '/categorias' ? 'aria-current="page"' : '' %>>Categorias</a>
+        </li>
+        <li>
+          <a href="/sobre"
+             <%= currentPath === '/sobre' ? 'aria-current="page"' : '' %>>Sobre</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>

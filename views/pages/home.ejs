@@ -1,0 +1,85 @@
+<section class="hero">
+  <div class="container">
+    <p class="hero__tagline">Pessoas reais. Soluções reais.</p>
+    <h1>Conte o que aconteceu.<br />Descubra o que fazer.</h1>
+    <p class="lede">
+      Conte seu problema com suas próprias palavras. A IA vai ajudar você a
+      entender a situação, organizar as informações e encontrar os próximos
+      passos.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="panel">
+      <form method="post" action="/caso/novo" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field <%= errors.description ? 'field--invalid' : '' %>">
+          <label for="description">O que aconteceu?</label>
+          <p class="field__hint" id="description-hint">
+            Escreva como você contaria para uma pessoa: o que comprou, quando,
+            quanto pagou e o que deu errado.
+          </p>
+          <textarea
+            id="description"
+            name="description"
+            rows="6"
+            required
+            minlength="20"
+            maxlength="5000"
+            aria-describedby="description-hint <%= errors.description ? 'description-error' : '' %>"
+            <%= errors.description ? 'aria-invalid="true"' : '' %>
+            placeholder="Comprei um produto, paguei no Pix e até hoje não recebi."
+          ><%= values.description || '' %></textarea>
+          <% if (errors.description) { %>
+            <p class="field__error" id="description-error"><%= errors.description %></p>
+          <% } %>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">
+          Analisar meu caso
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>Ou comece por aqui</h2>
+    <p class="muted small">Escolha o que mais se parece com a sua situação.</p>
+    <div class="grid grid--2">
+      <% categories.forEach(function (category) { %>
+        <a class="category" href="/categorias/<%= category.slug %>">
+          <span class="category__icon" aria-hidden="true"><%= category.icon %></span>
+          <span><%= category.quickLabel %></span>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <!--
+      §14: только то, что правда. Никаких отзывов, цифр успеха и гербов
+      государственных органов — ни одного из них у нас нет.
+    -->
+    <ul class="trust">
+      <li>
+        <span aria-hidden="true">🔒</span>
+        <span>Seus dados são tratados com segurança.</span>
+      </li>
+      <li>
+        <span aria-hidden="true">🤖</span>
+        <span>Orientação com inteligência artificial.</span>
+      </li>
+      <li>
+        <span aria-hidden="true">📚</span>
+        <span>Informações baseadas em fontes oficiais quando disponíveis.</span>
+      </li>
+    </ul>
+  </div>
+</section>

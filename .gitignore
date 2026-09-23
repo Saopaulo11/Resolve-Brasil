@@ -1,35 +1,31 @@
 # Зависимости
 /node_modules
-/.pnp
-.pnp.*
 
-# Сборка Next.js
-/.next/
-/out/
-/build
-
-# TypeScript
+# Сборка
+/dist
 *.tsbuildinfo
-next-env.d.ts
 
-# Переменные окружения. Ключи Supabase не должны попадать в репозиторий:
-# publishable-ключ ещё можно показать браузеру, secret-ключ обходит RLS и
-# равнозначен полному доступу к базе.
+# Клиент Prisma генерируется из prisma/schema.prisma (npm run db:generate).
+# В репозитории ему не место: версия в дереве разъедется со схемой.
+/src/generated/
+
+# Переменные окружения. В .env лежат SESSION_SECRET и ключи провайдеров —
+# они не должны попасть в репозиторий ни при каких условиях (§78).
 .env
 .env.*
 !.env.example
 
-# Локальный стек Supabase CLI
-/supabase/.branches
-/supabase/.temp
+# Загруженные файлы локального стенда: это документы пользователей.
+/storage/
+/uploads/
 
 # Прочее
 .DS_Store
 *.pem
 .vercel
+coverage/
 
 # Логи
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+*.log
