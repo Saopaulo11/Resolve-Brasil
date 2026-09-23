@@ -93,6 +93,12 @@ describe.skipIf(!DATABASE_URL)("хранилища на Prisma", () => {
       ipPrefix: "203.0.113.0",
     });
 
+    // Согласие обязано читаться обратно: раздел выгрузки строится из него.
+    const registrados = await consents.listForUser(user.id);
+    expect(registrados).toHaveLength(1);
+    expect(registrados[0]?.acceptedAt).toBeInstanceOf(Date);
+    expect(registrados[0]?.version).toBe("1.0");
+
     expect(await users.countAll()).toBeGreaterThan(0);
     expect((await users.listRecent(5)).some((item) => item.id === user.id)).toBe(true);
   });

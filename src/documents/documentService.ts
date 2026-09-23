@@ -328,6 +328,8 @@ async function applyConfirmedFacts(caseId: string): Promise<void> {
     paymentMethod: parsed.paymentMethod ?? "DESCONHECIDO",
   };
 
+  if (parsed.paymentMethod) void trackEvent("payment_method_detected");
+
   if (parsed.companyName) {
     const company = await resolveCompany(parsed.companyName);
     if (company) {

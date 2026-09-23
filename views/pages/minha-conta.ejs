@@ -116,5 +116,23 @@
         <button type="submit" class="btn btn--secondary">Sair da conta</button>
       </form>
     </div>
+
+    <div class="panel">
+      <h3>Perdeu o celular?</h3>
+      <%# §66: вход по номеру и коду — менять нечего, поэтому единственный
+          способ прекратить чужую сессию это отозвать все. %>
+      <p class="muted small">
+        Se alguém ficou com seu celular, encerre o acesso em todos os
+        aparelhos. Como a entrada é por telefone e código, não há senha a
+        trocar: desconectar tudo é o que corta o acesso de quem está com ele.
+        Você entra de novo pelo código de sempre.
+      </p>
+      <form method="post" action="/sair-de-todos">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn--secondary">
+          Sair de todos os aparelhos
+        </button>
+      </form>
+    </div>
   </div>
 </section>

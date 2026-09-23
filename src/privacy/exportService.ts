@@ -23,7 +23,7 @@ export type DataExport = {
 };
 
 export async function buildExport(userId: string): Promise<DataExport | null> {
-  const { users, cases, documents, facts, reminders, notifications } = stores();
+  const { users, cases, documents, facts, reminders, notifications, consents } = stores();
 
   const user = await users.findById(userId);
   if (!user) return null;
@@ -91,7 +91,15 @@ export async function buildExport(userId: string): Promise<DataExport | null> {
     },
     // Согласия лежат отдельным разделом: по ним видно, с какой редакцией
     // условий человек соглашался и когда.
-    consentimentos: [],
+    consentimentos: (await consents.listForUser(userId)).map((item) => ({
+      tipo: item.type,
+      versao: item.version,
+      aceito: item.accepted,
+      origem: item.source,
+      quando: item.acceptedAt.toISOString(),
+      // Усечённый адрес — тоже его данные, и скрывать их от него незачем.
+      rede: item.ipPrefix,
+    })),
     casos,
     lembretes: userReminders.flat().map((reminder) => ({
       titulo: reminder.title,

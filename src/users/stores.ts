@@ -99,6 +99,15 @@ export interface SessionStore {
   revokeAllForUser(userId: string, now: Date): Promise<void>;
 }
 
+export type ConsentRecord = {
+  type: ConsentType;
+  version: string;
+  accepted: boolean;
+  source: ConsentSource;
+  acceptedAt: Date;
+  ipPrefix: string | null;
+};
+
 export interface ConsentStore {
   record(input: {
     userId: string;
@@ -108,6 +117,14 @@ export interface ConsentStore {
     source: ConsentSource;
     ipPrefix: string | null;
   }): Promise<void>;
+  /**
+   * Согласия человека — для выгрузки его данных (§64).
+   *
+   * Без этого метода раздел согласий в выгрузке оставался пустым: человек
+   * запрашивал свои данные и не получал главного — с какой редакцией
+   * условий он соглашался и когда.
+   */
+  listForUser(userId: string): Promise<ConsentRecord[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -267,5 +284,20 @@ export class PrismaConsentStore implements ConsentStore {
     ipPrefix: string | null;
   }): Promise<void> {
     await db().consent.create({ data: input });
+  }
+
+  async listForUser(userId: string): Promise<ConsentRecord[]> {
+    return db().consent.findMany({
+      where: { userId },
+      orderBy: { acceptedAt: "asc" },
+      select: {
+        type: true,
+        version: true,
+        accepted: true,
+        source: true,
+        acceptedAt: true,
+        ipPrefix: true,
+      },
+    });
   }
 }

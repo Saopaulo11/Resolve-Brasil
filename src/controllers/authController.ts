@@ -6,7 +6,7 @@ import { PENDING_CASE_COOKIE } from "./casesController";
 import { loadConfig } from "../config/env";
 import { MARKETING_CHECKBOX_LABEL } from "../privacy/consent";
 import { requestCode, verifyCode } from "../users/authService";
-import { revokeSession } from "../services/session";
+import { revokeAllSessions, revokeSession } from "../services/session";
 import { VERDICT_MESSAGES, CODIGO_INCORRETO } from "../users/otpPolicy";
 import {
   formatBrazilianPhone,
@@ -247,4 +247,28 @@ export async function sair(req: Request, res: Response): Promise<void> {
 
   res.clearCookie(config.session.cookieName, { path: "/" });
   res.redirect(303, "/");
+}
+
+/**
+ * Выход со всех устройств (§66).
+ *
+ * Нужен на случай потерянного или чужого телефона: вход у нас по номеру и
+ * коду, паролю меняться нечему, и без этого человеку нечем прекратить
+ * чужую сессию — она живёт тридцать дней.
+ */
+export async function sairDeTodos(req: Request, res: Response): Promise<void> {
+  const config = loadConfig();
+  const userId = req.session?.userId;
+
+  if (!userId) {
+    res.redirect(303, "/entrar");
+    return;
+  }
+
+  // Текущая сессия отзывается вместе с остальными: «все» значит все, иначе
+  // человек решит, что вышел, а на этом устройстве останется вошедшим.
+  await revokeAllSessions(userId);
+
+  res.clearCookie(config.session.cookieName, { path: "/" });
+  res.redirect(303, "/entrar?aviso=" + encodeURIComponent("Você saiu de todos os dispositivos."));
 }

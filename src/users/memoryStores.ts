@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { ConsentSource, ConsentType } from "../generated/prisma/enums";
 import type {
+  ConsentRecord,
   ConsentStore,
   MarketingUpdate,
   OtpChallengeRecord,
@@ -218,13 +219,7 @@ export class MemorySessionStore implements SessionStore {
   }
 }
 
-export type RecordedConsent = {
-  userId: string;
-  type: ConsentType;
-  version: string;
-  accepted: boolean;
-  source: ConsentSource;
-};
+export type RecordedConsent = ConsentRecord & { userId: string };
 
 export class MemoryConsentStore implements ConsentStore {
   readonly records: RecordedConsent[] = [];
@@ -243,6 +238,14 @@ export class MemoryConsentStore implements ConsentStore {
       version: input.version,
       accepted: input.accepted,
       source: input.source,
+      acceptedAt: new Date(),
+      ipPrefix: input.ipPrefix,
     });
+  }
+
+  async listForUser(userId: string): Promise<ConsentRecord[]> {
+    return this.records
+      .filter((item) => item.userId === userId)
+      .map(({ userId: _userId, ...rest }) => rest);
   }
 }

@@ -117,6 +117,7 @@ export function buildRouter(): Router {
   router.get("/entrar/codigo", auth.codigoForm);
   router.post("/entrar/codigo", auth.confirmarCodigo);
   router.post("/sair", auth.sair);
+  router.post("/sair-de-todos", requireAuth(), auth.sairDeTodos);
 
   // --- Личный кабинет (§18) ---
   router.get("/minha-conta", requireAuth(), account.minhaConta);
