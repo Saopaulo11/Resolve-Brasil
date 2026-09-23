@@ -104,6 +104,13 @@ export interface CaseStore {
   findByPublicId(publicId: string): Promise<CaseRecord | null>;
   findById(caseId: string): Promise<CaseRecord | null>;
   listForUser(userId: string): Promise<CaseRecord[]>;
+  /**
+   * Число дел у каждого из перечисленных людей — одним запросом.
+   *
+   * Список пользователей в админке иначе делает по запросу на строку:
+   * сотня строк — сотня обращений к базе за тем, что считается разом.
+   */
+  countByUser(userIds: readonly string[]): Promise<Map<string, number>>;
   /** Последние дела — для админки. Текст обращения наружу не выносится. */
   listRecent(limit: number): Promise<CaseRecord[]>;
   publicIdExists(publicId: string): Promise<boolean>;
@@ -189,6 +196,22 @@ export class PrismaCaseStore implements CaseStore {
       orderBy: { updatedAt: "desc" },
     });
     return rows.map((row) => toRecord(row as unknown as PrismaCaseRow));
+  }
+
+  async countByUser(userIds: readonly string[]): Promise<Map<string, number>> {
+    if (userIds.length === 0) return new Map();
+
+    const rows = await db().case.groupBy({
+      by: ["userId"],
+      where: { userId: { in: [...userIds] } },
+      _count: { _all: true },
+    });
+
+    return new Map(
+      rows
+        .filter((row): row is typeof row & { userId: string } => row.userId !== null)
+        .map((row) => [row.userId, row._count._all]),
+    );
   }
 
   async listRecent(limit: number): Promise<CaseRecord[]> {

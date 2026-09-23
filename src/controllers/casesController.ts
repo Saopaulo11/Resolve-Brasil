@@ -163,19 +163,9 @@ export async function ver(
 
   const latest = (type: string) => latestMessage(type)?.metadata ?? null;
 
-  const avaliados = new Set(
-    (
-      await Promise.all(
-        messages
-          .filter((message) => message.direction === "ASSISTANT")
-          .map(async (message) =>
-            (await stores().feedback.findForMessage(message.id, userId))
-              ? message.id
-              : null,
-          ),
-      )
-    ).filter((id): id is string => id !== null),
-  );
+  // Одним запросом: по запросу на сообщение страница дела обращалась бы к
+  // базе по разу на каждый ответ модели.
+  const avaliados = await stores().feedback.ratedMessageIds(found.case.id, userId);
 
   renderPage(
     req,

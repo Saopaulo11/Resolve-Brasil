@@ -49,6 +49,8 @@ export interface CompanyStore {
     confidence: number;
   }): Promise<void>;
   listAliases(companyId: string): Promise<CompanyAliasRecord[]>;
+  /** Алиасы сразу для списка компаний: иначе запрос на каждую строку. */
+  listAliasesFor(companyIds: readonly string[]): Promise<Map<string, CompanyAliasRecord[]>>;
   listAll(limit: number): Promise<CompanyRecord[]>;
 }
 
@@ -90,6 +92,25 @@ export class PrismaCompanyStore implements CompanyStore {
       where: { companyId },
       orderBy: { createdAt: "asc" },
     });
+  }
+
+  async listAliasesFor(
+    companyIds: readonly string[],
+  ): Promise<Map<string, CompanyAliasRecord[]>> {
+    if (companyIds.length === 0) return new Map();
+
+    const rows = await db().companyAlias.findMany({
+      where: { companyId: { in: [...companyIds] } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const grouped = new Map<string, CompanyAliasRecord[]>();
+    for (const row of rows) {
+      const list = grouped.get(row.companyId) ?? [];
+      list.push(row);
+      grouped.set(row.companyId, list);
+    }
+    return grouped;
   }
 
   async listAll(limit: number): Promise<CompanyRecord[]> {
@@ -138,6 +159,20 @@ export class MemoryCompanyStore implements CompanyStore {
 
   async listAliases(companyId: string): Promise<CompanyAliasRecord[]> {
     return this.aliases.filter((item) => item.companyId === companyId);
+  }
+
+  async listAliasesFor(
+    companyIds: readonly string[],
+  ): Promise<Map<string, CompanyAliasRecord[]>> {
+    const wanted = new Set(companyIds);
+    const grouped = new Map<string, CompanyAliasRecord[]>();
+    for (const alias of this.aliases) {
+      if (!wanted.has(alias.companyId)) continue;
+      const list = grouped.get(alias.companyId) ?? [];
+      list.push(alias);
+      grouped.set(alias.companyId, list);
+    }
+    return grouped;
   }
 
   async listAll(limit: number): Promise<CompanyRecord[]> {

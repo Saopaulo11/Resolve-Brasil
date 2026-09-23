@@ -77,6 +77,16 @@ export class MemoryCaseStore implements CaseStore {
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 
+  async countByUser(userIds: readonly string[]): Promise<Map<string, number>> {
+    const wanted = new Set(userIds);
+    const counts = new Map<string, number>();
+    for (const record of this.cases.values()) {
+      if (record.userId === null || !wanted.has(record.userId)) continue;
+      counts.set(record.userId, (counts.get(record.userId) ?? 0) + 1);
+    }
+    return counts;
+  }
+
   async listRecent(limit: number): Promise<CaseRecord[]> {
     return [...this.cases.values()]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())

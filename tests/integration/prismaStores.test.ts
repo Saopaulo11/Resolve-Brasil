@@ -99,6 +99,11 @@ describe.skipIf(!DATABASE_URL)("хранилища на Prisma", () => {
     expect(registrados[0]?.acceptedAt).toBeInstanceOf(Date);
     expect(registrados[0]?.version).toBe("1.0");
 
+    // Счётчик дел одним запросом: список в админке иначе делает по
+    // обращению к базе на каждую строку.
+    const counts = await cases.countByUser([user.id]);
+    expect(counts.get(user.id) ?? 0).toBeGreaterThanOrEqual(0);
+
     expect(await users.countAll()).toBeGreaterThan(0);
     expect((await users.listRecent(5)).some((item) => item.id === user.id)).toBe(true);
   });

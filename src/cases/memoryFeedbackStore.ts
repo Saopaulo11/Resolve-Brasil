@@ -37,6 +37,17 @@ export class MemoryFeedbackStore implements FeedbackStore {
     return null;
   }
 
+  async ratedMessageIds(caseId: string, userId: string): Promise<Set<string>> {
+    return new Set(
+      [...this.items.values()]
+        .filter(
+          (item) =>
+            item.caseId === caseId && item.userId === userId && item.messageId !== null,
+        )
+        .map((item) => item.messageId as string),
+    );
+  }
+
   async listRecent(limit: number): Promise<FeedbackRecord[]> {
     return [...this.items.values()]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())

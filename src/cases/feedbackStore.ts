@@ -30,6 +30,13 @@ export type CreateFeedbackInput = {
 export interface FeedbackStore {
   create(input: CreateFeedbackInput): Promise<FeedbackRecord>;
   findForMessage(messageId: string, userId: string): Promise<FeedbackRecord | null>;
+  /**
+   * Оценённые сообщения дела — одним запросом.
+   *
+   * Иначе страница дела спрашивает базу по разу на сообщение: у дела с
+   * двадцатью ответами это двадцать обращений на каждый просмотр.
+   */
+  ratedMessageIds(caseId: string, userId: string): Promise<Set<string>>;
   listRecent(limit: number): Promise<FeedbackRecord[]>;
   countByRating(): Promise<{ sim: number; nao: number }>;
 }
@@ -44,6 +51,14 @@ export class PrismaFeedbackStore implements FeedbackStore {
     userId: string,
   ): Promise<FeedbackRecord | null> {
     return db().feedback.findFirst({ where: { messageId, userId } });
+  }
+
+  async ratedMessageIds(caseId: string, userId: string): Promise<Set<string>> {
+    const rows = await db().feedback.findMany({
+      where: { caseId, userId, messageId: { not: null } },
+      select: { messageId: true },
+    });
+    return new Set(rows.map((row) => row.messageId).filter((id): id is string => id !== null));
   }
 
   async listRecent(limit: number): Promise<FeedbackRecord[]> {

@@ -273,15 +273,16 @@ export async function usuarios(
   const { users, cases } = stores();
   const [list, total] = await Promise.all([users.listRecent(LIST_LIMIT), users.countAll()]);
 
-  const rows = await Promise.all(
-    list.map(async (user) => ({
-      telefone: maskPhone(user.phone),
-      verificado: user.phoneVerified,
-      marketing: user.marketingConsent,
-      casos: (await cases.listForUser(user.id)).length,
-      criadoEm: user.createdAt.toLocaleDateString("pt-BR"),
-    })),
-  );
+  // Один запрос на весь список, а не по запросу на строку.
+  const caseCounts = await cases.countByUser(list.map((user) => user.id));
+
+  const rows = list.map((user) => ({
+    telefone: maskPhone(user.phone),
+    verificado: user.phoneVerified,
+    marketing: user.marketingConsent,
+    casos: caseCounts.get(user.id) ?? 0,
+    criadoEm: user.createdAt.toLocaleDateString("pt-BR"),
+  }));
 
   adminPage(
     req,
@@ -651,26 +652,27 @@ export async function empresas(
   const { companies } = stores();
   const list = await companies.listAll(LIST_LIMIT);
 
-  const rows = await Promise.all(
-    list.map(async (company) => {
-      const guess = detectIndustry(company.canonicalName);
-      const aliases = await companies.listAliases(company.id);
+  // Алиасы одним запросом на весь список, а не по запросу на строку.
+  const aliasesByCompany = await companies.listAliasesFor(list.map((item) => item.id));
 
-      return {
-        nome: company.canonicalName,
-        normalizado: company.normalized,
-        setor: INDUSTRY_LABELS[company.industry],
-        identificado: company.industry !== "OTHER",
-        // Слово из названия, давшее отрасль. Пусто — значит не определено.
-        evidencia: guess.evidence,
-        apelidos: aliases.map((alias) => ({
-          texto: alias.alias,
-          revisado: alias.reviewed,
-        })),
-        criadoEm: company.createdAt.toLocaleDateString("pt-BR"),
-      };
-    }),
-  );
+  const rows = list.map((company) => {
+    const guess = detectIndustry(company.canonicalName);
+    const aliases = aliasesByCompany.get(company.id) ?? [];
+
+    return {
+      nome: company.canonicalName,
+      normalizado: company.normalized,
+      setor: INDUSTRY_LABELS[company.industry],
+      identificado: company.industry !== "OTHER",
+      // Слово из названия, давшее отрасль. Пусто — значит не определено.
+      evidencia: guess.evidence,
+      apelidos: aliases.map((alias) => ({
+        texto: alias.alias,
+        revisado: alias.reviewed,
+      })),
+      criadoEm: company.createdAt.toLocaleDateString("pt-BR"),
+    };
+  });
 
   adminPage(
     req,
