@@ -44,11 +44,35 @@ function client(req: Request) {
   };
 }
 
-/** Адрес возврата после входа. Только внутренние пути — иначе open redirect. */
+/** Куда возвращать, если адрес возврата не годится. */
+const DEFAULT_NEXT = "/minha-conta";
+
+/**
+ * Фиктивная база для разбора. Наружу не выходит и никуда не ведёт: нужна
+ * только чтобы относительный адрес стало возможно разобрать как URL.
+ */
+const NEXT_BASE = "http://next.invalid";
+
+/**
+ * Адрес возврата после входа. Только внутренние пути — иначе open redirect.
+ *
+ * Проверки «начинается со слеша и не с двух» недостаточно: «/\evil.com» её
+ * проходит, а браузер читает обратный слеш как второй слеш и уходит на
+ * чужой сайт. Поэтому адрес разбирается целиком, и наружу отдаётся только
+ * путь — всё, что меняет источник, отбрасывается вместе с ним.
+ */
 function safeNext(value: unknown): string {
-  if (typeof value !== "string") return "/minha-conta";
-  if (!value.startsWith("/") || value.startsWith("//")) return "/minha-conta";
-  return value;
+  if (typeof value !== "string" || value.length === 0) return DEFAULT_NEXT;
+
+  let url: URL;
+  try {
+    url = new URL(value, NEXT_BASE);
+  } catch {
+    return DEFAULT_NEXT;
+  }
+
+  if (url.origin !== NEXT_BASE) return DEFAULT_NEXT;
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 // --- Шаг 1: телефон ---------------------------------------------------------
