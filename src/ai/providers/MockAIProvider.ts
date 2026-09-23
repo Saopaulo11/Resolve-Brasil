@@ -5,6 +5,7 @@ import type {
   CaseContext,
   CompanyResponseInput,
   DocumentInput,
+  OfficialSourceOption,
 } from "./AIProvider";
 import type {
   ActionPlan,
@@ -79,7 +80,10 @@ export class MockAIProvider implements AIProvider {
     return { data: { questions: [] }, meta: meta("generateQuestions", startedAt) };
   }
 
-  async createActionPlan(_context: CaseContext): Promise<AiResult<ActionPlan>> {
+  async createActionPlan(
+    _context: CaseContext,
+    _sources: OfficialSourceOption[],
+  ): Promise<AiResult<ActionPlan>> {
     const startedAt = Date.now();
     return {
       data: { steps: [], sources: [], uncertainties: [MOCK_NOTE] },
@@ -123,6 +127,7 @@ export class MockAIProvider implements AIProvider {
   async searchSources(
     _query: string,
     _category: string | null,
+    _candidates: OfficialSourceOption[],
   ): Promise<AiResult<SourceSearch>> {
     const startedAt = Date.now();
     // not_found: true — вызывающий код покажет «não foi possível confirmar»

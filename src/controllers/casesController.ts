@@ -2,7 +2,9 @@ import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
 import { CATEGORIES, findCategoryBySlug } from "../cases/categories";
+import { runAnalysis, type AnalysisKind } from "../cases/analysisService";
 import { createCase, getCaseForUser } from "../cases/caseService";
+import { stores } from "../users/storeRegistry";
 import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
@@ -129,6 +131,11 @@ export async function ver(
   if (!found) return next();
 
   const status = statusDefinition(found.case.status);
+  const messages = await stores().cases.listMessages(found.case.id);
+
+  /** Последний результат каждого вида: старые остаются в истории дела. */
+  const latest = (type: string) =>
+    [...messages].reverse().find((message) => message.type === type)?.metadata ?? null;
 
   renderPage(
     req,
@@ -144,7 +151,63 @@ export async function ver(
       escalationLabel: ESCALATION_LABELS[found.case.escalationLevel],
       amountFormatted: formatBRL(found.case.amount),
       timeline: found.timeline,
+      classificacao: latest("CLASSIFICACAO"),
+      perguntas: latest("PERGUNTAS"),
+      plano: latest("PLANO_DE_ACAO"),
+      rascunho: latest("RASCUNHO"),
+      aviso: typeof req.query.aviso === "string" ? req.query.aviso : null,
     },
     next,
   );
+}
+
+const ANALYSIS_KINDS: readonly AnalysisKind[] = [
+  "classificar",
+  "perguntas",
+  "plano",
+  "rascunho",
+];
+
+/**
+ * Запуск анализа (§8).
+ *
+ * Результат сохраняется сообщением дела, а страница перечитывается заново:
+ * так обновление страницы не запускает повторный платный вызов модели.
+ */
+export async function analisar(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const userId = req.session?.userId;
+  if (!userId) {
+    res.redirect(303, "/entrar");
+    return;
+  }
+
+  const raw = req.params.publicId;
+  const publicId = typeof raw === "string" ? raw : "";
+  if (!isValidPublicCaseId(publicId)) return next();
+
+  const found = await getCaseForUser(publicId, userId);
+  if (!found) return next();
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const kind = ANALYSIS_KINDS.find((item) => item === body.tipo);
+  if (!kind) return next();
+
+  const outcome = await runAnalysis({
+    caseRecord: found.case,
+    timeline: found.timeline,
+    userId,
+    kind,
+  });
+
+  const target = `/caso/${publicId}`;
+  if (outcome.ok) {
+    res.redirect(303, target);
+    return;
+  }
+
+  res.redirect(303, `${target}?aviso=${encodeURIComponent(outcome.detail)}`);
 }

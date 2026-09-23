@@ -9,8 +9,21 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
+    },
+  },
+  {
+    // Скрипты из public/ выполняются в браузере, а не в Node: там другие
+    // глобальные объекты, и правила Node давали бы ложные ошибки.
+    files: ["public/js/**/*.js"],
+    languageOptions: {
+      globals: {
+        document: "readonly",
+        navigator: "readonly",
+        setTimeout: "readonly",
+        window: "readonly",
+      },
     },
   },
 );

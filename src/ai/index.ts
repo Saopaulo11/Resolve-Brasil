@@ -1,6 +1,7 @@
 import { loadConfig } from "../config/env";
 import type { AIProvider } from "./providers/AIProvider";
 import { MockAIProvider } from "./providers/MockAIProvider";
+import { OpenAIProvider } from "./providers/OpenAIProvider";
 
 /**
  * Выбор провайдера по конфигурации (§7, §40).
@@ -20,13 +21,16 @@ export function aiProvider(): AIProvider {
       return instance;
 
     case "openai":
+      instance = new OpenAIProvider();
+      return instance;
+
     case "anthropic":
-      // Реализация появится на PHASE 4. Подменять её моком нельзя: мок
-      // вернёт пустой результат, это примут за ответ модели, и провал
-      // интеграции останется незамеченным (§79).
+      // Вторичный провайдер (§7) — для сравнения моделей и оценки качества.
+      // Подменять его моком нельзя: мок вернёт пустой результат, это примут
+      // за ответ модели, и провал интеграции останется незамеченным (§79).
       throw new Error(
-        `AI_PROVIDER=${config.ai.provider}: провайдер ещё не реализован (PHASE 4). ` +
-          "Для локальной разработки поставьте AI_PROVIDER=mock.",
+        "AI_PROVIDER=anthropic: провайдер ещё не реализован. " +
+          "Используйте openai или mock.",
       );
 
     default: {

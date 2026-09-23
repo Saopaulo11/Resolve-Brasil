@@ -49,6 +49,19 @@ export type DocumentInput = {
   text: string;
 };
 
+/**
+ * Официальный источник из нашей базы (§29).
+ *
+ * Модель получает готовый список и выбирает из него. Просить её «найти
+ * источник» нельзя: выдуманная ссылка на gov.br — самая убедительная и
+ * самая опасная ошибка, которую она может сделать (§30).
+ */
+export type OfficialSourceOption = {
+  organization: string;
+  title: string;
+  url: string;
+};
+
 export type CompanyResponseInput = {
   /// Текст ответа компании — вставленный пользователем или распознанный.
   text: string;
@@ -81,7 +94,10 @@ export interface AIProvider {
 
   generateQuestions(context: CaseContext): Promise<AiResult<Questions>>;
 
-  createActionPlan(context: CaseContext): Promise<AiResult<ActionPlan>>;
+  createActionPlan(
+    context: CaseContext,
+    sources: OfficialSourceOption[],
+  ): Promise<AiResult<ActionPlan>>;
 
   createDraft(context: CaseContext): Promise<AiResult<Draft>>;
 
@@ -92,5 +108,10 @@ export interface AIProvider {
 
   summarizeCase(context: CaseContext): Promise<AiResult<CaseSummary>>;
 
-  searchSources(query: string, category: string | null): Promise<AiResult<SourceSearch>>;
+  /** Выбирает подходящие источники из переданных. Своих не добавляет. */
+  searchSources(
+    query: string,
+    category: string | null,
+    candidates: OfficialSourceOption[],
+  ): Promise<AiResult<SourceSearch>>;
 }

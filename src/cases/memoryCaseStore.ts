@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
 
+import type { CaseCategory } from "../generated/prisma/enums";
 import type {
   CaseEventRecord,
+  CaseMessageRecord,
   CaseRecord,
   CaseStore,
   CreateCaseInput,
   CreateEventInput,
+  CreateMessageInput,
 } from "./caseStore";
 
 /**
@@ -17,6 +20,7 @@ import type {
 export class MemoryCaseStore implements CaseStore {
   private readonly cases = new Map<string, CaseRecord>();
   private readonly events = new Map<string, CaseEventRecord>();
+  private readonly messages = new Map<string, CaseMessageRecord>();
 
   async create(input: CreateCaseInput): Promise<CaseRecord> {
     const now = new Date();
@@ -89,5 +93,38 @@ export class MemoryCaseStore implements CaseStore {
     return [...this.events.values()]
       .filter((event) => event.caseId === caseId)
       .sort((a, b) => a.eventDate.getTime() - b.eventDate.getTime());
+  }
+
+  async addMessage(input: CreateMessageInput): Promise<CaseMessageRecord> {
+    const message: CaseMessageRecord = {
+      id: randomUUID(),
+      caseId: input.caseId,
+      direction: input.direction,
+      type: input.type,
+      content: input.content,
+      metadata: input.metadata,
+      createdAt: new Date(),
+    };
+    this.messages.set(message.id, message);
+    return message;
+  }
+
+  async listMessages(caseId: string): Promise<CaseMessageRecord[]> {
+    return [...this.messages.values()]
+      .filter((message) => message.caseId === caseId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  async setClassification(
+    caseId: string,
+    category: CaseCategory,
+    subcategory: string | null,
+  ): Promise<void> {
+    const record = this.cases.get(caseId);
+    if (!record) return;
+    record.category = category;
+    record.subcategory = subcategory;
+    record.status = "EM_ANALISE";
+    record.updatedAt = new Date();
   }
 }

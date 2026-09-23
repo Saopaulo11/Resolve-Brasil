@@ -62,8 +62,12 @@ describe("создание дела вошедшим пользователем"
       .get(response.headers.location ?? "")
       .set("Cookie", session);
 
-    expect(page.text).toContain("Em construção");
+    // Ни категории, ни уверенности, ни плана — ничего не анализировалось.
+    expect(page.text).not.toContain("Entendemos sua situação");
+    expect(page.text).not.toContain("Plano de ação</h3>");
     expect(page.text).not.toMatch(/você tem direito garantido|certamente vai ganhar/i);
+    // Дисклеймер AI тоже не показывается: показывать его не под чем.
+    expect(page.text).not.toContain("Informação gerada por inteligência artificial");
   });
 
   it("дело появляется в личном кабинете", async () => {

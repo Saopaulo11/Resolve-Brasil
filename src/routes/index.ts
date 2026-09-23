@@ -6,7 +6,7 @@ import * as cases from "../controllers/casesController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import { findCategoryBySlug } from "../cases/categories";
-import { otpRequestRateLimit } from "../middleware/rateLimit";
+import { aiRateLimit, otpRequestRateLimit } from "../middleware/rateLimit";
 import { requireAuth } from "../middleware/session";
 
 /**
@@ -36,6 +36,8 @@ export function buildRouter(): Router {
 
   router.post("/caso/novo", cases.criar);
   router.get("/caso/:publicId", requireAuth(), cases.ver);
+  // Вызовы модели платные и медленные — отдельный лимит (§46).
+  router.post("/caso/:publicId/analisar", requireAuth(), aiRateLimit(), cases.analisar);
 
   // §64 перечисляет /privacy и /terms по-английски, §74 — те же страницы
   // по-португальски. Каноничны португальские, английские ведут на них:

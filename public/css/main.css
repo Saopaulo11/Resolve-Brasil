@@ -661,3 +661,33 @@ input:focus {
   margin: 0;
   font-weight: 500;
 }
+
+/* --- Анализ (PHASE 4) ----------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.flash--aviso {
+  background: #fffbe9;
+  border-color: #f0dca4;
+  border-left-color: var(--yellow);
+  color: #5c4708;
+}
+
+.panel h3 {
+  margin-top: 0;
+}
+
+.panel h4 {
+  font-size: 0.9375rem;
+  margin: 1.25rem 0 0.375rem;
+  color: var(--navy);
+}
+
+.panel textarea[readonly],
+.panel input[readonly] {
+  background: var(--bg-soft);
+}

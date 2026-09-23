@@ -4,6 +4,8 @@ import type {
   CaseStatus,
   EscalationLevel,
   FactSource,
+  MessageDirection,
+  MessageType,
   PaymentMethod,
 } from "../generated/prisma/enums";
 import { db } from "../services/db";
@@ -69,6 +71,26 @@ export type CreateEventInput = {
   source: FactSource;
 };
 
+export type CaseMessageRecord = {
+  id: string;
+  caseId: string;
+  direction: MessageDirection;
+  type: MessageType;
+  content: string;
+  metadata: unknown;
+  createdAt: Date;
+};
+
+export type CreateMessageInput = {
+  caseId: string;
+  userId: string | null;
+  direction: MessageDirection;
+  type: MessageType;
+  content: string;
+  metadata: unknown;
+  aiRequestId: string | null;
+};
+
 export interface CaseStore {
   create(input: CreateCaseInput): Promise<CaseRecord>;
   findByPublicId(publicId: string): Promise<CaseRecord | null>;
@@ -77,6 +99,14 @@ export interface CaseStore {
   attachToUser(caseId: string, userId: string): Promise<void>;
   addEvent(input: CreateEventInput): Promise<CaseEventRecord>;
   listEvents(caseId: string): Promise<CaseEventRecord[]>;
+  addMessage(input: CreateMessageInput): Promise<CaseMessageRecord>;
+  listMessages(caseId: string): Promise<CaseMessageRecord[]>;
+  /** Меняется только когда классификация достаточно уверенна (§87). */
+  setClassification(
+    caseId: string,
+    category: CaseCategory,
+    subcategory: string | null,
+  ): Promise<void>;
 }
 
 /** Prisma отдаёт Decimal; наружу он не выходит. */
@@ -130,6 +160,40 @@ export class PrismaCaseStore implements CaseStore {
     return db().caseEvent.findMany({
       where: { caseId },
       orderBy: { eventDate: "asc" },
+    });
+  }
+
+  async addMessage(input: CreateMessageInput): Promise<CaseMessageRecord> {
+    const row = await db().message.create({
+      data: {
+        caseId: input.caseId,
+        userId: input.userId,
+        direction: input.direction,
+        type: input.type,
+        content: input.content,
+        metadata: input.metadata as never,
+        aiRequestId: input.aiRequestId,
+      },
+    });
+    return row as unknown as CaseMessageRecord;
+  }
+
+  async listMessages(caseId: string): Promise<CaseMessageRecord[]> {
+    const rows = await db().message.findMany({
+      where: { caseId },
+      orderBy: { createdAt: "asc" },
+    });
+    return rows as unknown as CaseMessageRecord[];
+  }
+
+  async setClassification(
+    caseId: string,
+    category: CaseCategory,
+    subcategory: string | null,
+  ): Promise<void> {
+    await db().case.update({
+      where: { id: caseId },
+      data: { category, subcategory, status: "EM_ANALISE" },
     });
   }
 }

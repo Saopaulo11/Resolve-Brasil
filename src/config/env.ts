@@ -25,6 +25,11 @@ function intOr(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function floatOrNull(value: string | undefined): number | null {
+  const parsed = Number.parseFloat(value ?? "");
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export type AppConfig = ReturnType<typeof buildConfig>;
 
 function buildConfig(env: NodeJS.ProcessEnv) {
@@ -65,6 +70,26 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       },
       requestTimeoutMs: intOr(env.AI_REQUEST_TIMEOUT_MS, 60_000),
       maxRetries: intOr(env.AI_MAX_RETRIES, 2),
+      maxOutputTokens: intOr(env.AI_MAX_OUTPUT_TOKENS, 4096),
+
+      /**
+       * Порог, ниже которого классификация не считается подтверждённой
+       * (§87). Такая классификация сохраняется как предположение и не
+       * меняет категорию дела: неверная категория с виду уверенного
+       * ответа уводит дело не туда, и заметить это некому.
+       */
+      classificationMinConfidence: floatOrNull(env.AI_CLASSIFICATION_MIN_CONFIDENCE) ?? 0.6,
+
+      /**
+       * Цены за миллион токенов, в USD. Задаются конфигурацией, а не
+       * зашиваются в код: прайс меняется, а неверная цифра в учёте хуже
+       * её отсутствия — она выглядит достоверной. Не заданы — стоимость
+       * просто не считается (§45).
+       */
+      pricing: {
+        inputPerMillion: floatOrNull(env.OPENAI_PRICE_INPUT_PER_1M),
+        outputPerMillion: floatOrNull(env.OPENAI_PRICE_OUTPUT_PER_1M),
+      },
     },
 
     otp: {

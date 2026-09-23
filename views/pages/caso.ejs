@@ -52,15 +52,158 @@
       </ol>
     </div>
 
-    <h2>Próximos passos</h2>
+    <h2>Análise</h2>
+
+    <% if (aviso) { %>
+      <p class="flash flash--aviso" role="status"><%= aviso %></p>
+    <% } %>
+
     <div class="panel">
-      <p class="notice">
-        <strong>Em construção.</strong> A análise do caso — categoria, perguntas,
-        plano de ação e mensagem para a empresa — entra nas próximas etapas do
-        desenvolvimento. Nada foi analisado ainda: preferimos não mostrar um
-        resultado que não existe.
-      </p>
+      <form method="post" action="/caso/<%= caso.publicId %>/analisar" class="actions">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" name="tipo" value="classificar" class="btn btn--primary">
+          <%= classificacao ? "Analisar de novo" : "Analisar meu caso" %>
+        </button>
+        <button type="submit" name="tipo" value="perguntas" class="btn btn--secondary">
+          O que falta saber
+        </button>
+        <button type="submit" name="tipo" value="plano" class="btn btn--secondary">
+          Plano de ação
+        </button>
+        <button type="submit" name="tipo" value="rascunho" class="btn btn--secondary">
+          Preparar mensagem para a empresa
+        </button>
+      </form>
     </div>
+
+    <% if (classificacao) { %>
+      <div class="panel">
+        <h3>Entendemos sua situação</h3>
+        <dl class="rows">
+          <div class="row">
+            <dt>Categoria</dt>
+            <dd><%= classificacao.category %></dd>
+          </div>
+          <div class="row">
+            <dt>Confiança</dt>
+            <dd><%= Math.round(classificacao.confidence * 100) %>%</dd>
+          </div>
+        </dl>
+
+        <% if (classificacao.missing_information.length > 0) { %>
+          <h4>O que ainda falta</h4>
+          <ul>
+            <% classificacao.missing_information.forEach(function (item) { %>
+              <li><%= item %></li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <% if (classificacao.risk_flags.length > 0) { %>
+          <h4>Pontos de atenção</h4>
+          <ul>
+            <% classificacao.risk_flags.forEach(function (item) { %>
+              <li><%= item %></li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <%- include('../partials/ai-disclaimer') %>
+      </div>
+    <% } %>
+
+    <% if (perguntas && perguntas.questions.length > 0) { %>
+      <div class="panel">
+        <h3>Perguntas para avançar</h3>
+        <ol>
+          <% perguntas.questions.forEach(function (q) { %>
+            <li>
+              <p class="timeline__title"><%= q.question %></p>
+              <p class="small muted"><%= q.why %></p>
+            </li>
+          <% }); %>
+        </ol>
+        <%- include('../partials/ai-disclaimer') %>
+      </div>
+    <% } %>
+
+    <% if (plano) { %>
+      <div class="panel">
+        <h3>Plano de ação</h3>
+        <% if (plano.steps.length > 0) { %>
+          <ol>
+            <% plano.steps.forEach(function (step) { %>
+              <li>
+                <p class="timeline__title"><%= step.title %></p>
+                <p class="small"><%= step.detail %></p>
+                <%# §5: видно, на чём держится шаг — на источнике или на предположении %>
+                <% if (step.source === "OFFICIAL_SOURCE") { %>
+                  <p class="tag tag--fonte">Fonte oficial</p>
+                <% } else { %>
+                  <p class="tag tag--ai">Sugestão da IA</p>
+                <% } %>
+              </li>
+            <% }); %>
+          </ol>
+        <% } %>
+
+        <% if (plano.sources.length > 0) { %>
+          <h4>Fontes oficiais</h4>
+          <ul>
+            <% plano.sources.forEach(function (source) { %>
+              <li>
+                <a href="<%= source.url %>" rel="noopener noreferrer" target="_blank">
+                  <%= source.organization %> — <%= source.title %>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <p class="notice">Não foi possível confirmar essa informação em uma fonte oficial.</p>
+        <% } %>
+
+        <% if (plano.uncertainties.length > 0) { %>
+          <h4>O que não foi possível confirmar</h4>
+          <ul>
+            <% plano.uncertainties.forEach(function (item) { %>
+              <li><%= item %></li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <%- include('../partials/ai-disclaimer') %>
+      </div>
+    <% } %>
+
+    <% if (rascunho && rascunho.body) { %>
+      <div class="panel">
+        <h3>Mensagem para a empresa</h3>
+        <label for="draft-subject">Assunto</label>
+        <input type="text" id="draft-subject" value="<%= rascunho.subject %>" readonly />
+        <label for="draft-body">Mensagem</label>
+        <textarea id="draft-body" rows="12" readonly><%= rascunho.body %></textarea>
+        <p>
+          <button type="button" class="btn btn--secondary" data-copy="#draft-body">
+            Copiar
+          </button>
+        </p>
+
+        <% if (rascunho.warnings.length > 0) { %>
+          <h4>Antes de enviar</h4>
+          <ul>
+            <% rascunho.warnings.forEach(function (item) { %>
+              <li><%= item %></li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <p class="small muted">
+          Revise o texto antes de enviar. O envio é feito por você.
+        </p>
+
+        <%- include('../partials/ai-disclaimer') %>
+      </div>
+    <% } %>
 
     <p><a href="/minha-conta#meus-casos">← Voltar para meus casos</a></p>
   </div>
