@@ -335,6 +335,73 @@
       </div>
     <% } %>
 
+    <h2 id="lembretes">Lembretes</h2>
+
+    <div class="panel">
+      <p class="muted small">
+        Prazos de empresa passam despercebidos. Marque quando quer ser
+        lembrado de voltar a este caso.
+      </p>
+
+      <form method="post" action="/caso/<%= caso.publicId %>/lembretes">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field">
+          <label for="titulo-lembrete">Lembrar de</label>
+          <input type="text" id="titulo-lembrete" name="titulo" maxlength="120"
+                 value="Verificar a resposta da empresa" />
+        </div>
+
+        <div class="field">
+          <label for="prazo">Quando</label>
+          <select id="prazo" name="prazo">
+            <% presets.forEach(function (preset) { %>
+              <option value="<%= preset.value %>"><%= preset.label %></option>
+            <% }); %>
+            <option value="custom">Escolher uma data</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="data-lembrete">Data específica</label>
+          <p class="field__hint">
+            Usada apenas se você escolher «Escolher uma data» acima.
+          </p>
+          <input type="date" id="data-lembrete" name="data" />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Criar lembrete</button>
+      </form>
+
+      <% if (lembretes.length > 0) { %>
+        <ul class="reminder-list">
+          <% lembretes.forEach(function (lembrete) { %>
+            <li class="reminder">
+              <div>
+                <p class="timeline__title"><%= lembrete.title %></p>
+                <p class="small muted"><%= lembrete.scheduledAt %></p>
+              </div>
+              <% if (lembrete.pendente) { %>
+                <form method="post"
+                      action="/caso/<%= caso.publicId %>/lembretes/<%= lembrete.id %>/cancelar">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="btn btn--secondary">Cancelar</button>
+                </form>
+              <% } else if (lembrete.status === "ENVIADO") { %>
+                <span class="tag tag--concluido">Enviado</span>
+              <% } else { %>
+                <span class="tag tag--neutro">Cancelado</span>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+        <p class="small muted">
+          Lembretes são avisos sobre o seu caso, não propaganda. Eles não
+          dependem da sua opção de receber novidades.
+        </p>
+      <% } %>
+    </div>
+
     <h2 id="resposta">Recebi uma resposta</h2>
 
     <div class="panel">

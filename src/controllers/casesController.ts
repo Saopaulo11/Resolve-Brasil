@@ -15,6 +15,7 @@ import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status"
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
 import { isValidPublicCaseId } from "../utils/ids";
+import { listReminders, PRESETS } from "../notifications/reminderService";
 import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
 
@@ -189,6 +190,14 @@ export async function ver(
       plano: latest("PLANO_DE_ACAO"),
       rascunho: latest("RASCUNHO"),
       analiseResposta: latest("ANALISE_DE_RESPOSTA"),
+      presets: PRESETS,
+      lembretes: (await listReminders(found.case.id)).map((reminder) => ({
+        id: reminder.id,
+        title: reminder.title,
+        status: reminder.status,
+        scheduledAt: reminder.scheduledAt.toLocaleDateString("pt-BR"),
+        pendente: reminder.status === "AGENDADO",
+      })),
       aviso: typeof req.query.aviso === "string" ? req.query.aviso : null,
     },
     next,

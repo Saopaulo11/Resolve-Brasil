@@ -121,6 +121,19 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       maxFileSizeBytes: intOr(env.STORAGE_MAX_FILE_SIZE_BYTES, 10 * 1024 * 1024),
     },
 
+    reminders: {
+      /**
+       * Сколько раз пытаться отправить напоминание. Без предела неудачная
+       * отправка повторялась бы на каждом запуске рассылки; после предела
+       * напоминание отменяется, а причина остаётся в журнале уведомлений.
+       */
+      maxAttempts: intOr(env.REMINDER_MAX_ATTEMPTS, 3),
+      /** Пауза между попытками, минуты. */
+      retryAfterMinutes: intOr(env.REMINDER_RETRY_AFTER_MINUTES, 60),
+      /** Сколько напоминаний обрабатывать за один запуск рассылки. */
+      batchSize: intOr(env.REMINDER_BATCH_SIZE, 100),
+    },
+
     sources: {
       /**
        * Через сколько дней проверка источника считается устаревшей (§32).

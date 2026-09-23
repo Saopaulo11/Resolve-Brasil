@@ -815,3 +815,42 @@ input[type="file"] {
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
+
+/* --- Напоминания (PHASE 8) ------------------------------------------------ */
+
+.reminder-list {
+  list-style: none;
+  margin: 1.5rem 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.reminder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+}
+
+.reminder .btn {
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+}
+
+input[type="date"] {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  min-height: 48px;
+}

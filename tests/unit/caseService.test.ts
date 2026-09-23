@@ -1,29 +1,19 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { attachCaseToUser, createCase, getCaseForUser, listCases } from "../../src/cases/caseService";
-import { MemoryCaseStore } from "../../src/cases/memoryCaseStore";
-import {
-  MemoryConsentStore,
-  MemoryOtpStore,
-  MemorySessionStore,
-  MemoryUserStore,
-} from "../../src/users/memoryStores";
+import { createMemoryStores } from "../../src/users/memoryStoreSet";
 import { setStores } from "../../src/users/storeRegistry";
 
 const ALICE = "11111111-1111-4111-8111-111111111111";
 const BOB = "22222222-2222-4222-8222-222222222222";
 
-let cases: MemoryCaseStore;
+let stores: ReturnType<typeof createMemoryStores>;
+let cases: ReturnType<typeof createMemoryStores>["cases"];
 
 beforeEach(() => {
-  cases = new MemoryCaseStore();
-  setStores({
-    users: new MemoryUserStore(),
-    otp: new MemoryOtpStore(),
-    sessions: new MemorySessionStore(),
-    consents: new MemoryConsentStore(),
-    cases,
-  });
+  stores = createMemoryStores();
+  cases = stores.cases;
+  setStores(stores);
 });
 
 describe("создание дела", () => {

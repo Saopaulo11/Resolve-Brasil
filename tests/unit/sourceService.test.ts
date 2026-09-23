@@ -1,27 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { MemoryCaseStore } from "../../src/cases/memoryCaseStore";
-import {
-  MemoryAuditStore,
-  MemoryDocumentStore,
-  MemoryFactStore,
-} from "../../src/documents/memoryDocumentStore";
-import { MemorySourceStore } from "../../src/sources/memorySourceStore";
 import {
   checkUrl,
   importCandidates,
   usableSourceOptions,
   verifyAll,
 } from "../../src/sources/sourceService";
-import {
-  MemoryConsentStore,
-  MemoryOtpStore,
-  MemorySessionStore,
-  MemoryUserStore,
-} from "../../src/users/memoryStores";
+import { createMemoryStores } from "../../src/users/memoryStoreSet";
 import { setStores } from "../../src/users/storeRegistry";
 
-let sources: MemorySourceStore;
+let stores: ReturnType<typeof createMemoryStores>;
+let sources: ReturnType<typeof createMemoryStores>["sources"];
 
 const CANDIDATE = {
   organization: "Consumidor.gov.br",
@@ -31,18 +20,9 @@ const CANDIDATE = {
 };
 
 beforeEach(() => {
-  sources = new MemorySourceStore();
-  setStores({
-    users: new MemoryUserStore(),
-    otp: new MemoryOtpStore(),
-    sessions: new MemorySessionStore(),
-    consents: new MemoryConsentStore(),
-    cases: new MemoryCaseStore(),
-    documents: new MemoryDocumentStore(),
-    facts: new MemoryFactStore(),
-    audit: new MemoryAuditStore(),
-    sources,
-  });
+  stores = createMemoryStores();
+  sources = stores.sources;
+  setStores(stores);
 });
 
 describe("импорт кандидатов", () => {

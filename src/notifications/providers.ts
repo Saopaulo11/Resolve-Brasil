@@ -77,6 +77,11 @@ export function notificationProvider(): NotificationProvider {
   );
 }
 
+/** Для тестов: подставить провайдер, который действительно доставляет. */
+export function setNotificationProvider(custom: NotificationProvider): void {
+  instance = custom;
+}
+
 export function resetNotificationProviderCache(): void {
   instance = null;
 }

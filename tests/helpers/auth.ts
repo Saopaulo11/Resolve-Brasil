@@ -2,20 +2,11 @@ import request from "supertest";
 import type { Express } from "express";
 
 import { createApp } from "../../src/app";
-import { MemoryCaseStore } from "../../src/cases/memoryCaseStore";
-import {
-  MemoryAuditStore,
-  MemoryDocumentStore,
-  MemoryFactStore,
-} from "../../src/documents/memoryDocumentStore";
-import {
-  MemoryConsentStore,
-  MemoryOtpStore,
-  MemorySessionStore,
-  MemoryUserStore,
-} from "../../src/users/memoryStores";
 import { setOtpProvider } from "../../src/users/otpProvider";
-import { MemorySourceStore } from "../../src/sources/memorySourceStore";
+import {
+  createMemoryStores,
+  type MemoryStores,
+} from "../../src/users/memoryStoreSet";
 import { setStores } from "../../src/users/storeRegistry";
 import type { OtpProvider } from "../../src/users/otpProvider";
 
@@ -36,50 +27,20 @@ export class CapturingOtpProvider implements OtpProvider {
   }
 }
 
-export type Harness = {
+export type Harness = MemoryStores & {
   app: Express;
   otpProvider: CapturingOtpProvider;
-  users: MemoryUserStore;
-  otp: MemoryOtpStore;
-  sessions: MemorySessionStore;
-  consents: MemoryConsentStore;
-  cases: MemoryCaseStore;
-  documents: MemoryDocumentStore;
-  facts: MemoryFactStore;
-  audit: MemoryAuditStore;
-  sources: MemorySourceStore;
 };
 
 /** Свежее приложение с хранилищами в памяти — каждый тест изолирован. */
 export function createHarness(): Harness {
-  const users = new MemoryUserStore();
-  const otp = new MemoryOtpStore();
-  const sessions = new MemorySessionStore();
-  const consents = new MemoryConsentStore();
-  const cases = new MemoryCaseStore();
-  const documents = new MemoryDocumentStore();
-  const facts = new MemoryFactStore();
-  const audit = new MemoryAuditStore();
-  const sources = new MemorySourceStore();
-
-  setStores({ users, otp, sessions, consents, cases, documents, facts, audit, sources });
+  const stores = createMemoryStores();
+  setStores(stores);
 
   const otpProvider = new CapturingOtpProvider();
   setOtpProvider(otpProvider);
 
-  return {
-    app: createApp(),
-    otpProvider,
-    users,
-    otp,
-    sessions,
-    consents,
-    cases,
-    documents,
-    facts,
-    audit,
-    sources,
-  };
+  return { ...stores, app: createApp(), otpProvider };
 }
 
 /** CSRF-токен и куки со страницы — так же, как их берёт браузер. */

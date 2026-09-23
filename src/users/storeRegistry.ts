@@ -1,9 +1,3 @@
-import { MemoryCaseStore } from "../cases/memoryCaseStore";
-import {
-  MemoryAuditStore,
-  MemoryDocumentStore,
-  MemoryFactStore,
-} from "../documents/memoryDocumentStore";
 import {
   PrismaAuditStore,
   PrismaDocumentStore,
@@ -13,17 +7,17 @@ import {
   type FactStore,
 } from "../documents/documentStore";
 import { PrismaCaseStore, type CaseStore } from "../cases/caseStore";
-import { MemorySourceStore } from "../sources/memorySourceStore";
+import {
+  PrismaNotificationStore,
+  PrismaReminderStore,
+  type NotificationStore,
+  type ReminderStore,
+} from "../notifications/reminderStore";
 import { PrismaSourceStore, type SourceStore } from "../sources/sourceStore";
 import { loadConfig } from "../config/env";
 import { isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
-import {
-  MemoryConsentStore,
-  MemoryOtpStore,
-  MemorySessionStore,
-  MemoryUserStore,
-} from "./memoryStores";
+import { createMemoryStores } from "./memoryStoreSet";
 import {
   PrismaConsentStore,
   PrismaOtpStore,
@@ -52,6 +46,8 @@ export type Stores = {
   facts: FactStore;
   audit: AuditStore;
   sources: SourceStore;
+  reminders: ReminderStore;
+  notifications: NotificationStore;
 };
 
 let instance: Stores | null = null;
@@ -68,6 +64,8 @@ function build(): Stores {
       facts: new PrismaFactStore(),
       audit: new PrismaAuditStore(),
       sources: new PrismaSourceStore(),
+      reminders: new PrismaReminderStore(),
+      notifications: new PrismaNotificationStore(),
     };
   }
 
@@ -84,17 +82,7 @@ function build(): Stores {
       "при перезапуске. Так можно только в разработке.",
   );
 
-  return {
-    users: new MemoryUserStore(),
-    otp: new MemoryOtpStore(),
-    sessions: new MemorySessionStore(),
-    consents: new MemoryConsentStore(),
-    cases: new MemoryCaseStore(),
-    documents: new MemoryDocumentStore(),
-    facts: new MemoryFactStore(),
-    audit: new MemoryAuditStore(),
-    sources: new MemorySourceStore(),
-  };
+  return createMemoryStores();
 }
 
 export function stores(): Stores {

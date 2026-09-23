@@ -448,6 +448,10 @@ model Reminder {
   scheduledAt DateTime       @map("scheduled_at")
   status      ReminderStatus @default(AGENDADO)
   sentAt      DateTime?      @map("sent_at")
+  /// Сколько раз пытались отправить. Без счётчика неудачная отправка
+  /// повторялась бы бесконечно на каждом запуске рассылки.
+  attempts    Int            @default(0)
+  lastAttemptAt DateTime?    @map("last_attempt_at")
   createdAt   DateTime       @default(now()) @map("created_at")
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)

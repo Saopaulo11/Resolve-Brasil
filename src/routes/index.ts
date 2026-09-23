@@ -4,6 +4,7 @@ import * as account from "../controllers/accountController";
 import * as auth from "../controllers/authController";
 import * as cases from "../controllers/casesController";
 import * as documents from "../controllers/documentsController";
+import * as reminders from "../controllers/remindersController";
 import * as responses from "../controllers/responseController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
@@ -55,6 +56,14 @@ export function buildRouter(): Router {
     documents.extrair,
   );
   router.post("/caso/:publicId/fatos/:factId", requireAuth(), documents.revisarFato);
+
+  // --- Напоминания (§37) ---
+  router.post("/caso/:publicId/lembretes", requireAuth(), reminders.criar);
+  router.post(
+    "/caso/:publicId/lembretes/:reminderId/cancelar",
+    requireAuth(),
+    reminders.cancelar,
+  );
 
   // --- Ответ компании (§35) ---
   router.post("/caso/:publicId/resposta", requireAuth(), aiRateLimit(), responses.receber);
