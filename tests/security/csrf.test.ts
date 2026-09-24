@@ -1,7 +1,7 @@
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { createApp } from "../../src/app";
+import { createApp } from "../../src/createApp";
 
 let app: ReturnType<typeof createApp>;
 

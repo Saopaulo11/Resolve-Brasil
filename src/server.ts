@@ -8,22 +8,19 @@ import { config as loadDotenv } from "dotenv";
 
 loadDotenv();
 
-import { createApp } from "./app";
+import { createApp } from "./createApp";
+import { startFailureServer } from "./boot/failureServer";
 import { loadConfig } from "./config/env";
 import { disconnectDb } from "./services/db";
 import { logger } from "./utils/logger";
 
 /**
- * Точка входа. Конфигурация читается первой: если в production не хватает
- * обязательного, процесс обязан упасть здесь, а не обслуживать запросы с
- * небезопасными умолчаниями.
+ * Точка входа. Конфигурация читается первой: если чего-то обязательного не
+ * хватает, приложение не поднимается вовсе — обслуживать запросы с
+ * небезопасными умолчаниями оно не должно. Что делать со сбоем дальше,
+ * решает обработчик внизу файла.
  */
 function main(): void {
-  // Ошибка конфигурации не гасится здесь, а летит дальше: process.exit(1)
-  // поймать нельзя, и снаружи — в server.js, который запускает нас на
-  // платформе, — от упавшего процесса не остаётся ничего, кроме чужой
-  // страницы «функция не сработала». Пусть тот, кто звал, решает, что с
-  // этим делать. Локально `npm start` по-прежнему падает с тем же текстом.
   const config = loadConfig();
   const app = createApp();
   const server = app.listen(config.port, () => {
@@ -48,4 +45,19 @@ function main(): void {
   process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
-main();
+try {
+  main();
+} catch (error) {
+  // В production упавший процесс не оставляет наружу ничего, кроме заглушки
+  // платформы: по ней не отличить нехватку переменной от сломанного модуля.
+  // Поэтому здесь вместо смерти поднимается сервер, который причину называет.
+  //
+  // В разработке — наоборот: процесс обязан упасть шумно. Сервер, тихо
+  // отвечающий 503, разработчик заметит не сразу, а упавшую команду — сразу.
+  console.error(error);
+  if (process.env.NODE_ENV === "production") {
+    startFailureServer(error);
+  } else {
+    throw error;
+  }
+}
