@@ -119,13 +119,19 @@ document.addEventListener("input", function (event) {
  * Список выбранных вложений (§6).
  *
  * Родное поле выбора файла показывает только «N arquivos» и выглядит на
- * каждой системе по-своему — на части телефонов подписью на чужом языке.
- * Здесь человек видит, что именно он приложил: снимок, имя, размер, и может
- * убрать лишнее до отправки, а не после.
+ * каждой системе по-своему. Здесь человек видит, что именно он приложил:
+ * снимок, имя, размер, состояние, — и может убрать лишнее до отправки.
+ *
+ * ГЛАВНОЕ ПРАВИЛО: выбор накапливается.
+ *
+ * Браузер при каждом новом выборе заменяет input.files целиком, а не
+ * дополняет его. Поэтому единственный источник правды — список здесь, а
+ * поле лишь получает его копию перед отправкой. Раньше обработчик сбрасывал
+ * список в пустой и брал только что выбранное — из-за этого второй файл
+ * вытеснял первый, и приложить больше одного было нельзя.
  *
  * Правка ничего не решает за сервер: предел размера и тип файла проверяются
- * там же, где и раньше. Здесь они только называются заранее, чтобы человек не
- * узнавал о них после долгой загрузки.
+ * там же, где и раньше. Здесь они только называются заранее.
  *
  * Без этого скрипта остаётся обычное поле выбора файла, и форма работает.
  */
@@ -143,6 +149,12 @@ document.addEventListener("input", function (event) {
     return /^image\//.test(arquivo.type);
   };
 
+  var ESTADOS = {
+    pronto: "pronto para enviar",
+    enviando: "Enviando…",
+    grande: "acima do limite, não será enviado",
+  };
+
   Array.prototype.forEach.call(blocos, function (bloco) {
     var entrada = bloco.querySelector("[data-upload-entrada]");
     var camera = bloco.querySelector("[data-upload-camera]");
@@ -150,8 +162,8 @@ document.addEventListener("input", function (event) {
     var zona = bloco.querySelector("[data-upload-zona]");
     if (!entrada || !lista || !zona) return;
 
-    // Поддержка DataTransfer обязательна: без неё нельзя ни убрать файл из
-    // выбора, ни свести два поля в одно. Нет её — оставляем родное поле.
+    // Без DataTransfer нельзя ни убрать файл из выбора, ни свести два поля
+    // в одно. Нет его — оставляем родное поле как есть.
     if (typeof DataTransfer === "undefined") return;
     try {
       new DataTransfer();
@@ -161,18 +173,22 @@ document.addEventListener("input", function (event) {
 
     var maximo = Number(bloco.getAttribute("data-upload-max")) || 10;
     var limite = Number(bloco.getAttribute("data-upload-bytes")) || 0;
+
+    /** [{ id, arquivo, estado }] — источник правды о выборе. */
     var escolhidos = [];
+    var sequencia = 0;
     var previas = [];
 
     bloco.classList.add("upload--pronto");
 
+    /** Копия накопленного списка уходит в поле — его и отправит форма. */
     var aplicar = function () {
       var pacote = new DataTransfer();
-      escolhidos.forEach(function (arquivo) {
-        pacote.items.add(arquivo);
+      escolhidos.forEach(function (item) {
+        pacote.items.add(item.arquivo);
       });
       entrada.files = pacote.files;
-      // Камеру очищаем: снимок уже переехал в основное поле, и иначе он
+      // Камеру очищаем: снимок уже переехал в основное поле, иначе он
       // уехал бы на сервер дважды.
       if (camera) camera.value = "";
     };
@@ -184,9 +200,12 @@ document.addEventListener("input", function (event) {
       previas = [];
       lista.textContent = "";
 
-      escolhidos.forEach(function (arquivo, indice) {
-        var item = document.createElement("li");
-        item.className = "upload__item";
+      escolhidos.forEach(function (item) {
+        var arquivo = item.arquivo;
+
+        var linha = document.createElement("li");
+        linha.className = "upload__item";
+        linha.setAttribute("data-upload-id", item.id);
 
         var figura = document.createElement("span");
         figura.className = "upload__miniatura";
@@ -212,14 +231,8 @@ document.addEventListener("input", function (event) {
 
         var meta = document.createElement("span");
         meta.className = "upload__meta";
-
-        if (limite > 0 && arquivo.size > limite) {
-          meta.classList.add("upload__meta--erro");
-          meta.textContent =
-            tamanho(arquivo.size) + " · acima do limite, não será enviado";
-        } else {
-          meta.textContent = tamanho(arquivo.size) + " · pronto para enviar";
-        }
+        meta.textContent = tamanho(arquivo.size) + " · " + ESTADOS[item.estado];
+        if (item.estado === "grande") meta.classList.add("upload__meta--erro");
 
         texto.appendChild(nome);
         texto.appendChild(meta);
@@ -229,16 +242,21 @@ document.addEventListener("input", function (event) {
         remover.className = "upload__remover";
         remover.setAttribute("aria-label", "Remover " + arquivo.name);
         remover.textContent = "Remover";
+        // Убираем по идентификатору, а не по месту в списке: место меняется
+        // при каждом добавлении, и обработчик, запомнивший старое, убрал бы
+        // не тот файл.
         remover.addEventListener("click", function () {
-          escolhidos.splice(indice, 1);
+          escolhidos = escolhidos.filter(function (atual) {
+            return atual.id !== item.id;
+          });
           aplicar();
           desenhar();
         });
 
-        item.appendChild(figura);
-        item.appendChild(texto);
-        item.appendChild(remover);
-        lista.appendChild(item);
+        linha.appendChild(figura);
+        linha.appendChild(texto);
+        linha.appendChild(remover);
+        lista.appendChild(linha);
       });
 
       if (escolhidos.length >= maximo) {
@@ -249,25 +267,36 @@ document.addEventListener("input", function (event) {
       }
     };
 
+    /** Дополняет накопленное, не заменяя его. */
     var adicionar = function (arquivos) {
       Array.prototype.forEach.call(arquivos, function (arquivo) {
         if (escolhidos.length >= maximo) return;
+
         // Один и тот же файл, выбранный дважды, — почти всегда промах.
         var repetido = escolhidos.some(function (atual) {
-          return atual.name === arquivo.name && atual.size === arquivo.size;
+          return (
+            atual.arquivo.name === arquivo.name &&
+            atual.arquivo.size === arquivo.size
+          );
         });
-        if (!repetido) escolhidos.push(arquivo);
+        if (repetido) return;
+
+        sequencia += 1;
+        escolhidos.push({
+          id: "a" + sequencia,
+          arquivo: arquivo,
+          estado: limite > 0 && arquivo.size > limite ? "grande" : "pronto",
+        });
       });
+
       aplicar();
       desenhar();
     };
 
     entrada.addEventListener("change", function () {
-      // Файлы уже в поле: берём их как есть, иначе собственное присваивание
-      // ниже затёрло бы выбор.
-      var novos = Array.prototype.slice.call(entrada.files);
-      escolhidos = [];
-      adicionar(novos);
+      // После выбора поле содержит ТОЛЬКО что выбрали сейчас — браузер
+      // заменяет список целиком. Поэтому именно дополняем накопленное.
+      adicionar(entrada.files);
     });
 
     if (camera) {
@@ -294,16 +323,14 @@ document.addEventListener("input", function (event) {
       if (e.dataTransfer && e.dataTransfer.files) adicionar(e.dataTransfer.files);
     });
 
-    // На отправке подписи меняются: человек видит, что файлы поехали, а не
-    // гадает, нажалась ли кнопка.
+    // На отправке подписи меняются: человек видит, что файлы поехали.
     var forma = bloco.closest("form");
     if (forma) {
       forma.addEventListener("submit", function () {
-        var metas = lista.querySelectorAll(".upload__meta");
-        Array.prototype.forEach.call(metas, function (meta) {
-          if (meta.classList.contains("upload__meta--erro")) return;
-          meta.textContent = "Enviando…";
+        escolhidos.forEach(function (item) {
+          if (item.estado === "pronto") item.estado = "enviando";
         });
+        desenhar();
       });
     }
   });
