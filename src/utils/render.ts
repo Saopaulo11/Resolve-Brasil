@@ -3,6 +3,7 @@ import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 
 import { AI_DISCLAIMER_PT_BR } from "../ai/disclaimer";
+import { loadConfig } from "../config/env";
 
 /**
  * Рендеринг страницы в общий макет.
@@ -27,7 +28,21 @@ export function renderPage(
   locals: PageLocals,
   next?: NextFunction,
 ): void {
+  const config = loadConfig();
+
+  /*
+   * Канонический адрес страницы (§33).
+   *
+   * Берётся путь без строки запроса: «/?categoria=pix» и «/» — одна и та же
+   * страница, и без канонического адреса поисковик считает их разными и
+   * делит между ними вес. Адрес абсолютный, из APP_URL: относительный
+   * canonical смысла не имеет.
+   */
+  const canonicalUrl = `${config.appUrl.replace(/\/+$/, "")}${req.path}`;
+
   const base = {
+    canonicalUrl,
+    ogImageUrl: `${config.appUrl.replace(/\/+$/, "")}/images/brand/og-card.png`,
     // Умолчания идут первыми: шаблоны обращаются к values и errors всегда,
     // но страница с формой обязана иметь возможность их переопределить.
     values: {} as Record<string, unknown>,

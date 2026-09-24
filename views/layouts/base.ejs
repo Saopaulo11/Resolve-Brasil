@@ -8,12 +8,22 @@
     <meta name="theme-color" content="#10243e" />
     <link rel="stylesheet" href="/css/main.css" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="canonical" href="<%= canonicalUrl %>" />
     <link rel="icon" href="/images/brand/icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/images/brand/icon.svg" />
+    <%# iOS растровую иконку: SVG в apple-touch-icon он не берёт. %>
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta property="og:title" content="<%= title %>" />
     <meta property="og:description" content="<%= description %>" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Resolve Brasil" />
+    <meta property="og:url" content="<%= canonicalUrl %>" />
+    <%# Ссылками здесь делятся в WhatsApp, и без картинки превью пустое. %>
+    <meta property="og:image" content="<%= ogImageUrl %>" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Resolve Brasil — Conte o que aconteceu. Descubra o que fazer." />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>

@@ -11,6 +11,7 @@ import * as reminders from "../controllers/remindersController";
 import * as responses from "../controllers/responseController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
+import * as seo from "../controllers/seoController";
 import * as privacy from "../controllers/privacyController";
 import { findCategoryBySlug } from "../cases/categories";
 import { loadConfig } from "../config/env";
@@ -27,6 +28,10 @@ export function buildRouter(): Router {
   const router = Router();
 
   router.get("/health", health.health);
+
+  // §33: поисковикам — карта сайта и запреты обхода.
+  router.get("/robots.txt", seo.robots);
+  router.get("/sitemap.xml", seo.sitemap);
 
   router.get("/", pages.home);
   router.get("/como-funciona", pages.comoFunciona);
