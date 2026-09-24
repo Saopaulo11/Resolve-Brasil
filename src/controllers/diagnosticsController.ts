@@ -4,6 +4,7 @@ import { limparMensagem } from "../boot/failureServer";
 import { loadConfig } from "../config/env";
 import { classifyError, statusDoErro } from "../errors/categories";
 import { openAiClient } from "../ai/openai/client";
+import { databaseUrlSource, stripTlsParams } from "../config/databaseUrl";
 import { db, isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
 
@@ -42,9 +43,26 @@ export async function ai(req: Request, res: Response): Promise<void> {
   const config = loadConfig();
   const chave = config.ai.openai.apiKey;
 
+  const modelo = config.ai.openai.model ?? null;
+
+  /*
+   * Самая частая ошибка при заполнении панели: в значение вставляют строку
+   * целиком, вместе с «OPENAI_MODEL=». Снаружи это неотличимо от
+   * несуществующей модели — провайдер одинаково отвечает 404, — и ищут
+   * потом доступ к модели вместо опечатки. Называем прямо.
+   */
+  const modeloSuspeito = modelo !== null && /[=\s]/.test(modelo);
+
   const base = {
     provider: config.ai.provider,
-    model: config.ai.openai.model ?? null,
+    model: modelo,
+    ...(modeloSuspeito
+      ? {
+          modelWarning:
+            "Похоже, в значение попала целая строка вида KEY=VALUE. " +
+            "В переменной должен быть только идентификатор модели.",
+        }
+      : {}),
     apiKeyConfigured: Boolean(chave),
     apiKeyPrefix: pistaDaChave(chave),
   };
@@ -137,6 +155,24 @@ export async function database(_req: Request, res: Response): Promise<void> {
     return;
   }
 
+  /*
+   * Откуда взялась строка и что с TLS. Без этого «не подключается» не
+   * отличить от «подключается не туда»: стоит заполнить DATABASE_URL — и
+   * собранные из частей настройки перестают применяться целиком, молча.
+   *
+   * Ни строки, ни пароля здесь нет — только имя источника и имена
+   * вынутых параметров.
+   */
+  const config = loadConfig();
+  const origem = databaseUrlSource(process.env);
+  const { removidos } = stripTlsParams(config.database.url ?? "");
+
+  const conexao = {
+    source: origem,
+    tls: config.database.caCert ? "verificado" : "sem verificação",
+    tlsParamsIgnorados: removidos,
+  };
+
   const leitura = await (async () => {
     const comecou = Date.now();
     try {
@@ -154,6 +190,7 @@ export async function database(_req: Request, res: Response): Promise<void> {
   if (leitura.read === "error") {
     res.status(503).json({
       configured: true,
+      ...conexao,
       ...leitura,
       write: "skipped",
       errorCode: "DATABASE_ERROR",
@@ -186,6 +223,7 @@ export async function database(_req: Request, res: Response): Promise<void> {
     if (error === ROLLBACK) {
       res.status(200).json({
         configured: true,
+        ...conexao,
         ...leitura,
         write: "success",
         writeLatencyMs: Date.now() - comecou,
@@ -198,6 +236,7 @@ export async function database(_req: Request, res: Response): Promise<void> {
 
     res.status(503).json({
       configured: true,
+      ...conexao,
       ...leitura,
       write: "error",
       writeLatencyMs: Date.now() - comecou,

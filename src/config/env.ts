@@ -55,6 +55,14 @@ function buildConfig(env: NodeJS.ProcessEnv) {
     database: {
       // Либо строка целиком, либо собранная из частей — см. databaseUrl.ts.
       url: resolveDatabaseUrl(env),
+      /**
+       * Корневой сертификат для проверки сервера базы.
+       *
+       * Без него соединение шифруется, но подлинность сервера не
+       * проверяется. Берётся в панели Supabase (Database → SSL) и кладётся
+       * в переменную целиком, вместе со строками BEGIN/END.
+       */
+      caCert: optionalString(env.DATABASE_CA_CERT),
     },
 
     session: {

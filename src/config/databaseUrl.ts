@@ -91,3 +91,69 @@ export function resolveDatabaseUrl(env: NodeJS.ProcessEnv): string | null {
   if (direta) return direta;
   return composeDatabaseUrl(partsFromEnv(env));
 }
+
+/**
+ * Параметры TLS, которые мы забираем из строки себе.
+ *
+ * Почему их нельзя оставить в строке: pg собирает настройки как
+ * `Object.assign(config, parse(connectionString))` — разобранная строка
+ * перебивает всё, что передали явно. Значит либо TLS живёт только в строке,
+ * либо строка о нём не знает вовсе. Выбрано второе: в строке он задаётся
+ * одним словом без оттенков, а нам нужно уметь и проверять сертификат по
+ * своему корневому, и честно сказать в диагностике, что именно включено.
+ */
+const PARAMETROS_TLS = [
+  "sslmode",
+  "ssl",
+  "sslrootcert",
+  "sslcert",
+  "sslkey",
+];
+
+export type UrlSemTls = {
+  /** Строка без параметров TLS. */
+  url: string;
+  /** Что из неё убрано — для диагностики, без значений. */
+  removidos: string[];
+};
+
+/**
+ * Вынимает параметры TLS из строки подключения.
+ *
+ * Трогаем только часть после «?». Всё до неё — включая пароль с его
+ * процентным кодированием — остаётся байт в байт: разбор и пересборка
+ * адреса целиком умеет незаметно переписать пароль.
+ */
+export function stripTlsParams(url: string): UrlSemTls {
+  const corte = url.indexOf("?");
+  if (corte === -1) return { url, removidos: [] };
+
+  const base = url.slice(0, corte);
+  const consulta = url.slice(corte + 1);
+  const removidos: string[] = [];
+
+  const mantidos = consulta
+    .split("&")
+    .filter((par) => par.length > 0)
+    .filter((par) => {
+      const nome = par.split("=")[0]?.toLowerCase() ?? "";
+      if (PARAMETROS_TLS.includes(nome)) {
+        removidos.push(nome);
+        return false;
+      }
+      return true;
+    });
+
+  return {
+    url: mantidos.length > 0 ? `${base}?${mantidos.join("&")}` : base,
+    removidos,
+  };
+}
+
+/** Откуда взялась строка — для диагностики. */
+export function databaseUrlSource(
+  env: NodeJS.ProcessEnv,
+): "DATABASE_URL" | "partes" | null {
+  if (env.DATABASE_URL?.trim()) return "DATABASE_URL";
+  return composeDatabaseUrl(partsFromEnv(env)) ? "partes" : null;
+}
