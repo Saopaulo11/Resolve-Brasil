@@ -1,3 +1,13 @@
+// Загрузка .env идёт до всего остального: config/env.ts читает process.env
+// на первом же обращении, и опоздавший dotenv не успел бы ничего дать.
+//
+// Файл не обязателен: в production переменные приходят от платформы, и .env
+// там нет вовсе. dotenv не перезаписывает то, что уже задано в окружении,
+// поэтому боевые значения он подменить не может (§78).
+import { config as loadDotenv } from "dotenv";
+
+loadDotenv();
+
 import { createApp } from "./app";
 import { loadConfig } from "./config/env";
 import { disconnectDb } from "./services/db";
