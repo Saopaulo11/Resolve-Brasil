@@ -88,6 +88,9 @@ export async function attachCaseToUser(
   if (found.userId !== null) return found.userId === userId ? found : null;
 
   await cases.attachToUser(found.id, userId);
+  // Вложения, приложенные при вводе, тоже были ничьими: выдача документа
+  // проверяет владельца, и без этого человек не открыл бы свой же файл.
+  await stores().documents.attachToUser(found.id, userId);
 
   const attached = await cases.findByPublicId(publicId);
   // Владелец сменился — слепок пересчитывается: от него зависит признак

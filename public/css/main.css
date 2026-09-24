@@ -685,6 +685,55 @@ input:focus {
   color: #5c4708;
 }
 
+/* --- Вложения при вводе --------------------------------------------------- */
+
+.upload input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  font: inherit;
+  color: var(--text-muted);
+}
+
+.upload input[type="file"]:focus-visible {
+  outline: 2px solid var(--green-text);
+  outline-offset: 2px;
+}
+
+/*
+ * Поле камеры на настольном браузере — тот же выбор файла, только лишний.
+ * Показывается там, где у устройства есть камера, то есть на узком экране.
+ */
+.upload__camera,
+.upload #arquivo-camera {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .upload__camera {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--green-text);
+    cursor: pointer;
+  }
+
+  .upload #arquivo-camera {
+    display: block;
+    /* Скрыто от глаз, но доступно скринридеру и подписи выше. */
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
 /* Отказ на нашей стороне: не ошибка ввода, чинить человеку нечего. */
 .flash--falha {
   background: #fdecec;

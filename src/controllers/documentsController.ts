@@ -5,11 +5,13 @@ import {
   extractFromDocument,
   readDocument,
   reviewFact,
-  uploadDocument,
+  uploadDocuments,
   UPLOAD_MESSAGES,
+  type BatchUploadResult,
   type FactDecision,
 } from "../documents/documentService";
 import type { DocumentKind } from "../generated/prisma/enums";
+import { uploadedFiles } from "../middleware/upload";
 import { ipPrefix } from "../utils/crypto";
 import { isValidPublicCaseId } from "../utils/ids";
 import { stores } from "../users/storeRegistry";
@@ -49,6 +51,25 @@ function requireUser(req: Request, res: Response): string | null {
   return userId;
 }
 
+/**
+ * Что сказать после отправки.
+ *
+ * Молча теряется только то, о чём не сказали: принятые файлы человек видит
+ * в списке сам, а про каждый отвергнутый нужно назвать файл и причину —
+ * иначе он не поймёт, почему из пяти снимков дошли четыре.
+ */
+function avisoDeEnvio(result: BatchUploadResult): string | null {
+  if (result.recusados.length === 0) return null;
+
+  const detalhes = result.recusados
+    .map((item) => `${item.filename}: ${UPLOAD_MESSAGES[item.reason]}`)
+    .join(" ");
+
+  return result.enviados.length > 0
+    ? `Parte dos arquivos não foi aceita. ${detalhes}`
+    : detalhes;
+}
+
 export async function enviar(
   req: Request,
   res: Response,
@@ -63,21 +84,23 @@ export async function enviar(
   const body = (req.body ?? {}) as Record<string, unknown>;
   const kind = KINDS.find((item) => item === body.tipo) ?? "OUTRO";
 
-  const result = await uploadDocument({
+  const result = await uploadDocuments({
     caseRecord: found.case,
     userId,
-    file: req.file,
+    files: uploadedFiles(req),
     kind,
     ipPrefix: ipPrefix(req.ip) ?? null,
   });
 
   const target = `/caso/${found.case.publicId}`;
-  if (result.ok) {
+  const aviso = avisoDeEnvio(result);
+
+  if (!aviso) {
     res.redirect(303, `${target}#documentos`);
     return;
   }
 
-  res.redirect(303, `${target}?aviso=${encodeURIComponent(UPLOAD_MESSAGES[result.reason])}`);
+  res.redirect(303, `${target}?aviso=${encodeURIComponent(aviso)}`);
 }
 
 /**

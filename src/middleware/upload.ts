@@ -17,19 +17,39 @@ import { loadConfig } from "../config/env";
  */
 const FIELD = "arquivo";
 
+/** Файл, разобранный из формы. Содержимое держится в памяти, не на диске. */
+export type UploadedFile = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
+
+/**
+ * Файлы текущего запроса — всегда массивом, даже когда он пуст.
+ *
+ * Обращаться к req.files напрямую не стоит: multer кладёт туда то массив,
+ * то объект по полям, и каждый потребитель начинает проверять это сам.
+ */
+export function uploadedFiles(req: Request): UploadedFile[] {
+  const files = (req as Request & { files?: unknown }).files;
+  return Array.isArray(files) ? (files as UploadedFile[]) : [];
+}
+
 export function uploadParser(): RequestHandler {
   const config = loadConfig();
+  const maxFiles = config.storage.maxFilesPerUpload;
 
   const parser = multer({
     storage: multer.memoryStorage(),
     limits: {
       fileSize: config.storage.maxFileSizeBytes,
-      files: 1,
+      files: maxFiles,
       // Поля формы у нас короткие: токен, тип документа, решение по факту.
       fieldSize: 8 * 1024,
       fields: 20,
     },
-  }).single(FIELD);
+  }).array(FIELD, maxFiles);
 
   return function parseUpload(req: Request, res: Response, next: NextFunction) {
     // Не multipart — разбирать нечего.

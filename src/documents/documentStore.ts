@@ -28,7 +28,13 @@ export type DocumentRecord = {
 
 export type CreateDocumentInput = {
   caseId: string;
-  userId: string;
+  /**
+   * Владелец. Пусто у дела, начатого до входа: документ прикрепляется к делу
+   * сразу, а владельцем обзаводится вместе с ним — после подтверждения
+   * телефона (§15). Требовать вход до загрузки значило бы терять файлы,
+   * которые человек уже выбрал.
+   */
+  userId: string | null;
   filename: string;
   mimeType: string;
   fileSize: number;
@@ -62,6 +68,13 @@ export type CreateFactInput = {
 
 export interface DocumentStore {
   create(input: CreateDocumentInput): Promise<DocumentRecord>;
+  /**
+   * Документы дела, начатого до входа, получают владельца вместе с делом.
+   *
+   * Без этого файл остаётся ничьим: выдача документа проверяет владельца, и
+   * человек не смог бы открыть собственное вложение.
+   */
+  attachToUser(caseId: string, userId: string): Promise<void>;
   findById(documentId: string): Promise<DocumentRecord | null>;
   listForCase(caseId: string): Promise<DocumentRecord[]>;
   setExtractionStatus(
@@ -116,6 +129,13 @@ export interface AuditStore {
 export class PrismaDocumentStore implements DocumentStore {
   async create(input: CreateDocumentInput): Promise<DocumentRecord> {
     return db().document.create({ data: input });
+  }
+
+  async attachToUser(caseId: string, userId: string): Promise<void> {
+    await db().document.updateMany({
+      where: { caseId, userId: null },
+      data: { userId },
+    });
   }
 
   async findById(documentId: string): Promise<DocumentRecord | null> {

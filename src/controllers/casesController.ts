@@ -22,6 +22,9 @@ import { BRAZILIAN_STATES, stateName } from "../cases/states";
 import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status";
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
+import { uploadDocuments, UPLOAD_MESSAGES } from "../documents/documentService";
+import { uploadedFiles } from "../middleware/upload";
+import { ipPrefix } from "../utils/crypto";
 import { isValidPublicCaseId } from "../utils/ids";
 import { logger } from "../utils/logger";
 import { listReminders, PRESETS } from "../notifications/reminderService";
@@ -86,6 +89,7 @@ function renderHome(
       title: HOME_TITLE,
       description: HOME_DESCRIPTION,
       categories: CATEGORIES,
+      maxArquivos: loadConfig().storage.maxFilesPerUpload,
       values: { description: state.description ?? "" },
       errors: state.erroDeCampo ? { description: state.erroDeCampo } : {},
       selectedCategory: state.categoria ?? "",
@@ -93,6 +97,42 @@ function renderHome(
     },
     next,
   );
+}
+
+
+/**
+ * Прикрепление файлов, выбранных вместе с рассказом.
+ *
+ * Возвращает предупреждение, если что-то не прошло, и null, если всё в
+ * порядке. Сбой самого хранилища не роняет создание дела: человек описал
+ * проблему, и терять описание из-за неудавшегося вложения нельзя.
+ */
+async function anexarNaCriacao(input: {
+  caseRecord: Awaited<ReturnType<typeof createCase>>;
+  userId: string | null;
+  files: ReturnType<typeof uploadedFiles>;
+  ipPrefix: string | null;
+}): Promise<string | null> {
+  if (input.files.length === 0) return null;
+
+  try {
+    const resultado = await uploadDocuments({
+      caseRecord: input.caseRecord,
+      userId: input.userId,
+      files: input.files,
+      kind: "OUTRO",
+      ipPrefix: input.ipPrefix,
+    });
+
+    if (resultado.recusados.length === 0) return null;
+
+    return resultado.recusados
+      .map((item) => `${item.filename}: ${UPLOAD_MESSAGES[item.reason]}`)
+      .join(" ");
+  } catch (error) {
+    logger().error({ err: error, caseId: input.caseRecord.publicId }, "falha ao anexar arquivos");
+    return "Não conseguimos anexar seus arquivos agora. Você pode enviá-los novamente nesta página.";
+  }
 }
 
 export async function criar(
@@ -147,10 +187,20 @@ export async function criar(
     return;
   }
 
+  // Файлы, приложенные прямо при вводе (§6). Дело уже создано, поэтому
+  // отказ по какому-то из них его не отменяет: рассказ важнее вложения,
+  // а про непринятый файл человеку скажут на странице дела.
+  const anexos = await anexarNaCriacao({
+    caseRecord: created,
+    userId: req.session?.userId ?? null,
+    files: uploadedFiles(req),
+    ipPrefix: ipPrefix(req.ip) ?? null,
+  });
+
   const target = `/caso/${created.publicId}`;
 
   if (req.session) {
-    res.redirect(303, target);
+    res.redirect(303, anexos ? `${target}?aviso=${encodeURIComponent(anexos)}` : target);
     return;
   }
 
@@ -225,6 +275,9 @@ export async function ver(
       title: `Caso ${found.case.publicId} — Resolve Brasil`,
       description: "Acompanhe o andamento do seu caso.",
       caso: found.case,
+      // Предел берётся из конфигурации, а не пишется в шаблоне: иначе
+      // подсказка и то, что на самом деле примет сервер, разъедутся.
+      maxArquivos: loadConfig().storage.maxFilesPerUpload,
       statusLabel: status.label,
       statusHint: status.hint,
       statusTone: status.tone,

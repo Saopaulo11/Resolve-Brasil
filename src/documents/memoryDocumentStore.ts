@@ -22,6 +22,12 @@ import type {
 export class MemoryDocumentStore implements DocumentStore {
   private readonly documents = new Map<string, DocumentRecord>();
 
+  async attachToUser(caseId: string, userId: string): Promise<void> {
+    for (const record of this.documents.values()) {
+      if (record.caseId === caseId && record.userId === null) record.userId = userId;
+    }
+  }
+
   async create(input: CreateDocumentInput): Promise<DocumentRecord> {
     const record: DocumentRecord = {
       id: randomUUID(),

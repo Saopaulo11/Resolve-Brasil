@@ -144,9 +144,13 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
         <div class="field">
-          <label for="arquivo">Arquivo</label>
-          <input type="file" id="arquivo" name="arquivo" required
-                 accept=".pdf,.jpg,.jpeg,.png,.webp" />
+          <label for="arquivo">Arquivos</label>
+          <p class="field__hint" id="arquivo-hint">
+            Você pode escolher vários de uma vez. Até <%= maxArquivos %> por envio.
+          </p>
+          <input type="file" id="arquivo" name="arquivo" required multiple
+                 aria-describedby="arquivo-hint"
+                 accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" />
         </div>
 
         <div class="field">
@@ -164,7 +168,7 @@
           </select>
         </div>
 
-        <button type="submit" class="btn btn--primary">Enviar documento</button>
+        <button type="submit" class="btn btn--primary">Enviar documentos</button>
       </form>
 
       <% if (documentos.length > 0) { %>

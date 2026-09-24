@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import { getCaseForUser } from "../cases/caseService";
 import { recordCompanyResponse, type ResponseInput } from "../cases/responseService";
+import { uploadedFiles } from "../middleware/upload";
 import { ipPrefix } from "../utils/crypto";
 import { isValidPublicCaseId } from "../utils/ids";
 
@@ -33,8 +34,12 @@ export async function receber(
   const body = (req.body ?? {}) as Record<string, unknown>;
   const texto = typeof body.texto === "string" ? body.texto : "";
 
-  const input: ResponseInput = req.file
-    ? { kind: "arquivo", file: req.file }
+  // Ответ компании — один документ: скриншот или письмо. Если человек
+  // выбрал несколько, берём первый, а не молча отбрасываем все.
+  const [arquivo] = uploadedFiles(req);
+
+  const input: ResponseInput = arquivo
+    ? { kind: "arquivo", file: arquivo }
     : { kind: "texto", text: texto };
 
   const outcome = await recordCompanyResponse({

@@ -29,13 +29,18 @@ import type { CaseFactRecord, DocumentRecord } from "./documentStore";
  * обращение в журнал.
  */
 
-export type UploadError = UploadValidationError | "conteudo_nao_confere" | "sem_arquivo";
+export type UploadError =
+  | UploadValidationError
+  | "conteudo_nao_confere"
+  | "sem_arquivo"
+  | "duplicado";
 
 export const UPLOAD_MESSAGES: Record<UploadError, string> = {
   ...UPLOAD_ERROR_MESSAGES,
   sem_arquivo: "Selecione um arquivo para enviar.",
   conteudo_nao_confere:
     "O conteúdo do arquivo não corresponde ao tipo declarado. Envie PDF, JPG, PNG ou WEBP.",
+  duplicado: "Esse arquivo já está anexado a este caso.",
 };
 
 export type UploadResult =
@@ -54,10 +59,16 @@ const SCAN_STATUS_NOT_CHECKED = "NAO_VERIFICADO";
 
 export async function uploadDocument(input: {
   caseRecord: CaseRecord;
-  userId: string;
+  userId: string | null;
   file: { originalname: string; mimetype: string; size: number; buffer: Buffer } | undefined;
   kind: DocumentKind;
   ipPrefix: string | null;
+  /**
+   * Контрольные суммы, которые в этом деле уже заняты. Передаются снаружи,
+   * чтобы при отправке нескольких файлов разом повтор внутри самой отправки
+   * тоже отсекался — до того, как второй экземпляр попадёт в хранилище.
+   */
+  jaAnexados?: ReadonlySet<string>;
 }): Promise<UploadResult> {
   const { file } = input;
   if (!file || file.size === 0) return { ok: false, reason: "sem_arquivo" };
@@ -81,6 +92,13 @@ export async function uploadDocument(input: {
     return { ok: false, reason: "conteudo_nao_confere" };
   }
 
+  // Повтор — не ошибка человека: на телефоне один и тот же снимок легко
+  // выбрать дважды. Но второй экземпляр занимает место, путает список и
+  // уходит в извлечение фактов вторым заходом, удваивая расход на модель.
+  const hash = checksum(file.buffer);
+  const ocupados = input.jaAnexados ?? (await checksumsDoCaso(input.caseRecord.id));
+  if (ocupados.has(hash)) return { ok: false, reason: "duplicado" };
+
   const storageKey = buildStorageKey(input.caseRecord.id, actual);
   await storageProvider().put(storageKey, file.buffer, actual);
 
@@ -93,7 +111,7 @@ export async function uploadDocument(input: {
     fileSize: file.size,
     storageKey,
     kind: input.kind,
-    checksumSha256: checksum(file.buffer),
+    checksumSha256: hash,
     scanStatus: SCAN_STATUS_NOT_CHECKED,
   });
 
@@ -118,6 +136,69 @@ export async function uploadDocument(input: {
   void trackEvent("document_uploaded", { userId: input.userId });
 
   return { ok: true, document };
+}
+
+/** Контрольные суммы уже прикреплённых к делу файлов. */
+async function checksumsDoCaso(caseId: string): Promise<Set<string>> {
+  const existentes = await stores().documents.listForCase(caseId);
+  return new Set(
+    existentes
+      .map((documento) => documento.checksumSha256)
+      .filter((valor): valor is string => Boolean(valor)),
+  );
+}
+
+export type BatchUploadResult = {
+  enviados: DocumentRecord[];
+  recusados: Array<{ filename: string; reason: UploadError }>;
+};
+
+/**
+ * Отправка нескольких файлов разом (§6).
+ *
+ * Файлы обрабатываются по одному и независимо: один отвергнутый не
+ * отменяет остальные. Человеку, приложившему счёт, чек и переписку, незачем
+ * начинать сначала из-за того, что один снимок оказался слишком большим.
+ */
+export async function uploadDocuments(input: {
+  caseRecord: CaseRecord;
+  userId: string | null;
+  files: ReadonlyArray<{
+    originalname: string;
+    mimetype: string;
+    size: number;
+    buffer: Buffer;
+  }>;
+  kind: DocumentKind;
+  ipPrefix: string | null;
+}): Promise<BatchUploadResult> {
+  const resultado: BatchUploadResult = { enviados: [], recusados: [] };
+  if (input.files.length === 0) return resultado;
+
+  // Одно обращение к базе на всю отправку, а не на каждый файл. Набор
+  // пополняется по ходу — иначе два одинаковых файла в одной форме прошли
+  // бы оба: в базе на момент проверки нет ни одного из них.
+  const ocupados = await checksumsDoCaso(input.caseRecord.id);
+
+  for (const file of input.files) {
+    const result = await uploadDocument({
+      caseRecord: input.caseRecord,
+      userId: input.userId,
+      file,
+      kind: input.kind,
+      ipPrefix: input.ipPrefix,
+      jaAnexados: ocupados,
+    });
+
+    if (result.ok) {
+      resultado.enviados.push(result.document);
+      if (result.document.checksumSha256) ocupados.add(result.document.checksumSha256);
+    } else {
+      resultado.recusados.push({ filename: file.originalname, reason: result.reason });
+    }
+  }
+
+  return resultado;
 }
 
 export type DownloadResult =

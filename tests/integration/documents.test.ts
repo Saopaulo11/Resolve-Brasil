@@ -494,3 +494,52 @@ describe("подтверждённые факты становятся поля�
   });
 });
 
+describe("несколько файлов за одну отправку", () => {
+  beforeEach(async () => {
+    useOpenAi();
+    await setup();
+  });
+
+  it("принимает все и показывает их в деле", async () => {
+    const page = await openPage(harness.app, `/caso/${publicId}`, cookies);
+    const resposta = await request(harness.app)
+      .post(`/caso/${publicId}/documentos`)
+      .set("Cookie", page.cookies)
+      .field("_csrf", page.token)
+      .field("tipo", "OUTRO")
+      .attach("arquivo", PDF_BYTES, { filename: "nota.pdf", contentType: "application/pdf" })
+      .attach("arquivo", PNG_BYTES, { filename: "foto.png", contentType: "image/png" });
+
+    expect(resposta.status).toBe(303);
+
+    const depois = await request(harness.app)
+      .get(`/caso/${publicId}`)
+      .set("Cookie", cookies);
+    expect(depois.text).toContain("nota.pdf");
+    expect(depois.text).toContain("foto.png");
+  });
+
+  it("непринятый файл не отменяет остальные", async () => {
+    const page = await openPage(harness.app, `/caso/${publicId}`, cookies);
+    const resposta = await request(harness.app)
+      .post(`/caso/${publicId}/documentos`)
+      .set("Cookie", page.cookies)
+      .field("_csrf", page.token)
+      .field("tipo", "OUTRO")
+      .attach("arquivo", PDF_BYTES, { filename: "nota.pdf", contentType: "application/pdf" })
+      .attach("arquivo", Buffer.from("nao e imagem"), {
+        filename: "falso.png",
+        contentType: "image/png",
+      });
+
+    // Человеку называют файл и причину — иначе непонятно, почему из двух
+    // дошёл один.
+    expect(decodeURIComponent(resposta.headers.location ?? "")).toContain("falso.png");
+
+    const depois = await request(harness.app)
+      .get(`/caso/${publicId}`)
+      .set("Cookie", cookies);
+    expect(depois.text).toContain("nota.pdf");
+    expect(depois.text).not.toContain("falso.png");
+  });
+});
