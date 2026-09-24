@@ -2118,3 +2118,286 @@ input[type="email"] {
     display: none;
   }
 }
+
+/* =====================================================================
+ * Общие составляющие страниц: заголовок раздела, карточка, блок текста.
+ * Одни и те же на входе, в категориях и на текстовых страницах — иначе
+ * страницы расходятся тем быстрее, чем их больше.
+ * ===================================================================== */
+
+.pagina {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 3rem var(--gutter) 4rem;
+}
+
+.pagina--estreita {
+  max-width: 34rem;
+}
+
+.pagina__titulo {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.pagina__lead {
+  margin: 0 0 2rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+  text-wrap: pretty;
+}
+
+/* --- Блок содержимого ---------------------------------------------- */
+
+.bloco {
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.bloco + .bloco {
+  margin-top: 1rem;
+}
+
+.bloco__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.bloco p {
+  margin: 0 0 0.75rem;
+  color: var(--color-muted);
+}
+
+.bloco p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Карточка входа ------------------------------------------------- */
+
+.cartao {
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.cartao__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.cartao__lead {
+  margin: 0 0 1.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+.cartao__campo {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 1.0625rem;
+  color: var(--color-text);
+}
+
+.cartao__campo:focus {
+  outline: none;
+  border-color: var(--color-primary-border);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+
+.cartao__campo[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.cartao__rotulo {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.cartao__erro {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.cartao__nota {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.cartao__acao {
+  width: 100%;
+  margin-top: 1.25rem;
+}
+
+.cartao__rodape {
+  margin: 1.25rem auto 0;
+  max-width: 26rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* --- Сетка карточек категорий --------------------------------------- */
+
+.cartoes {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+.cartao-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cartao-item:hover {
+  border-color: var(--color-primary-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.cartao-item__nome {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.cartao-item__texto {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* --- Нумерованные шаги в тексте -------------------------------------- */
+
+.etapas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: etapa;
+}
+
+.etapas li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.75rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--color-border);
+  counter-increment: etapa;
+}
+
+.etapas li:last-child {
+  border-bottom: 0;
+}
+
+.etapas li::before {
+  content: counter(etapa, decimal-leading-zero);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  line-height: 1.6;
+}
+
+@media (max-width: 47.9375rem) {
+  .pagina {
+    padding-top: 2rem;
+  }
+
+  .cartao {
+    padding: 1.5rem;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+/* --- Повторная отправка кода ---------------------------------------- */
+
+.reenvio {
+  max-width: 26rem;
+  margin: 1.25rem auto 0;
+  text-align: center;
+}
+
+.reenvio__botao {
+  width: 100%;
+  justify-content: center;
+}
+
+.reenvio__botao:disabled {
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.reenvio__espera {
+  margin: 0.625rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.reenvio__espera:empty {
+  display: none;
+}
+
+.cartao__consentimento {
+  margin-top: 1.25rem;
+}
+
+/* --- Ссылки ---------------------------------------------------------- */
+
+/*
+ * До сих пор ссылки шли умолчаниями браузера: синие и фиолетовые после
+ * посещения. Это первое, по чему сайт читается как «просто страница», и
+ * фиолетовый здесь ничего не сообщает — человек не перебирает выдачу.
+ *
+ * Более частные правила (навигация, карточки) объявлены раньше и выигрывают
+ * по специфичности — их цвет не меняется.
+ */
+a {
+  color: var(--color-primary);
+  text-underline-offset: 0.15em;
+}
+
+a:visited {
+  color: var(--color-primary);
+}
+
+a:hover {
+  color: var(--color-primary-strong);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-primary-border);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

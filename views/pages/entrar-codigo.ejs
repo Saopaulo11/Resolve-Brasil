@@ -1,84 +1,80 @@
-<section class="section">
-  <div class="container container--narrow">
-    <h1>Confirme o código</h1>
-    <p class="lede">Enviamos um código para seu telefone.</p>
-    <p class="small muted"><%= phoneMasked %></p>
+<section class="pagina pagina--estreita">
+  <div class="cartao">
+    <h1 class="cartao__titulo">Digite o código</h1>
+    <p class="cartao__lead">
+      Enviamos um código para seu telefone.<br /><%= phoneMasked %>
+    </p>
 
-    <div class="panel">
-      <form method="post" action="/entrar/codigo" novalidate>
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="next" value="<%= nextUrl %>" />
-
-        <div class="field <%= errors.code ? 'field--invalid' : '' %>">
-          <label for="code">Código recebido</label>
-          <input
-            type="text"
-            id="code"
-            name="code"
-            required
-            autocomplete="one-time-code"
-            inputmode="numeric"
-            <%# autocomplete="one-time-code" позволяет системе подставить код из SMS %>
-            aria-describedby="<%= errors.code ? 'code-error' : '' %>"
-            aria-invalid="<%= errors.code ? 'true' : 'false' %>"
-          />
-          <% if (errors.code) { %>
-            <p class="field__error" id="code-error"><%= errors.code %></p>
-          <% } %>
-        </div>
-
-        <%# §17: согласие на маркетинг — отдельная галочка, по умолчанию снятая.
-            Вход по телефону сам по себе согласия на рассылку не означает. %>
-        <div class="field field--check">
-          <input
-            type="checkbox"
-            id="marketing"
-            name="marketing"
-            <%= values.marketing ? 'checked' : '' %>
-          />
-          <label for="marketing" class="label--inline"><%= marketingLabel %></label>
-        </div>
-        <p class="field__hint">
-          Avisos sobre o seu caso são enviados de qualquer forma — essa opção é
-          só para novidades e dicas, e pode ser desativada quando quiser.
-        </p>
-
-        <button type="submit" class="btn btn--primary btn--block">Confirmar</button>
-      </form>
-    </div>
-
-    <%
-      /* Пауза между отправками (§67). Её считает сервер и он же её
-         применяет — разметка ниже только показывает остаток.
-
-         Кнопка приходит доступной намеренно. Заблокировать её может лишь
-         скрипт: если он не выполнится, заблокированная разметкой кнопка
-         осталась бы мёртвой навсегда, и повторная отправка стала бы
-         недоступна вовсе. Поэтому запрет ставится только там, где есть кому
-         его снять, а без скрипта отказ придёт с сервера — тем же текстом. */
-    %>
-    <form method="post" action="/entrar" class="resend"
-          data-reenvio="<%= aguardeSegundos %>">
+    <form method="post" action="/entrar/codigo" novalidate>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="hidden" name="next" value="<%= nextUrl %>" />
-      <input type="hidden" name="phone" value="<%= phoneMasked %>" />
 
-      <button type="submit" class="btn btn--secondary btn--block"
-              data-reenvio-botao>
-        Reenviar código
-      </button>
+      <label class="cartao__rotulo" for="code">Código recebido</label>
+      <%# autocomplete="one-time-code" позволяет системе подставить код из SMS %>
+      <input
+        class="cartao__campo"
+        type="text"
+        id="code"
+        name="code"
+        required
+        autocomplete="one-time-code"
+        inputmode="numeric"
+        aria-describedby="<%= errors.code ? 'code-error' : '' %>"
+        aria-invalid="<%= errors.code ? 'true' : 'false' %>"
+      />
+      <% if (errors.code) { %>
+        <p class="cartao__erro" id="code-error"><%= errors.code %></p>
+      <% } %>
 
-      <%# aria-live: отсчёт проговаривается экранным диктором, не перебивая. %>
-      <p class="small muted resend__espera" data-reenvio-aviso
-         role="status" aria-live="polite">
-        <% if (aguardeSegundos > 0) { %>
-          Você poderá solicitar um novo código em <%= aguardeSegundos %> segundos.
-        <% } %>
+      <%# §17: согласие на маркетинг — отдельная галочка, по умолчанию снятая.
+          Вход по телефону сам по себе согласия на рассылку не означает. %>
+      <div class="field field--check cartao__consentimento">
+        <input
+          type="checkbox"
+          id="marketing"
+          name="marketing"
+          <%= values.marketing ? 'checked' : '' %>
+        />
+        <label for="marketing" class="label--inline"><%= marketingLabel %></label>
+      </div>
+      <p class="cartao__nota">
+        Avisos sobre o seu caso são enviados de qualquer forma — essa opção é
+        só para novidades e dicas, e pode ser desativada quando quiser.
       </p>
-    </form>
 
-    <p class="small muted">
-      <a href="/entrar">Usar outro número</a>
-    </p>
+      <button type="submit" class="btn btn--primary cartao__acao">Confirmar</button>
+    </form>
   </div>
+
+  <%
+    /* Пауза между отправками (§67). Её считает сервер и он же её применяет —
+       разметка ниже только показывает остаток.
+
+       Кнопка приходит доступной намеренно. Заблокировать её может лишь
+       скрипт: если он не выполнится, заблокированная разметкой кнопка
+       осталась бы мёртвой навсегда, и повторная отправка стала бы недоступна
+       вовсе. Поэтому запрет ставится только там, где есть кому его снять, а
+       без скрипта отказ придёт с сервера — тем же текстом. */
+  %>
+  <form method="post" action="/entrar" class="reenvio"
+        data-reenvio="<%= aguardeSegundos %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="hidden" name="next" value="<%= nextUrl %>" />
+    <input type="hidden" name="phone" value="<%= phoneMasked %>" />
+
+    <button type="submit" class="btn--discreto reenvio__botao" data-reenvio-botao>
+      Reenviar código
+    </button>
+
+    <%# aria-live: отсчёт проговаривается экранным диктором, не перебивая. %>
+    <p class="reenvio__espera" data-reenvio-aviso role="status" aria-live="polite">
+      <% if (aguardeSegundos > 0) { %>
+        Você poderá solicitar um novo código em <%= aguardeSegundos %> segundos.
+      <% } %>
+    </p>
+  </form>
+
+  <p class="cartao__rodape">
+    <a href="/entrar">Usar outro número</a>
+  </p>
 </section>

@@ -1,43 +1,42 @@
-<section class="section">
-  <div class="container container--narrow">
-    <h1>Entrar</h1>
-    <p class="lede">
+<section class="pagina pagina--estreita">
+  <div class="cartao">
+    <h1 class="cartao__titulo">Entrar</h1>
+    <p class="cartao__lead">
       Informe seu telefone. Enviaremos um código para confirmar que é você.
       Não usamos senha.
     </p>
 
-    <div class="panel">
-      <form method="post" action="/entrar" novalidate>
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <input type="hidden" name="next" value="<%= nextUrl %>" />
+    <form method="post" action="/entrar" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="next" value="<%= nextUrl %>" />
 
-        <div class="field <%= errors.phone ? 'field--invalid' : '' %>">
-          <label for="phone">Telefone com DDD</label>
-          <p class="field__hint" id="phone-hint">Exemplo: (11) 98765-4321</p>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            required
-            autocomplete="tel-national"
-            inputmode="tel"
-            value="<%= values.phone || '' %>"
-            aria-describedby="phone-hint <%= errors.phone ? 'phone-error' : '' %>"
-            aria-invalid="<%= errors.phone ? 'true' : 'false' %>"
-          />
-          <% if (errors.phone) { %>
-            <p class="field__error" id="phone-error"><%= errors.phone %></p>
-          <% } %>
-        </div>
+      <label class="cartao__rotulo" for="phone">Telefone com DDD</label>
+      <input
+        class="cartao__campo"
+        type="tel"
+        id="phone"
+        name="phone"
+        required
+        autocomplete="tel-national"
+        inputmode="tel"
+        placeholder="(11) 98765-4321"
+        value="<%= values.phone || '' %>"
+        aria-describedby="<%= errors.phone ? 'phone-erro' : '' %>"
+        aria-invalid="<%= errors.phone ? 'true' : 'false' %>"
+      />
+      <% if (errors.phone) { %>
+        <p class="cartao__erro" id="phone-erro"><%= errors.phone %></p>
+      <% } %>
 
-        <button type="submit" class="btn btn--primary btn--block">Enviar código</button>
-      </form>
-    </div>
-
-    <p class="small muted">
-      Ao continuar, você concorda com os
-      <a href="/termos">Termos de uso</a> e a
-      <a href="/privacidade">Política de privacidade</a>.
-    </p>
+      <button type="submit" class="btn btn--primary cartao__acao">
+        Enviar código
+      </button>
+    </form>
   </div>
+
+  <p class="cartao__rodape">
+    Ao continuar, você concorda com os
+    <a href="/termos">Termos de uso</a> e a
+    <a href="/privacidade">Política de privacidade</a>.
+  </p>
 </section>
