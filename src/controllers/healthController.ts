@@ -50,9 +50,41 @@ async function checkDatabase(): Promise<Check> {
     await db().$queryRaw`select 1`;
     return { ok: true, detail: "consulta executada" };
   } catch (error) {
+    const dica = dicaDeConexao();
     return {
       ok: false,
-      detail: limparMensagem(error),
+      detail: dica ? `${limparMensagem(error)} — ${dica}` : limparMensagem(error),
     };
   }
+}
+
+/**
+ * Подсказка про строку подключения.
+ *
+ * Прямой хост Supabase не имеет записи IPv4 — только IPv6, а исходящего
+ * IPv6 у бессерверных функций нет. Соединение не начинается вовсе, и в
+ * логах базы не появляется ни одной попытки входа: отказ выглядит как
+ * неверный пароль и ищется часами. Здесь он называется словами.
+ *
+ * Хост — не секрет: он и так виден в сообщении драйвера. Пароль и остальная
+ * строка сюда не попадают: берётся только hostname.
+ */
+function dicaDeConexao(): string | null {
+  const url = loadConfig().database.url;
+  if (!url) return null;
+
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return null;
+  }
+
+  if (!/^db\..+\.supabase\.co$/i.test(host)) return null;
+
+  return (
+    `${host} é a conexão direta, que só existe em IPv6 — funções serverless ` +
+    "não têm saída IPv6. Use a string do Transaction pooler (porta 6543), " +
+    "em Supabase → Connect."
+  );
 }

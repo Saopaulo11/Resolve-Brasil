@@ -1,5 +1,5 @@
 import request from "supertest";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * /health открыт без входа — иначе он не годится как проверка снаружи.
@@ -19,6 +19,7 @@ vi.mock("../../src/services/db", () => ({
   disconnectDb: async () => undefined,
 }));
 
+const { resetConfigCache } = await import("../../src/config/env");
 const { createHarness } = await import("../helpers/auth");
 
 let app: ReturnType<typeof createHarness>["app"];
@@ -40,5 +41,44 @@ describe("GET /health при недоступной базе", () => {
     expect(corpo).toContain("[redigido]");
     // Причина при этом остаётся различимой.
     expect(corpo).toContain("ECONNREFUSED");
+  });
+});
+
+describe("подсказка про строку подключения", () => {
+  const ANTES = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...ANTES };
+    resetConfigCache();
+  });
+
+  it("узнаёт прямой хост Supabase и называет лечение", async () => {
+    // Прямой хост существует только в IPv6, а исходящего IPv6 у функций
+    // нет. В логах базы при этом не появляется ни одной попытки входа, и
+    // отказ выглядит как неверный пароль — его ищут часами.
+    process.env.DATABASE_URL =
+      "postgresql://postgres:SenhaReal@db.yybexvdznczbobsibtyn.supabase.co:5432/postgres";
+    resetConfigCache();
+
+    const resposta = await request(createHarness().app).get("/health");
+    const detalhe = resposta.body.checks.database.detail as string;
+
+    expect(detalhe).toContain("conexão direta");
+    expect(detalhe).toContain("Transaction pooler");
+    expect(detalhe).toContain("6543");
+    // Хост назван — он и так виден в сообщении драйвера. Пароль нет.
+    expect(detalhe).toContain("db.yybexvdznczbobsibtyn.supabase.co");
+    expect(detalhe).not.toContain("SenhaReal");
+  });
+
+  it("молчит, когда строка уже через пул", async () => {
+    process.env.DATABASE_URL =
+      "postgresql://postgres.abc:SenhaReal@aws-0-sa-east-1.pooler.supabase.com:6543/postgres";
+    resetConfigCache();
+
+    const resposta = await request(createHarness().app).get("/health");
+    const detalhe = resposta.body.checks.database.detail as string;
+
+    expect(detalhe).not.toContain("Transaction pooler");
   });
 });
