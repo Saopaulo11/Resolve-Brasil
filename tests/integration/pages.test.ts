@@ -2,6 +2,7 @@ import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { createApp } from "../../src/app";
+import { CATEGORIES } from "../../src/cases/categories";
 
 let app: ReturnType<typeof createApp>;
 
@@ -40,10 +41,17 @@ describe("публичные страницы", () => {
     expect(response.text).toContain('<html lang="pt-BR"');
   });
 
-  it("показывает все семь категорий MVP", async () => {
+  it("показывает все категории MVP и позволяет выбрать любую", async () => {
+    // Проверяется содержимое, а не вёрстка: категории переезжали со
+    // страницы на страницу и из ссылок в переключатели формы, и тест,
+    // привязанный к имени класса, ломался на каждом переезде, ничего
+    // не говоря о том, видит ли человек свою ситуацию в списке.
     const response = await request(app).get("/");
-    const matches = response.text.match(/class="category"/g) ?? [];
-    expect(matches).toHaveLength(7);
+
+    for (const category of CATEGORIES) {
+      expect(response.text, category.slug).toContain(category.quickLabel);
+      expect(response.text, category.slug).toContain(`value="${category.slug}"`);
+    }
   });
 
   it("на каждой странице сказано, чем сервис не является", async () => {

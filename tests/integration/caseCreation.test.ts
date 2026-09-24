@@ -157,3 +157,48 @@ describe("создание дела до входа (§15)", () => {
     expect(page.text).toContain(DESCRIPTION);
   });
 });
+
+describe("выбор категории на главной (§5)", () => {
+  it("выбранная категория становится категорией дела", async () => {
+    const session = await login(harness, "11987654321");
+    const home = await openPage(harness.app, "/", session);
+    const response = await request(harness.app)
+      .post("/caso/novo")
+      .set("Cookie", home.cookies)
+      .type("form")
+      .send({
+        _csrf: home.token,
+        description: DESCRIPTION,
+        categoria: "produto-nao-recebido",
+      });
+
+    const publicId = /\/caso\/(RB-[A-Z2-9]{6})/.exec(response.headers.location ?? "")?.[1];
+    const caso = await harness.cases.findByPublicId(publicId ?? "");
+
+    expect(caso?.category).toBe("PRODUTO_NAO_RECEBIDO");
+  });
+
+  it("без выбора категория остаётся пустой — её определит анализ", async () => {
+    // Заставлять человека раскладывать свою проблему по нашим ящикам нельзя:
+    // он пришёл рассказать, что случилось, а не классифицировать это.
+    const session = await login(harness, "11987654321");
+    const { response } = await submitCase(session);
+
+    const publicId = /\/caso\/(RB-[A-Z2-9]{6})/.exec(response.headers.location ?? "")?.[1];
+    const caso = await harness.cases.findByPublicId(publicId ?? "");
+
+    expect(caso?.category).toBeNull();
+  });
+
+  it("приход с карточки категории заранее отмечает её в форме", async () => {
+    const pagina = await request(harness.app).get("/?categoria=cobranca-indevida");
+
+    // Отмечен именно нужный переключатель, а не первый попавшийся.
+    expect(pagina.text).toMatch(
+      /id="categoria-cobranca-indevida"[^>]*\n?[^>]*checked/,
+    );
+    expect(pagina.text).not.toMatch(
+      /id="categoria-produto-nao-recebido"[^>]*\n?[^>]*checked/,
+    );
+  });
+});

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import { CATEGORIES } from "../cases/categories";
+import { DESCRIPTION_MAX, DESCRIPTION_MIN } from "../cases/description";
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
 import { renderPage } from "../utils/render";
@@ -17,6 +18,8 @@ export function home(req: Request, res: Response): void {
       "entender a situação, organizar as informações e encontrar os próximos passos.",
     categories: CATEGORIES,
     maxArquivos: loadConfig().storage.maxFilesPerUpload,
+    descricaoMin: DESCRIPTION_MIN,
+    descricaoMax: DESCRIPTION_MAX,
     // Пришёл с карточки категории — форма это помнит и передаёт дальше.
     selectedCategory:
       typeof req.query.categoria === "string" ? req.query.categoria : "",

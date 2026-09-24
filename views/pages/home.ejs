@@ -1,21 +1,31 @@
-<section class="hero">
-  <div class="container">
-    <p class="hero__tagline">Pessoas reais. Soluções reais.</p>
-    <h1>Conte o que aconteceu.<br />Descubra o que fazer.</h1>
-    <p class="lede">
-      Conte seu problema com suas próprias palavras. A IA vai ajudar você a
-      entender a situação, organizar as informações e encontrar os próximos
-      passos.
-    </p>
-  </div>
-</section>
+<%
+  // Отказ на нашей стороне. Рассказ человека остаётся в форме ниже: общая
+  // страница ошибки его теряет, и вернуться ему некуда.
+  var falhou = typeof falha !== 'undefined' && falha;
+  var categoriaAtual = typeof selectedCategory !== 'undefined' ? selectedCategory : '';
+%>
+<section class="intake">
+  <div class="container intake__grid">
+    <div class="intake__lead">
+      <p class="hero__tagline">Pessoas reais. Soluções reais.</p>
+      <h1>Conte o que aconteceu.<br />Descubra o que fazer.</h1>
+      <p class="lede">
+        Conte seu problema com suas próprias palavras. A IA ajuda você a
+        entender a situação, organizar as informações e encontrar os
+        próximos passos.
+      </p>
 
-<section class="section">
-  <div class="container">
-    <div class="panel">
-      <%# Отказ на нашей стороне. Рассказ человека остаётся в форме ниже:
-          общая страница ошибки его теряет, и вернуться ему некуда. %>
-      <% var falhou = typeof falha !== 'undefined' && falha; %>
+      <%# §14: только то, что правда. Никаких отзывов, цифр успеха и гербов
+          государственных органов — ни одного из них у нас нет. %>
+      <ul class="trust">
+        <li>Orientação com inteligência artificial</li>
+        <li>Fontes oficiais quando disponíveis</li>
+        <li>Você decide o que fazer</li>
+      </ul>
+
+    </div>
+
+    <div class="panel intake__panel">
       <% if (falhou) { %>
         <div class="flash flash--falha" role="alert">
           <strong><%= falha.heading %></strong>
@@ -25,10 +35,6 @@
 
       <form method="post" action="/caso/novo" enctype="multipart/form-data" novalidate>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <%# Категория, выбранная карточкой на /categorias. Пустая — если человек
-            пришёл прямо на главную: тогда категорию определит AI на PHASE 4. %>
-        <input type="hidden" name="categoria"
-               value="<%= typeof selectedCategory !== 'undefined' ? selectedCategory : '' %>" />
 
         <div class="field <%= errors.description ? 'field--invalid' : '' %>">
           <label for="description">O que aconteceu?</label>
@@ -39,23 +45,58 @@
           <textarea
             id="description"
             name="description"
-            rows="6"
+            rows="7"
             required
-            minlength="20"
-            maxlength="5000"
-            aria-describedby="description-hint <%= errors.description ? 'description-error' : '' %>"
+            minlength="<%= descricaoMin %>"
+            maxlength="<%= descricaoMax %>"
+            data-contador="description-contador"
+            aria-describedby="description-hint description-contador <%= errors.description ? 'description-error' : '' %>"
             aria-invalid="<%= errors.description ? 'true' : 'false' %>"
-            placeholder="Comprei um produto, paguei no Pix e até hoje não recebi."
+            placeholder="Ex.: Comprei um produto, paguei no Pix e até hoje não recebi."
           ><%= values.description || '' %></textarea>
+          <%# Без JavaScript здесь остаётся требование словами — оно и важнее
+              счётчика: человек должен понимать, чего от него ждут. %>
+          <p class="field__contador" id="description-contador">
+            Mínimo de <%= descricaoMin %> caracteres.
+          </p>
           <% if (errors.description) { %>
             <p class="field__error" id="description-error"><%= errors.description %></p>
           <% } %>
         </div>
 
-        <%# §6: вложения прямо при вводе. Дожидаться страницы дела незачем —
-            чек и переписка есть у человека уже сейчас, а через шаг он их
-            приложить забудет. Работает и без JavaScript: браузер сам
-            показывает, сколько файлов выбрано. %>
+        <%# §5: категория необязательна. Выбор человека точнее нашего
+            угадывания, но заставлять выбирать нельзя — он пришёл рассказать
+            о проблеме, а не разложить её по нашим ящикам. %>
+        <fieldset class="field chips">
+          <legend>
+            O que mais se parece com a sua situação?
+            <span class="chips__opcional">opcional</span>
+          </legend>
+          <p class="field__hint" id="categoria-hint">
+            Se você não escolher, a IA identifica pelo seu relato.
+          </p>
+          <div class="chips__lista">
+            <% categories.forEach(function (category) { %>
+              <input
+                class="chips__radio"
+                type="radio"
+                name="categoria"
+                id="categoria-<%= category.slug %>"
+                value="<%= category.slug %>"
+                aria-describedby="categoria-hint"
+                <%= categoriaAtual === category.slug ? 'checked' : '' %>
+              />
+              <label class="chips__item" for="categoria-<%= category.slug %>">
+                <span aria-hidden="true"><%= category.icon %></span>
+                <span><%= category.quickLabel %></span>
+              </label>
+            <% }); %>
+          </div>
+        </fieldset>
+
+        <%# §6: вложения прямо при вводе. Чек и переписка есть у человека
+            сейчас, а через шаг он их приложить забудет. Работает и без
+            JavaScript: браузер сам показывает, сколько файлов выбрано. %>
         <div class="field upload">
           <label for="arquivo">Tem algum documento ou comprovante?</label>
           <p class="field__hint" id="arquivo-hint">
@@ -94,43 +135,36 @@
         <% } %>
       </form>
     </div>
-  </div>
-</section>
 
-<section class="section">
-  <div class="container">
-    <h2>Ou comece por aqui</h2>
-    <p class="muted small">Escolha o que mais se parece com a sua situação.</p>
-    <div class="grid grid--2">
-      <% categories.forEach(function (category) { %>
-        <a class="category" href="/categorias/<%= category.slug %>">
-          <span class="category__icon" aria-hidden="true"><%= category.icon %></span>
-          <span><%= category.quickLabel %></span>
-        </a>
-      <% }); %>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container">
-    <!--
-      §14: только то, что правда. Никаких отзывов, цифр успеха и гербов
-      государственных органов — ни одного из них у нас нет.
-    -->
-    <ul class="trust">
-      <li>
-        <span aria-hidden="true">🔒</span>
-        <span>Seus dados são tratados com segurança.</span>
-      </li>
-      <li>
-        <span aria-hidden="true">🤖</span>
-        <span>Orientação com inteligência artificial.</span>
-      </li>
-      <li>
-        <span aria-hidden="true">📚</span>
-        <span>Informações baseadas em fontes oficiais quando disponíveis.</span>
-      </li>
-    </ul>
+      <div class="intake__passos">
+        <h2>Como funciona</h2>
+        <ol class="passos__lista">
+          <li>
+            <span class="passos__numero">1</span>
+            <h3>Você conta o que aconteceu</h3>
+            <p>
+              Com suas próprias palavras, sem termos jurídicos. Se tiver
+              comprovante, nota fiscal ou a conversa com a empresa, anexe junto.
+            </p>
+          </li>
+          <li>
+            <span class="passos__numero">2</span>
+            <h3>A IA organiza o caso</h3>
+            <p>
+              Identifica a situação, lê os documentos que você enviou e pergunta
+              só o que ainda falta — no máximo cinco perguntas.
+            </p>
+          </li>
+          <li>
+            <span class="passos__numero">3</span>
+            <h3>Você recebe os próximos passos</h3>
+            <p>
+              Um plano de ação, as fontes oficiais quando existirem e uma
+              mensagem pronta para enviar à empresa. O envio é sempre feito
+              por você.
+            </p>
+          </li>
+        </ol>
+      </div>
   </div>
 </section>

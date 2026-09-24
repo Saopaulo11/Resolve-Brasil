@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
 import { CATEGORIES, findCategoryBySlug } from "../cases/categories";
+import { DESCRIPTION_MAX, DESCRIPTION_MIN } from "../cases/description";
 import { runAnalysis, type AnalysisKind } from "../cases/analysisService";
 import {
   DOCUMENT_KIND_LABELS,
@@ -52,8 +53,11 @@ const schema = z.object({
   description: z
     .string({ error: "Conte o que aconteceu para começarmos." })
     .trim()
-    .min(20, "Conte um pouco mais: o que foi comprado, quando e o que deu errado.")
-    .max(5000, "Texto muito longo. Resuma os pontos principais."),
+    .min(
+      DESCRIPTION_MIN,
+      "Conte um pouco mais: o que foi comprado, quando e o que deu errado.",
+    )
+    .max(DESCRIPTION_MAX, "Texto muito longo. Resuma os pontos principais."),
   categoria: z.string().max(80).optional(),
 });
 
@@ -90,6 +94,8 @@ function renderHome(
       description: HOME_DESCRIPTION,
       categories: CATEGORIES,
       maxArquivos: loadConfig().storage.maxFilesPerUpload,
+      descricaoMin: DESCRIPTION_MIN,
+      descricaoMax: DESCRIPTION_MAX,
       values: { description: state.description ?? "" },
       errors: state.erroDeCampo ? { description: state.erroDeCampo } : {},
       selectedCategory: state.categoria ?? "",
