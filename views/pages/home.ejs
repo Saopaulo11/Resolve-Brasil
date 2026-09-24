@@ -34,7 +34,7 @@
             minlength="20"
             maxlength="5000"
             aria-describedby="description-hint <%= errors.description ? 'description-error' : '' %>"
-            <%= errors.description ? 'aria-invalid="true"' : '' %>
+            aria-invalid="<%= errors.description ? 'true' : 'false' %>"
             placeholder="Comprei um produto, paguei no Pix e até hoje não recebi."
           ><%= values.description || '' %></textarea>
           <% if (errors.description) { %>

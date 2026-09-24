@@ -105,6 +105,22 @@ describe("создание дела вошедшим пользователем"
     // Заставлять человека заново набирать рассказ — верный способ его потерять.
     expect(response.text).toContain("oi</textarea>");
   });
+
+  it("отвечает по-португальски, когда поля с рассказом нет вовсе", async () => {
+    // required у textarea живёт в браузере. POST приходит откуда угодно, и
+    // тогда сообщение писал бы уже zod: по-английски и про типы данных.
+    const session = await login(harness, "11987654321");
+    const home = await openPage(harness.app, "/", session);
+    const response = await request(harness.app)
+      .post("/caso/novo")
+      .set("Cookie", home.cookies)
+      .type("form")
+      .send({ _csrf: home.token });
+
+    expect(response.status).toBe(400);
+    expect(response.text).toContain("Conte o que aconteceu para começarmos");
+    expect(response.text).not.toMatch(/Invalid input|expected string|received undefined/);
+  });
 });
 
 describe("создание дела до входа (§15)", () => {

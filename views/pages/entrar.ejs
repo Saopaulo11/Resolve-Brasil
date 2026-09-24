@@ -23,7 +23,7 @@
             inputmode="tel"
             value="<%= values.phone || '' %>"
             aria-describedby="phone-hint <%= errors.phone ? 'phone-error' : '' %>"
-            <%= errors.phone ? 'aria-invalid="true"' : '' %>
+            aria-invalid="<%= errors.phone ? 'true' : 'false' %>"
           />
           <% if (errors.phone) { %>
             <p class="field__error" id="phone-error"><%= errors.phone %></p>

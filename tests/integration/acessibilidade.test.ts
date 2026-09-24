@@ -1,7 +1,13 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createHarness, login, openPage, type Harness } from "../helpers/auth";
+import {
+  createHarness,
+  login,
+  mergeCookies,
+  openPage,
+  type Harness,
+} from "../helpers/auth";
 
 /**
  * Доступность отрендеренных страниц (§70).
@@ -17,6 +23,14 @@ let harness: Harness;
 beforeEach(() => {
   harness = createHarness();
 });
+
+/**
+ * Атрибут, собранный целиком внутри выводящего тега шаблона, приезжает с
+ * экранированными кавычками: браузер получает `aria-invalid=&#34;true&#34;`,
+ * значением считает `"true"` вместе с кавычками — и разметку не понимает.
+ * На глаз страница выглядит правильно, поэтому замечает это только тест.
+ */
+const ATRIBUTO_ESCAPADO = /\s[a-z-]+=&#3[49];/;
 
 /** Поля ввода, которым подпись не нужна по устройству. */
 const SEM_LABEL = new Set(["hidden", "submit", "button", "image"]);
@@ -92,6 +106,22 @@ describe("публичные страницы", () => {
       expect(html, caminho).toContain('class="skip-link"');
     }
   });
+
+  it("ни один атрибут не приезжает экранированным", async () => {
+    for (const [caminho, html] of await paginasPublicas()) {
+      expect(html, caminho).not.toMatch(ATRIBUTO_ESCAPADO);
+    }
+  });
+
+  it("в навигации отмечена текущая страница", async () => {
+    // Без aria-current человек со скринридером слышит список одинаковых
+    // ссылок и не понимает, на какой из них он уже находится.
+    const sobre = await request(harness.app).get("/sobre");
+    expect(sobre.text).toContain('aria-current="page"');
+
+    const inicio = await request(harness.app).get("/");
+    expect(inicio.text).not.toContain("aria-current");
+  });
 });
 
 describe("страницы за входом", () => {
@@ -112,5 +142,58 @@ describe("страницы за входом", () => {
       expect(camposSemLabel(response.text), caminho).toEqual([]);
       expect(imagensSemAlt(response.text), caminho).toEqual([]);
     }
+  });
+});
+
+describe("поля с ошибкой", () => {
+  it("текст дела: пометка об ошибке доходит до скринридера", async () => {
+    const home = await openPage(harness.app, "/");
+    const resposta = await request(harness.app)
+      .post("/caso/novo")
+      .set("Cookie", home.cookies)
+      .type("form")
+      .send({ _csrf: home.token, description: "curto" });
+
+    expect(resposta.status).toBe(400);
+    expect(resposta.text).toContain('aria-invalid="true"');
+    expect(resposta.text).not.toMatch(ATRIBUTO_ESCAPADO);
+  });
+
+  it("телефон: пометка об ошибке доходит до скринридера", async () => {
+    const entrar = await openPage(harness.app, "/entrar");
+    const resposta = await request(harness.app)
+      .post("/entrar")
+      .set("Cookie", entrar.cookies)
+      .type("form")
+      .send({ _csrf: entrar.token, phone: "123" });
+
+    expect(resposta.status).toBe(400);
+    expect(resposta.text).toContain('aria-invalid="true"');
+    expect(resposta.text).not.toMatch(ATRIBUTO_ESCAPADO);
+  });
+
+  it("код подтверждения: пометка об ошибке доходит до скринридера", async () => {
+    const entrar = await openPage(harness.app, "/entrar");
+    const enviado = await request(harness.app)
+      .post("/entrar")
+      .set("Cookie", entrar.cookies)
+      .type("form")
+      .send({ _csrf: entrar.token, phone: "11987654321" });
+
+    const codigo = await openPage(
+      harness.app,
+      "/entrar/codigo",
+      mergeCookies(entrar.cookies, (enviado.headers["set-cookie"] as unknown as string[]) ?? []),
+    );
+
+    const resposta = await request(harness.app)
+      .post("/entrar/codigo")
+      .set("Cookie", codigo.cookies)
+      .type("form")
+      .send({ _csrf: codigo.token, code: "abc" });
+
+    expect(resposta.status).toBe(400);
+    expect(resposta.text).toContain('aria-invalid="true"');
+    expect(resposta.text).not.toMatch(ATRIBUTO_ESCAPADO);
   });
 });

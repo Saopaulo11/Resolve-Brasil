@@ -1,3 +1,10 @@
+<%#
+  aria-current ставится условным тегом, а не собирается строкой внутри
+  выводящего тега: весь атрибут, пропущенный через вывод, приезжает как
+  aria-current=&#34;page&#34; — кавычки экранированы, и значение браузер
+  уже не разбирает. Пункт «вы здесь» остаётся видимым глазом и невидимым
+  для скринридера.
+%>
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="brand" href="/" aria-label="Resolve Brasil — página inicial">
@@ -6,24 +13,19 @@
     <nav class="site-nav" aria-label="Navegação principal">
       <ul>
         <li>
-          <a href="/como-funciona"
-             <%= currentPath === '/como-funciona' ? 'aria-current="page"' : '' %>>Como funciona</a>
+          <a href="/como-funciona"<% if (currentPath === '/como-funciona') { %> aria-current="page"<% } %>>Como funciona</a>
         </li>
         <li>
-          <a href="/categorias"
-             <%= currentPath === '/categorias' ? 'aria-current="page"' : '' %>>Categorias</a>
+          <a href="/categorias"<% if (currentPath === '/categorias') { %> aria-current="page"<% } %>>Categorias</a>
         </li>
         <li>
-          <a href="/sobre"
-             <%= currentPath === '/sobre' ? 'aria-current="page"' : '' %>>Sobre</a>
+          <a href="/sobre"<% if (currentPath === '/sobre') { %> aria-current="page"<% } %>>Sobre</a>
         </li>
         <li>
           <% if (typeof userId !== 'undefined' && userId) { %>
-            <a href="/minha-conta"
-               <%= currentPath === '/minha-conta' ? 'aria-current="page"' : '' %>>Minha conta</a>
+            <a href="/minha-conta"<% if (currentPath === '/minha-conta') { %> aria-current="page"<% } %>>Minha conta</a>
           <% } else { %>
-            <a href="/entrar"
-               <%= currentPath === '/entrar' ? 'aria-current="page"' : '' %>>Entrar</a>
+            <a href="/entrar"<% if (currentPath === '/entrar') { %> aria-current="page"<% } %>>Entrar</a>
           <% } %>
         </li>
       </ul>

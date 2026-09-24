@@ -21,7 +21,7 @@
             inputmode="numeric"
             <%# autocomplete="one-time-code" позволяет системе подставить код из SMS %>
             aria-describedby="<%= errors.code ? 'code-error' : '' %>"
-            <%= errors.code ? 'aria-invalid="true"' : '' %>
+            aria-invalid="<%= errors.code ? 'true' : 'false' %>"
           />
           <% if (errors.code) { %>
             <p class="field__error" id="code-error"><%= errors.code %></p>

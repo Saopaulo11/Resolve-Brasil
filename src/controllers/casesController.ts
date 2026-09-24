@@ -41,8 +41,12 @@ export const PENDING_CASE_COOKIE = "rb_caso";
 const PENDING_CASE_TTL_MS = 30 * 60_000;
 
 const schema = z.object({
+  // Сообщение на самом z.string(), а не только на проверках длины: если поля
+  // в теле запроса нет вовсе, zod выдаёт свой текст — по-английски и про типы.
+  // Форма помечена required, но на это нельзя полагаться: required живёт в
+  // браузере, а POST приходит откуда угодно.
   description: z
-    .string()
+    .string({ error: "Conte o que aconteceu para começarmos." })
     .trim()
     .min(20, "Conte um pouco mais: o que foi comprado, quando e o que deu errado.")
     .max(5000, "Texto muito longo. Resuma os pontos principais."),
