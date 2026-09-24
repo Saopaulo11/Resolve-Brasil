@@ -273,6 +273,22 @@
       </div>
     <% } %>
 
+    <% if (typeof convidado !== 'undefined' && convidado) { %>
+      <%# Дело живёт в подписанной куке на полчаса. Сказать об этом нужно
+          до того, как человек закроет вкладку, а не после. %>
+      <div class="guardar">
+        <p class="guardar__texto">
+          <strong>Este caso ainda não está salvo na sua conta.</strong>
+          Informe seu telefone para guardá-lo, acompanhar o andamento e
+          receber lembretes. Leva menos de um minuto.
+        </p>
+        <a class="btn btn--primary"
+           href="/entrar?next=<%= encodeURIComponent('/caso/' + caso.publicId) %>">
+          Salvar meu caso
+        </a>
+      </div>
+    <% } %>
+
     <h2>Análise</h2>
 
     <% if (aviso) { %>

@@ -60,9 +60,16 @@ export function buildRouter(): Router {
   });
 
   router.post("/caso/novo", cases.criar);
-  router.get("/caso/:publicId", requireAuth(), cases.ver);
+  /*
+   * Без requireAuth намеренно: доступ проверяет сам обработчик — дело видно
+   * владельцу и тому, кто завёл его в этом браузере и ещё не вошёл (§15).
+   * Посредник здесь отправлял бы на форму телефона раньше, чем человек
+   * увидит хоть что-то, и правка теряла бы смысл.
+   */
+  router.get("/caso/:publicId", cases.ver);
   // Вызовы модели платные и медленные — отдельный лимит (§46).
-  router.post("/caso/:publicId/analisar", requireAuth(), aiRateLimit(), cases.analisar);
+  // Тоже без requireAuth: разбор — то, ради чего человек пришёл.
+  router.post("/caso/:publicId/analisar", aiRateLimit(), cases.analisar);
 
   // --- Документы (§23–§26) ---
   router.post("/caso/:publicId/documentos", requireAuth(), documents.enviar);

@@ -2559,3 +2559,31 @@ a:focus-visible {
     max-width: 9rem;
   }
 }
+
+/* --- Приглашение сохранить дело -------------------------------------- */
+
+.guardar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+}
+
+.guardar__texto {
+  flex: 1 1 18rem;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+@media (max-width: 47.9375rem) {
+  .guardar .btn {
+    width: 100%;
+  }
+}

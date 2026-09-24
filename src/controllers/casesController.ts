@@ -14,8 +14,10 @@ import {
   createCase,
   ESCALATION_ORDER,
   getCaseForUser,
+  getUnclaimedCase,
   isClosedStatus,
   nextEscalation,
+  type CaseWithTimeline,
 } from "../cases/caseService";
 import { stores } from "../users/storeRegistry";
 import { PIX_SITUATIONS, pixSituationDefinition } from "../cases/pix";
@@ -46,6 +48,17 @@ import { classifyError } from "../errors/categories";
 
 /** Кука с номером дела, созданного до входа. Живёт минуты, не дни. */
 export const PENDING_CASE_COOKIE = "rb_caso";
+
+/**
+ * Номер дела, заведённого в этом браузере до входа.
+ *
+ * Кука подписана: подделать номер нельзя. Она же httpOnly — скрипту на
+ * странице недоступна.
+ */
+function pendingCaseId(req: Request): string | null {
+  const valor = req.signedCookies?.[PENDING_CASE_COOKIE];
+  return typeof valor === "string" && valor.length > 0 ? valor : null;
+}
 const PENDING_CASE_TTL_MS = 30 * 60_000;
 
 const schema = z.object({
@@ -221,9 +234,15 @@ export async function criar(
     return;
   }
 
-  // Не вошёл — дело уже создано, но без владельца. Номер кладём в
-  // подписанную куку и ведём на вход; привязка произойдёт после
-  // подтверждения телефона (§15).
+  /*
+   * Не вошёл — дело создано без владельца. Номер кладём в подписанную куку
+   * и ведём СРАЗУ НА ДЕЛО, а не на вход.
+   *
+   * Раньше здесь стояла стена: человек рассказывал о проблеме и упирался в
+   * форму телефона, не увидев ещё ничего. Телефон нужен, чтобы дело
+   * сохранилось и приходили напоминания, — об этом и спрашиваем, но после
+   * того, как показали пользу, а не до.
+   */
   const config = loadConfig();
   res.cookie(PENDING_CASE_COOKIE, created.publicId, {
     httpOnly: true,
@@ -234,7 +253,7 @@ export async function criar(
     maxAge: PENDING_CASE_TTL_MS,
   });
 
-  res.redirect(303, `/entrar?next=${encodeURIComponent(target)}`);
+  res.redirect(303, anexos ? `${target}?aviso=${encodeURIComponent(anexos)}` : target);
 }
 
 export async function ver(
@@ -243,10 +262,6 @@ export async function ver(
   next: NextFunction,
 ): Promise<void> {
   const userId = req.session?.userId;
-  if (!userId) {
-    res.redirect(303, "/entrar");
-    return;
-  }
 
   // Express 5 типизирует параметр как string | string[]: повторённый
   // параметр в адресе даёт массив. Берём только строку.
@@ -256,12 +271,39 @@ export async function ver(
   // Неверный формат номера до базы не доходит.
   if (!isValidPublicCaseId(publicId)) return next();
 
+  if (!userId) {
+    // Не вошёл — но мог сам завести это дело в этом же браузере.
+    const convidado = await getUnclaimedCase(publicId, pendingCaseId(req));
+    if (!convidado) {
+      res.redirect(303, `/entrar?next=${encodeURIComponent(`/caso/${publicId}`)}`);
+      return;
+    }
+    return renderCaso(req, res, next, convidado, null);
+  }
+
   const found = await getCaseForUser(publicId, userId);
 
   // Чужое дело и несуществующее дело дают одинаковый 404: ответ «403»
   // подтвердил бы, что такой номер существует.
   if (!found) return next();
 
+  return renderCaso(req, res, next, found, userId);
+}
+
+/**
+ * Отрисовка страницы дела.
+ *
+ * userId === null — дело смотрит тот, кто его завёл и ещё не вошёл. Всё
+ * остальное одинаково: показывать ему меньше, чем он сам только что
+ * написал, незачем.
+ */
+async function renderCaso(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  found: CaseWithTimeline,
+  userId: string | null,
+): Promise<void> {
   const status = statusDefinition(found.case.status);
   const { cases, documents, facts } = stores();
   const messages = await cases.listMessages(found.case.id);
@@ -282,7 +324,11 @@ export async function ver(
 
   // Одним запросом: по запросу на сообщение страница дела обращалась бы к
   // базе по разу на каждый ответ модели.
-  const avaliados = await stores().feedback.ratedMessageIds(found.case.id, userId);
+  // Оценка привязана к человеку: у того, кто ещё не вошёл, её нет и быть
+  // не может — спрашивать базу не о чем.
+  const avaliados = userId
+    ? await stores().feedback.ratedMessageIds(found.case.id, userId)
+    : new Set<string>();
 
   const progresso = analysisProgress(messages.map((message) => message.type));
 
@@ -297,6 +343,12 @@ export async function ver(
       title: `Caso ${found.case.publicId} — Resolve Brasil`,
       description: "Acompanhe o andamento do seu caso.",
       caso: found.case,
+      /*
+       * Дело ещё не привязано к человеку: он завёл его в этом браузере и не
+       * вошёл. Показываем это прямо — кука живёт полчаса, и если он уйдёт,
+       * дела он потом не найдёт.
+       */
+      convidado: userId === null,
       // Предел берётся из конфигурации, а не пишется в шаблоне: иначе
       // подсказка и то, что на самом деле примет сервер, разъедутся.
       maxArquivos: loadConfig().storage.maxFilesPerUpload,
@@ -438,17 +490,17 @@ export async function analisar(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const userId = req.session?.userId;
-  if (!userId) {
-    res.redirect(303, "/entrar");
-    return;
-  }
+  const userId = req.session?.userId ?? null;
 
   const raw = req.params.publicId;
   const publicId = typeof raw === "string" ? raw : "";
   if (!isValidPublicCaseId(publicId)) return next();
 
-  const found = await getCaseForUser(publicId, userId);
+  // Разбор доступен владельцу и тому, кто завёл дело в этом браузере и ещё
+  // не вошёл: ради разбора он сюда и пришёл (§15).
+  const found = userId
+    ? await getCaseForUser(publicId, userId)
+    : await getUnclaimedCase(publicId, pendingCaseId(req));
   if (!found) return next();
 
   const body = (req.body ?? {}) as Record<string, unknown>;

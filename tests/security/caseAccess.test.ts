@@ -63,8 +63,10 @@ describe("доступ к делу (§80)", () => {
     const alice = await login(harness, "11987654321");
     const publicId = await createCaseAs(alice);
 
+    // Дело Алисы уже принадлежит ей, и кук у этого запроса нет вовсе:
+    // права на просмотр не даёт ничто.
     const response = await request(harness.app).get(`/caso/${publicId}`);
-    expect(response.status).toBe(302);
+    expect([302, 303]).toContain(response.status);
     expect(response.headers.location).toContain("/entrar");
   });
 

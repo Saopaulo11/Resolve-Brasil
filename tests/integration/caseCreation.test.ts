@@ -124,11 +124,15 @@ describe("создание дела вошедшим пользователем"
 });
 
 describe("создание дела до входа (§15)", () => {
-  it("ведёт на вход, сохранив дело", async () => {
+  it("ведёт сразу на дело, не спрашивая телефон", async () => {
+    // Телефон нужен, чтобы дело сохранилось и приходили напоминания, —
+    // и спрашивать его раньше, чем показана польза, значит терять людей
+    // у стены, за которой они ещё ничего не видели.
     const { response } = await submitCase();
 
     expect(response.status).toBe(303);
-    expect(response.headers.location).toMatch(/^\/entrar\?next=/);
+    expect(response.headers.location).toMatch(/^\/caso\/RB-[A-Z2-9]{6}/);
+    expect(response.headers.location).not.toContain("/entrar");
   });
 
   it("после входа дело становится делом этого пользователя", async () => {

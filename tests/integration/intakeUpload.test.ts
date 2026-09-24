@@ -104,7 +104,7 @@ describe("до входа", () => {
     ]);
 
     expect(response.status).toBe(303);
-    expect(response.headers.location).toContain("/entrar");
+    expect(response.headers.location).toContain("/caso/");
 
     const documentos = await harness.documents.listForCase(
       (await harness.cases.findByPublicId(publicId ?? ""))?.id ?? "",

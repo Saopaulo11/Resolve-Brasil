@@ -60,7 +60,13 @@ async function officialSources(): Promise<OfficialSourceOption[]> {
 export async function runAnalysis(input: {
   caseRecord: CaseRecord;
   timeline: CaseEventRecord[];
-  userId: string;
+  /**
+   * Кто запустил разбор. null — тот, кто завёл дело и ещё не вошёл (§15).
+   *
+   * Используется только учётом событий, и он null принимает: в аналитике
+   * человека всё равно нет, туда идут обезличенные счётчики (§55).
+   */
+  userId: string | null;
   kind: AnalysisKind;
 }): Promise<AnalysisOutcome> {
   const provider = aiProvider();
@@ -187,7 +193,7 @@ async function linkPlanSources(caseId: string, plan: { sources?: unknown }): Pro
 async function applyClassification(
   caseRecord: CaseRecord,
   classification: { category: string; subcategory: string | null; confidence: number },
-  userId: string,
+  userId: string | null,
 ): Promise<void> {
   const threshold = loadConfig().ai.classificationMinConfidence;
   if (classification.confidence < threshold) return;
