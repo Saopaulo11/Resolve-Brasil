@@ -33,6 +33,7 @@ import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
 import { megabytes } from "../utils/bytes";
 import { analysisProgress } from "../cases/analysisFlow";
+import { classifyError } from "../errors/categories";
 
 /**
  * Дела (§20, §21, §22).
@@ -184,7 +185,13 @@ export async function criar(
     // Общая страница «Algo deu errado» здесь — тупик: рассказ, который
     // человек только что написал, пропадает вместе с ней, и вернуться ему
     // некуда. Подробности отказа остаются в журнале, наружу не уходят.
-    logger().error({ err: error, path: req.path }, "falha ao criar o caso");
+    // Категория в журнал: «не удалось создать дело» одинаково выглядит и
+    // когда недоступна база, и когда отказал провайдер, а чинится это
+    // совершенно по-разному. Человеку категория не показывается.
+    logger().error(
+      { err: error, path: req.path, categoria: classifyError(error) },
+      "falha ao criar o caso",
+    );
     renderHome(req, res, next, {
       status: 503,
       description: parsed.data.description,

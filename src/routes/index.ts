@@ -9,6 +9,7 @@ import * as documents from "../controllers/documentsController";
 import * as feedback from "../controllers/feedbackController";
 import * as reminders from "../controllers/remindersController";
 import * as responses from "../controllers/responseController";
+import * as diagnostics from "../controllers/diagnosticsController";
 import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import * as seo from "../controllers/seoController";
@@ -28,6 +29,16 @@ export function buildRouter(): Router {
   const router = Router();
 
   router.get("/health", health.health);
+
+  /*
+   * Диагностика (§41). Снаружи видно только «не получилось»; отсюда видно,
+   * что именно. Секретов не отдаёт — ключ показывается началом и длиной.
+   *
+   * Живой запрос к провайдеру стоит денег, поэтому под тем же ограничением
+   * частоты, что и разбор дела. ?live=0 отвечает одними настройками.
+   */
+  router.get("/health/ai", aiRateLimit(), diagnostics.ai);
+  router.get("/health/db", diagnostics.database);
 
   // §33: поисковикам — карта сайта и запреты обхода.
   router.get("/robots.txt", seo.robots);
