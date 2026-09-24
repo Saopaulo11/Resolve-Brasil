@@ -18,7 +18,12 @@ export default tseslint.config(
     // правила для модулей TypeScript здесь дают ложные ошибки.
     files: ["server.js"],
     languageOptions: {
-      globals: { require: "readonly", module: "writable" },
+      globals: {
+        require: "readonly",
+        module: "writable",
+        process: "readonly",
+        console: "readonly",
+      },
     },
     rules: {
       "@typescript-eslint/no-require-imports": "off",

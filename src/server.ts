@@ -19,16 +19,12 @@ import { logger } from "./utils/logger";
  * небезопасными умолчаниями.
  */
 function main(): void {
-  let config;
-  try {
-    config = loadConfig();
-  } catch (error) {
-    // Логгер сам зависит от конфигурации, поэтому здесь ещё console.
-    console.error(error instanceof Error ? error.message : error);
-    process.exit(1);
-    return;
-  }
-
+  // Ошибка конфигурации не гасится здесь, а летит дальше: process.exit(1)
+  // поймать нельзя, и снаружи — в server.js, который запускает нас на
+  // платформе, — от упавшего процесса не остаётся ничего, кроме чужой
+  // страницы «функция не сработала». Пусть тот, кто звал, решает, что с
+  // этим делать. Локально `npm start` по-прежнему падает с тем же текстом.
+  const config = loadConfig();
   const app = createApp();
   const server = app.listen(config.port, () => {
     logger().info(
