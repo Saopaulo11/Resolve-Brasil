@@ -23,6 +23,7 @@ import { ESCALATION_LABELS, formatBRL, statusDefinition } from "../cases/status"
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
 import { isValidPublicCaseId } from "../utils/ids";
+import { logger } from "../utils/logger";
 import { listReminders, PRESETS } from "../notifications/reminderService";
 import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
@@ -58,6 +59,42 @@ const HOME_DESCRIPTION =
   "Conte seu problema com suas próprias palavras. A IA ajuda você a entender " +
   "a situação, organizar as informações e encontrar os próximos passos.";
 
+/**
+ * Возврат на главную с сохранённым рассказом.
+ *
+ * Общий для всех исходов, кроме успеха: и отказ проверки, и сбой на нашей
+ * стороне возвращают человека к его же тексту, а не к пустой форме.
+ */
+function renderHome(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  state: {
+    status: number;
+    description?: string;
+    categoria?: string;
+    erroDeCampo?: string;
+    falha?: { heading: string; message: string };
+  },
+): void {
+  res.status(state.status);
+  renderPage(
+    req,
+    res,
+    "home",
+    {
+      title: HOME_TITLE,
+      description: HOME_DESCRIPTION,
+      categories: CATEGORIES,
+      values: { description: state.description ?? "" },
+      errors: state.erroDeCampo ? { description: state.erroDeCampo } : {},
+      selectedCategory: state.categoria ?? "",
+      falha: state.falha ?? null,
+    },
+    next,
+  );
+}
+
 export async function criar(
   req: Request,
   res: Response,
@@ -65,28 +102,18 @@ export async function criar(
 ): Promise<void> {
   const body = (req.body ?? {}) as Record<string, unknown>;
   const parsed = schema.safeParse(body);
+  const relato = typeof body.description === "string" ? body.description : "";
+  const categoria = typeof body.categoria === "string" ? body.categoria : "";
 
   if (!parsed.success) {
     // Введённый текст возвращается в форму: заставлять человека набирать
     // рассказ о проблеме заново — верный способ его потерять.
-    res.status(400);
-    renderPage(
-      req,
-      res,
-      "home",
-      {
-        title: HOME_TITLE,
-        description: HOME_DESCRIPTION,
-        categories: CATEGORIES,
-        values: {
-          description: typeof body.description === "string" ? body.description : "",
-        },
-        errors: {
-          description: parsed.error.issues[0]?.message ?? "Descrição inválida.",
-        },
-      },
-      next,
-    );
+    renderHome(req, res, next, {
+      status: 400,
+      description: relato,
+      categoria,
+      erroDeCampo: parsed.error.issues[0]?.message ?? "Descrição inválida.",
+    });
     return;
   }
 
@@ -96,11 +123,29 @@ export async function criar(
     ? (findCategoryBySlug(parsed.data.categoria)?.value ?? null)
     : null;
 
-  const created = await createCase({
-    userId: req.session?.userId ?? null,
-    description: parsed.data.description,
-    category,
-  });
+  let created;
+  try {
+    created = await createCase({
+      userId: req.session?.userId ?? null,
+      description: parsed.data.description,
+      category,
+    });
+  } catch (error) {
+    // Общая страница «Algo deu errado» здесь — тупик: рассказ, который
+    // человек только что написал, пропадает вместе с ней, и вернуться ему
+    // некуда. Подробности отказа остаются в журнале, наружу не уходят.
+    logger().error({ err: error, path: req.path }, "falha ao criar o caso");
+    renderHome(req, res, next, {
+      status: 503,
+      description: parsed.data.description,
+      categoria,
+      falha: {
+        heading: "Não conseguimos analisar seu caso agora.",
+        message: "Seus dados foram preservados. Tente novamente.",
+      },
+    });
+    return;
+  }
 
   const target = `/caso/${created.publicId}`;
 

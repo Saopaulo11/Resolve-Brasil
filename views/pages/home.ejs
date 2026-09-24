@@ -13,6 +13,16 @@
 <section class="section">
   <div class="container">
     <div class="panel">
+      <%# Отказ на нашей стороне. Рассказ человека остаётся в форме ниже:
+          общая страница ошибки его теряет, и вернуться ему некуда. %>
+      <% var falhou = typeof falha !== 'undefined' && falha; %>
+      <% if (falhou) { %>
+        <div class="flash flash--falha" role="alert">
+          <strong><%= falha.heading %></strong>
+          <p><%= falha.message %></p>
+        </div>
+      <% } %>
+
       <form method="post" action="/caso/novo" novalidate>
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <%# Категория, выбранная карточкой на /categorias. Пустая — если человек
@@ -43,8 +53,13 @@
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">
-          Analisar meu caso
+          <%= falhou ? 'Tentar novamente' : 'Analisar meu caso' %>
         </button>
+        <% if (falhou) { %>
+          <p class="small center">
+            <a href="/">Voltar ao início</a>
+          </p>
+        <% } %>
       </form>
     </div>
   </div>

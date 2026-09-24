@@ -685,6 +685,23 @@ input:focus {
   color: #5c4708;
 }
 
+/* Отказ на нашей стороне: не ошибка ввода, чинить человеку нечего. */
+.flash--falha {
+  background: #fdecec;
+  border-color: #f3b8b8;
+  border-left-color: #b42318;
+  color: #7a1c14;
+}
+
+.flash--falha p {
+  margin: 0.25rem 0 0;
+  font-weight: 400;
+}
+
+.center {
+  text-align: center;
+}
+
 .panel h3 {
   margin-top: 0;
 }
