@@ -2587,3 +2587,184 @@ a:focus-visible {
     width: 100%;
   }
 }
+
+/* =====================================================================
+ * Страница дела.
+ *
+ * Разбор стоит сразу под шапкой: ради него сюда и приходят. Всё остальное
+ * — хронология, документы, напоминания — ниже, оно нужно, когда дело уже
+ * ведут, а не в первую секунду.
+ * ===================================================================== */
+
+.caso {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2.5rem var(--gutter) 4rem;
+}
+
+.caso__cabecalho {
+  margin-bottom: 2rem;
+}
+
+.caso__numero {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.caso__numero strong {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.caso__titulo {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.caso__marcas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Метка состояния: состояние словом, а не цветом — цвет лишь поддерживает. */
+.marca {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle);
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+/*
+ * Оттенки ровно те, что возвращает statusDefinition: neutro, andamento,
+ * atencao, concluido. Придуманные имена классов молча не нашли бы правило,
+ * и метка осталась бы серой при любом состоянии.
+ */
+.marca--neutro {
+  color: var(--color-text);
+}
+
+.marca--andamento {
+  border-color: #b2ddff;
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+.marca--atencao {
+  border-color: #fec84b;
+  background: #fffaeb;
+  color: #93370d;
+}
+
+.marca--concluido {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.caso__dica {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-muted);
+}
+
+/* --- Разделы дела ---------------------------------------------------- */
+
+.caso h2 {
+  margin: 2.5rem 0 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.caso h3 {
+  margin: 0 0 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+/* --- Панель хода разбора --------------------------------------------- */
+
+.panel--analise {
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+/* --- Шаги плана действий --------------------------------------------- */
+
+.caso ol.passos-plano {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: passo;
+}
+
+.caso ol.passos-plano > li {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.75rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--color-border);
+  counter-increment: passo;
+}
+
+.caso ol.passos-plano > li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.caso ol.passos-plano > li::before {
+  content: counter(passo, decimal-leading-zero);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  line-height: 1.6;
+}
+
+/* --- Черновик письма компании ---------------------------------------- */
+
+.rascunho textarea {
+  display: block;
+  width: 100%;
+  min-height: 12rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-subtle);
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  resize: vertical;
+}
+
+.rascunho__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 47.9375rem) {
+  .caso {
+    padding-top: 1.75rem;
+  }
+
+  .caso h2 {
+    margin-top: 2rem;
+  }
+}
