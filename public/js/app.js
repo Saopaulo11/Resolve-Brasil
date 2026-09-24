@@ -387,3 +387,31 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js").catch(function () {});
   });
 }
+
+/**
+ * Поле рассказа растёт под текст (§3).
+ *
+ * Полоса прокрутки внутри маленького поля прячет начало рассказа, и человек
+ * перестаёт видеть, что уже написал. Предел роста задан в стилях: дальше
+ * поле само прокручивается, иначе длинный рассказ уводит кнопку за экран.
+ *
+ * Без скрипта остаётся обычное поле с прокруткой — оно работает.
+ */
+(function () {
+  var campos = document.querySelectorAll("[data-cresce]");
+  if (!campos.length) return;
+
+  var ajustar = function (campo) {
+    campo.style.height = "auto";
+    campo.style.height = campo.scrollHeight + "px";
+  };
+
+  Array.prototype.forEach.call(campos, function (campo) {
+    // Сразу: поле могло приехать с сервера уже с текстом — после отказа
+    // рассказ возвращается в форму.
+    if (campo.value) ajustar(campo);
+    campo.addEventListener("input", function () {
+      ajustar(campo);
+    });
+  });
+})();

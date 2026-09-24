@@ -1,36 +1,43 @@
 <%#
-  Поле вложений (§6, §25).
+  Вложения (§6, §25).
 
-  Локали: id, name, titulo, dica, maxArquivos, maxArquivoMb, maxArquivoBytes,
+  Локали: id, name, maxArquivos, maxArquivoMb, maxArquivoBytes,
   obrigatorio (bool), comCamera (bool).
 
-  Без JavaScript видны обычные поля выбора файла: браузер сам показывает, что
-  выбрано, и форма отправляется полностью. Скрипт добавляет классу upload
-  признак upload--pronto — только тогда появляются кнопки и список выбранных
-  файлов, а сами поля прячутся. Порядок именно такой: если скрипт не
-  выполнится, человек останется с рабочим полем, а не с кнопкой, которая
-  ничего не открывает.
+  Без JavaScript видны обычные поля выбора файла: браузер сам показывает,
+  что выбрано, и форма отправляется полностью. Скрипт ставит блоку признак
+  upload--pronto — только тогда появляются кнопки и список, а поля прячутся.
+  Порядок именно такой: не выполнится скрипт — останется рабочее поле, а не
+  кнопка, которая ничего не открывает.
 %>
 <div class="upload"
      data-upload
      data-upload-max="<%= maxArquivos %>"
      data-upload-bytes="<%= maxArquivoBytes %>">
 
-  <p class="upload__titulo"><%= titulo %></p>
-  <p class="field__hint" id="<%= id %>-hint"><%= dica %></p>
+  <%# Список идёт раньше кнопок: добавленный файл появляется над ними, а не
+      выталкивает их вниз. aria-live проговаривает добавление. %>
+  <ul class="upload__lista" data-upload-lista role="status" aria-live="polite"></ul>
 
   <div class="upload__zona" data-upload-zona>
-    <p class="upload__chamada">Arraste o arquivo aqui ou escolha do dispositivo</p>
-    <p class="upload__formatos">
-      PDF, JPG, PNG ou WEBP · até <%= maxArquivoMb %> MB · até <%= maxArquivos %> arquivos
-    </p>
-
     <div class="upload__acoes">
-      <label class="btn btn--secondary" for="<%= id %>">Escolher arquivo</label>
+      <label class="btn--discreto" for="<%= id %>">
+        <span aria-hidden="true">＋</span> Adicionar documento
+      </label>
       <% if (comCamera) { %>
-        <label class="btn btn--secondary" for="<%= id %>-camera">📷 Tirar foto</label>
+        <label class="btn--discreto upload__camera" for="<%= id %>-camera">
+          <span aria-hidden="true">📷</span> Tirar foto
+        </label>
       <% } %>
     </div>
+
+    <%# Перетаскивание работает — значит о нём надо сказать. На узком экране
+        подпись скрыта стилями: там не перетаскивают. %>
+    <p class="upload__arrastar">Arraste o arquivo aqui ou escolha do dispositivo</p>
+
+    <p class="upload__formatos" id="<%= id %>-hint">
+      PDF, JPG, PNG ou WEBP · até <%= maxArquivoMb %> MB · até <%= maxArquivos %> arquivos
+    </p>
 
     <input
       type="file"
@@ -59,7 +66,4 @@
       />
     <% } %>
   </div>
-
-  <%# Список заполняется скриптом. aria-live: добавленный файл проговаривается. %>
-  <ul class="upload__lista" data-upload-lista role="status" aria-live="polite"></ul>
 </div>

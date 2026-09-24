@@ -4,150 +4,141 @@
   var falhou = typeof falha !== 'undefined' && falha;
   var categoriaAtual = typeof selectedCategory !== 'undefined' ? selectedCategory : '';
 %>
-<section class="intake">
-  <div class="container intake__grid">
-    <div class="intake__lead">
-      <p class="hero__tagline">Pessoas reais. Soluções reais.</p>
-      <h1>Conte o que aconteceu.<br />Descubra o que fazer.</h1>
-      <p class="lede">
-        Conte seu problema com suas próprias palavras. A IA ajuda você a
-        entender a situação, organizar as informações e encontrar os
-        próximos passos.
-      </p>
+<%#
+  Главная — рабочая область, а не витрина.
 
-      <%# §14: только то, что правда. Никаких отзывов, цифр успеха и гербов
-          государственных органов — ни одного из них у нас нет. %>
-      <ul class="trust">
-        <li>Orientação com inteligência artificial</li>
-        <li>Fontes oficiais quando disponíveis</li>
-        <li>Você decide o que fazer</li>
-      </ul>
+  Прежняя вёрстка ставила рассказ о продукте слева, а поле справа: человек
+  читал обещания, прежде чем дойти до того, за чем пришёл. Здесь один
+  столбец по центру, и первое, что он встречает, — поле «что случилось».
 
+  Порядок в разметке тот же, что на экране: заголовок, поле, категории,
+  шаги. Экранный диктор идёт по нему же.
+%>
+<section class="trabalho">
+  <p class="trabalho__olho">Pessoas reais. Soluções reais.</p>
+  <h1 class="trabalho__titulo">Conte o que aconteceu.<br />Descubra o que fazer.</h1>
+  <p class="trabalho__lead">
+    Conte seu problema com suas próprias palavras. A IA ajuda você a entender
+    a situação, organizar as informações e encontrar os próximos passos.
+  </p>
+
+  <% if (falhou) { %>
+    <%# Спокойный отказ, не большой красный блок: чинить человеку нечего. %>
+    <div class="recado recado--falha" role="alert">
+      <p class="recado__titulo"><%= falha.heading %></p>
+      <p class="recado__texto"><%= falha.message %></p>
     </div>
+  <% } %>
 
-    <div class="panel intake__panel">
-      <% if (falhou) { %>
-        <div class="flash flash--falha" role="alert">
-          <strong><%= falha.heading %></strong>
-          <p><%= falha.message %></p>
-        </div>
-      <% } %>
+  <form method="post" action="/caso/novo" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-      <form method="post" action="/caso/novo" enctype="multipart/form-data" novalidate>
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <div class="compositor">
+      <label class="compositor__rotulo" for="description">O que aconteceu?</label>
 
-        <div class="field <%= errors.description ? 'field--invalid' : '' %>">
-          <label for="description">O que aconteceu?</label>
-          <p class="field__hint" id="description-hint">
-            Escreva como você contaria para uma pessoa: o que comprou, quando,
-            quanto pagou e o que deu errado.
-          </p>
-          <textarea
-            id="description"
-            name="description"
-            rows="7"
-            required
-            minlength="<%= descricaoMin %>"
-            maxlength="<%= descricaoMax %>"
-            data-contador="description-contador"
-            aria-describedby="description-hint description-contador <%= errors.description ? 'description-error' : '' %>"
-            aria-invalid="<%= errors.description ? 'true' : 'false' %>"
-            placeholder="Ex.: Comprei um produto, paguei no Pix e até hoje não recebi."
-          ><%= values.description || '' %></textarea>
-          <%# Без JavaScript здесь остаётся требование словами — оно и важнее
-              счётчика: человек должен понимать, чего от него ждут. %>
-          <p class="field__contador" id="description-contador">
-            Mínimo de <%= descricaoMin %> caracteres.
-          </p>
-          <% if (errors.description) { %>
-            <p class="field__error" id="description-error"><%= errors.description %></p>
-          <% } %>
+      <textarea
+        class="compositor__campo"
+        id="description"
+        name="description"
+        required
+        minlength="<%= descricaoMin %>"
+        maxlength="<%= descricaoMax %>"
+        data-cresce
+        aria-describedby="description-ajuda"
+        aria-invalid="<%= errors.description ? 'true' : 'false' %>"
+        placeholder="Ex.: Comprei um produto pela internet, paguei via Pix e até hoje não recebi."
+      ><%= values.description || '' %></textarea>
+
+      <div class="compositor__rodape">
+        <div class="compositor__anexos">
+          <%- include("../partials/upload", {
+                id: "arquivo",
+                name: "arquivo",
+                maxArquivos: maxArquivos,
+                maxArquivoMb: maxArquivoMb,
+                maxArquivoBytes: maxArquivoBytes,
+                obrigatorio: false,
+                comCamera: true,
+              }) %>
         </div>
 
-        <%# §5: категория необязательна. Выбор человека точнее нашего
-            угадывания, но заставлять выбирать нельзя — он пришёл рассказать
-            о проблеме, а не разложить её по нашим ящикам. %>
-        <fieldset class="field chips">
-          <legend>
-            O que mais se parece com a sua situação?
-            <span class="chips__opcional">opcional</span>
-          </legend>
-          <p class="field__hint" id="categoria-hint">
-            Se você não escolher, a IA identifica pelo seu relato.
-          </p>
-          <div class="chips__lista">
-            <% categories.forEach(function (category) { %>
-              <input
-                class="chips__radio"
-                type="radio"
-                name="categoria"
-                id="categoria-<%= category.slug %>"
-                value="<%= category.slug %>"
-                aria-describedby="categoria-hint"
-                <%= categoriaAtual === category.slug ? 'checked' : '' %>
-              />
-              <label class="chips__item" for="categoria-<%= category.slug %>">
-                <span aria-hidden="true"><%= category.icon %></span>
-                <span><%= category.quickLabel %></span>
-              </label>
-            <% }); %>
-          </div>
-        </fieldset>
-
-        <%# §6: вложения прямо при вводе. Чек и переписка есть у человека
-            сейчас, а через шаг он их приложить забудет. %>
-        <%- include("../partials/upload", {
-              id: "arquivo",
-              name: "arquivo",
-              titulo: "Adicionar documento",
-              dica: "Nota fiscal, comprovante de Pix, pedido, conversa com a empresa.",
-              maxArquivos: maxArquivos,
-              maxArquivoMb: maxArquivoMb,
-              maxArquivoBytes: maxArquivoBytes,
-              obrigatorio: false,
-              comCamera: true,
-            }) %>
-
-        <button type="submit" class="btn btn--primary btn--block">
+        <button type="submit" class="btn btn--primary">
           <%= falhou ? 'Tentar novamente' : 'Analisar meu caso' %>
         </button>
-        <% if (falhou) { %>
-          <p class="small center">
-            <a href="/">Voltar ao início</a>
-          </p>
+      </div>
+
+      <%# Ошибка поля появляется только после отправки: требование «минимум
+          20 символов» красным на пустой странице — это упрёк авансом. %>
+      <p class="compositor__aviso" id="description-ajuda">
+        <% if (errors.description) { %>
+          <span class="compositor__aviso--erro"><%= errors.description %></span>
+        <% } else { %>
+          Quanto mais detalhes, melhor a IA entende o seu caso.
         <% } %>
-      </form>
+      </p>
     </div>
 
-      <div class="intake__passos">
-        <h2>Como funciona</h2>
-        <ol class="passos__lista">
-          <li>
-            <span class="passos__numero">1</span>
-            <h3>Você conta o que aconteceu</h3>
-            <p>
-              Com suas próprias palavras, sem termos jurídicos. Se tiver
-              comprovante, nota fiscal ou a conversa com a empresa, anexe junto.
-            </p>
-          </li>
-          <li>
-            <span class="passos__numero">2</span>
-            <h3>A IA organiza o caso</h3>
-            <p>
-              Identifica a situação, lê os documentos que você enviou e pergunta
-              só o que ainda falta — no máximo cinco perguntas.
-            </p>
-          </li>
-          <li>
-            <span class="passos__numero">3</span>
-            <h3>Você recebe os próximos passos</h3>
-            <p>
-              Um plano de ação, as fontes oficiais quando existirem e uma
-              mensagem pronta para enviar à empresa. O envio é sempre feito
-              por você.
-            </p>
-          </li>
-        </ol>
+    <fieldset class="categorias-rapidas">
+      <legend class="categorias-rapidas__titulo">
+        O que mais se parece com a sua situação?
+      </legend>
+      <p class="categorias-rapidas__dica">
+        Opcional. Se você não escolher, a IA identifica pelo seu relato.
+      </p>
+
+      <div class="pilulas">
+        <% categories.forEach(function (categoria) { %>
+          <input
+            type="radio"
+            class="visuallyhidden"
+            id="categoria-<%= categoria.slug %>"
+            name="categoria"
+            value="<%= categoria.slug %>"
+            <%= categoriaAtual === categoria.slug ? 'checked' : '' %>
+          />
+          <label class="pilula" for="categoria-<%= categoria.slug %>">
+            <span aria-hidden="true"><%= categoria.icon %></span>
+            <%= categoria.quickLabel %>
+          </label>
+        <% }); %>
       </div>
-  </div>
+    </fieldset>
+
+    <% if (falhou) { %>
+      <%# Путь назад при отказе: кнопка «повторить» — это ещё не выход. %>
+      <p class="trabalho__volta">
+        <a href="/">Voltar ao início</a>
+      </p>
+    <% } %>
+  </form>
+</section>
+
+<section class="passos" aria-labelledby="como-funciona">
+  <h2 class="passos__titulo" id="como-funciona">Como funciona</h2>
+  <ol class="passos__lista">
+    <li class="passos__item">
+      <span class="passos__numero">01</span>
+      <h3 class="passos__nome">Você conta o que aconteceu</h3>
+      <p class="passos__texto">
+        Com suas próprias palavras, sem termos jurídicos. Se tiver comprovante
+        ou nota fiscal, anexe junto.
+      </p>
+    </li>
+    <li class="passos__item">
+      <span class="passos__numero">02</span>
+      <h3 class="passos__nome">A IA organiza o caso</h3>
+      <p class="passos__texto">
+        Identifica a situação, lê os documentos e pergunta só o que ainda
+        falta — no máximo cinco perguntas.
+      </p>
+    </li>
+    <li class="passos__item">
+      <span class="passos__numero">03</span>
+      <h3 class="passos__nome">Você recebe os próximos passos</h3>
+      <p class="passos__texto">
+        Um plano de ação, as fontes oficiais quando existirem e uma mensagem
+        pronta. O envio é sempre feito por você.
+      </p>
+    </li>
+  </ol>
 </section>

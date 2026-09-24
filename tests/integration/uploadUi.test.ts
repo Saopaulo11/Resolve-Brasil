@@ -22,13 +22,15 @@ describe("поле вложений", () => {
     const pagina = await request(harness.app).get("/");
 
     expect(pagina.status).toBe(200);
+    // Кнопка называется действием, а не механикой: человек добавляет
+    // документ, а не «выбирает файл».
     expect(pagina.text).toContain("Adicionar documento");
     expect(pagina.text).toContain(
       "Arraste o arquivo aqui ou escolha do dispositivo",
     );
     expect(pagina.text).toMatch(/PDF, JPG, PNG ou WEBP · até \d+ MB/);
-    expect(pagina.text).toContain("Escolher arquivo");
     expect(pagina.text).toContain("Tirar foto");
+    expect(pagina.text).toMatch(/até \d+ arquivos/);
   });
 
   it("поле выбора остаётся в разметке и принимает несколько файлов", async () => {
