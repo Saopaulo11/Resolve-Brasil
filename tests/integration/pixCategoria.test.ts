@@ -43,7 +43,9 @@ describe("категория «Problema com Pix»", () => {
     const pagina = await request(harness.app).get("/");
 
     expect(pagina.status).toBe(200);
-    expect(pagina.text).toContain("Tive um problema com Pix");
+    // Под полем ввода — короткая подпись: восемь длинных фраз в ряд
+    // занимают три строки и спорят с полем за внимание.
+    expect(pagina.text).toContain("Problema com Pix");
     expect(pagina.text).toContain("categoria-problema-com-pix");
   });
 

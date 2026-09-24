@@ -901,14 +901,7 @@ input:focus {
   font-size: 1.25rem;
 }
 
-.passos__lista {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
-}
+
 
 /* На планшете три шага встают в ряд; в узкой колонке — столбиком. */
 @media (min-width: 48rem) and (max-width: 61.999rem) {
@@ -918,30 +911,13 @@ input:focus {
   }
 }
 
-.passos__lista li {
-  border-top: 2px solid var(--border);
-  padding-top: 0.875rem;
-}
 
-.passos__numero {
-  display: inline-block;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--green-text);
-  letter-spacing: 0.04em;
-}
 
-.passos__lista h3 {
-  margin: 0.25rem 0 0.375rem;
-  font-size: 1.0625rem;
-  color: var(--navy);
-}
 
-.passos__lista p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.9375rem;
-}
+
+
+
+
 
 /* --- Действия над документом ----------------------------------------------- */
 
@@ -1014,16 +990,9 @@ input:focus {
  * остаётся обычное поле выбора файла — оно работает и показывает выбранное
  * средствами браузера.
  */
-.upload__acoes {
-  display: none;
-}
 
-.upload--pronto .upload__acoes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-}
+
+
 
 .upload__entrada {
   display: block;
@@ -1165,11 +1134,6 @@ input:focus {
 @media (max-width: 640px) {
   .upload__zona {
     padding: 1rem 0.75rem;
-  }
-
-  /* На узком экране кнопки во всю ширину: попасть пальцем проще. */
-  .upload--pronto .upload__acoes {
-    flex-direction: column;
   }
 
   .upload__nome {
@@ -1702,128 +1666,37 @@ input[type="email"] {
 
 /* --- Рабочая область главной --------------------------------------- */
 
-.trabalho {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 3.5rem var(--gutter) 3.5rem;
-}
 
-.trabalho__olho {
-  margin: 0 0 1rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  text-align: center;
-}
 
-.trabalho__titulo {
-  margin: 0 0 1rem;
-  /* Верх диапазона из ТЗ упирался в ширину колонки и ломал заголовок на
-     четыре строки. Размер подобран так, чтобы каждая фраза шла одной. */
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
-  font-weight: 650;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  text-align: center;
-  text-wrap: balance;
-}
 
-.trabalho__lead {
-  max-width: 34rem;
-  margin: 0 auto 2.5rem;
-  font-size: 1.125rem;
-  line-height: 1.55;
-  color: var(--color-muted);
-  text-align: center;
-  text-wrap: pretty;
-}
+
+
+
+
 
 /* --- Поле ввода как рабочий стол ------------------------------------ */
 
-.compositor {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: 1.25rem;
-}
+
 
 /* Фокус показываем на всей карточке: человек смотрит на неё, а не на
    границу поля внутри. */
-.compositor:focus-within {
-  border-color: var(--color-primary-border);
-  box-shadow: var(--shadow-md), 0 0 0 4px var(--color-primary-soft);
-}
 
-.compositor__rotulo {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
 
-.compositor__campo {
-  display: block;
-  width: 100%;
-  min-height: 160px;
-  max-height: 320px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: 1.0625rem;
-  line-height: 1.55;
-  color: var(--color-text);
-  resize: none;
-}
 
-.compositor__campo:focus {
-  outline: none;
-}
 
-.compositor__campo::placeholder {
-  color: var(--color-muted);
-}
 
-.compositor__rodape {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-}
 
-.compositor__anexos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
 
-.compositor__aviso {
-  margin: 0.75rem 0 0;
-  font-size: 0.875rem;
-  color: var(--color-muted);
-}
 
-@media (max-width: 47.9375rem) {
-  .trabalho {
-    padding-top: 2.25rem;
-  }
 
-  .compositor__rodape {
-    flex-direction: column;
-    align-items: stretch;
-  }
 
-  /* Действие во всю ширину: пальцем попадают по нему, а не мимо. */
-  .compositor__rodape .btn--primary {
-    width: 100%;
-  }
-}
+
+
+
+
+
+
+
 
 /* --- Кнопки: тихая вторичная, одна зелёная ------------------------- */
 
@@ -1850,122 +1723,41 @@ input[type="email"] {
 
 /* --- Категории как компактные пилюли -------------------------------- */
 
-.categorias-rapidas {
-  margin: 1.75rem 0 0;
-}
 
-.categorias-rapidas__titulo {
-  margin: 0 0 0.75rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
 
-.categorias-rapidas__dica {
-  margin: 0 0 0.875rem;
-  font-size: 0.875rem;
-  color: var(--color-muted);
-}
 
-.pilulas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
 
-.pilula {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 44px;
-  padding: 0.5rem 0.9rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  font-size: 0.9375rem;
-  color: var(--color-text);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
 
-.pilula:hover {
-  border-color: var(--color-muted);
-}
+
+
+
+
+
+
 
 /* Выбранное состояние: рамка и очень светлая заливка, текст тёмно-зелёный. */
-.pilulas input:checked + .pilula {
-  border-color: var(--color-primary-border);
-  background: var(--color-primary-soft);
-  color: var(--color-primary-strong);
-  font-weight: 500;
-}
+
 
 /* Фокус виден на самой пилюле: сам переключатель скрыт от глаз. */
-.pilulas input:focus-visible + .pilula {
-  outline: 2px solid var(--color-primary-border);
-  outline-offset: 2px;
-}
+
 
 /* --- Три шага под рабочей областью ---------------------------------- */
 
-.passos {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 0 var(--gutter) 4rem;
-}
 
-.passos__titulo {
-  margin: 0 0 1.5rem;
-  font-size: 1.0625rem;
-  font-weight: 600;
-  color: var(--color-muted);
-  text-align: center;
-}
 
-.passos__lista {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(3, 1fr);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 
-.passos__item {
-  padding: 1.25rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-}
 
-.passos__numero {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
 
-.passos__nome {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
-  font-weight: 600;
-}
 
-.passos__texto {
-  margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  color: var(--color-muted);
-}
 
-@media (max-width: 47.9375rem) {
-  .passos__lista {
-    grid-template-columns: 1fr;
-  }
-}
+
+
+
+
+
+
+
+
 
 
 /* --- Вложения внутри поля ввода ------------------------------------ */
@@ -1974,54 +1766,23 @@ input[type="email"] {
  * display: contents — чтобы список и кнопки стали прямыми детьми подвала.
  * Иначе список рос бы внутри левой колонки и толкал кнопку действия вбок.
  */
-.compositor__anexos,
-.compositor__anexos .upload {
-  display: contents;
-}
 
-.compositor__rodape {
-  flex-wrap: wrap;
-}
+
+
 
 /* Список — во всю ширину и выше кнопок. */
-.compositor__rodape .upload__lista {
-  flex: 1 0 100%;
-  order: -1;
-  margin: 0 0 0.25rem;
-}
 
-.compositor__rodape .upload__zona {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-right: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  text-align: left;
-}
 
-.compositor__rodape .upload__formatos {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--color-muted);
-}
 
-.upload__acoes {
-  display: flex;
-  gap: 0.5rem;
-}
 
-.upload--pronto .upload__acoes {
-  display: flex;
-}
+
+
+
+
+
 
 /* Перетаскивание подсвечивает всю карточку, а не невидимую зону. */
-.compositor:has(.upload__zona--sobre) {
-  border-color: var(--color-primary-border);
-  background: var(--color-primary-soft);
-}
+
 
 .upload__item {
   padding: 0.5rem 0;
@@ -2032,25 +1793,7 @@ input[type="email"] {
   display: none;
 }
 
-@media (max-width: 47.9375rem) {
-  .compositor__rodape .upload__zona {
-    width: 100%;
-  }
 
-  .upload__acoes {
-    width: 100%;
-  }
-
-  /* Кнопки пополам: по каждой удобно попасть пальцем. */
-  .upload__acoes .btn--discreto {
-    flex: 1 1 0;
-    justify-content: center;
-  }
-
-  .compositor__rodape .upload__formatos {
-    width: 100%;
-  }
-}
 
 /* --- Спокойные сообщения ------------------------------------------- */
 
@@ -2082,9 +1825,7 @@ input[type="email"] {
   color: #912018;
 }
 
-.compositor__aviso--erro {
-  color: var(--color-danger);
-}
+
 
 /* Скрыто от глаз, доступно скринридеру и подписи. */
 .visuallyhidden {
@@ -2100,17 +1841,9 @@ input[type="email"] {
 }
 
 
-.upload__arrastar {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--color-muted);
-}
 
-.trabalho__volta {
-  margin: 1.25rem 0 0;
-  font-size: 0.9375rem;
-  text-align: center;
-}
+
+
 
 @media (max-width: 47.9375rem) {
   /* На телефоне не перетаскивают — подпись только занимала бы место. */
@@ -2400,4 +2133,429 @@ a:focus-visible {
   outline: 2px solid var(--color-primary-border);
   outline-offset: 2px;
   border-radius: 3px;
+}
+
+/* =====================================================================
+ * Первый экран: рабочая область, а не витрина.
+ *
+ * Размеры здесь не на глаз. Бюджет высоты на 1440×900 считан так, чтобы в
+ * первый экран целиком попали шапка, надзаголовок, заголовок, подзаголовок,
+ * composer и категории, — и осталось пустое место. Всё остальное уходит
+ * ниже сгиба намеренно: оно не должно соперничать с тем, ради чего пришли.
+ * ===================================================================== */
+
+.inicio {
+  max-width: 55rem;
+  margin: 0 auto;
+  padding: 2.75rem var(--gutter) 0;
+  text-align: center;
+}
+
+.inicio__olho {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.inicio__titulo {
+  max-width: 50rem;
+  margin: 0 auto 1rem;
+  /* Верх подобран так, чтобы «Conte o que aconteceu.» шло одной строкой в
+     отведённые 800px. На 66px фраза не влезала и разрывалась на две. */
+  font-size: clamp(2.5rem, 4.7vw, 3.75rem);
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  /* Без text-wrap: balance — перенос задан в разметке, а балансировка
+     спорит с ним и разбивает первую фразу на две строки. */
+}
+
+.inicio__lead {
+  max-width: 43.75rem;
+  margin: 0 auto;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+  text-wrap: pretty;
+}
+
+/* --- Composer -------------------------------------------------------- */
+
+.composer {
+  max-width: 55rem;
+  margin: 2rem auto 0;
+  padding: 1.125rem 1.25rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Фокус — на всей карточке: человек смотрит на неё, а не на поле внутри. */
+.composer:focus-within {
+  border-color: var(--color-primary-border);
+  box-shadow: 0 0 0 4px var(--color-primary-soft);
+}
+
+.composer__rotulo {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.composer__campo {
+  display: block;
+  width: 100%;
+  min-height: 150px;
+  max-height: 260px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  resize: none;
+}
+
+.composer__campo:focus {
+  outline: none;
+}
+
+.composer__campo::placeholder {
+  color: var(--color-muted);
+}
+
+/*
+ * Нижняя полоса — одна строка: слева вложения, справа действие.
+ * Никаких переносов на широком экране: перенос вырастил прежний composer до
+ * 453px при бюджете в 320.
+ */
+.composer__barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.composer__acao {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* --- Категории под composer ------------------------------------------ */
+
+.chips {
+  max-width: 55rem;
+  margin: 1.25rem auto 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+
+.chips__titulo {
+  display: block;
+  margin: 0 0 0.625rem;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.chips__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 38px;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--color-muted);
+}
+
+.chips input:checked + .chip {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.chips input:focus-visible + .chip {
+  outline: 2px solid var(--color-primary-border);
+  outline-offset: 2px;
+}
+
+/* --- Небольшое сообщение об отказе ----------------------------------- */
+
+/* Над composer, строкой, а не карточкой во весь экран: чинить человеку
+   нечего, и большой красный блок здесь только пугает. */
+.aviso-inline {
+  max-width: 55rem;
+  margin: 0 auto 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-left: 3px solid var(--color-danger);
+  background: var(--color-danger-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.875rem;
+  text-align: left;
+  color: #912018;
+}
+
+.aviso-inline strong {
+  display: block;
+  font-weight: 600;
+}
+
+.composer__erro {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+/* --- Три шага — далеко внизу и компактно ------------------------------ */
+
+.comofunciona {
+  max-width: 55rem;
+  /* Большая пустота перед разделом: он не должен попадать в первый экран. */
+  margin: 7rem auto 0;
+  padding: 0 var(--gutter) 4rem;
+}
+
+.comofunciona__titulo {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.comofunciona__lista {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin: 0;
+  padding: 1.25rem 0 0;
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.comofunciona__numero {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.comofunciona__nome {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.comofunciona__texto {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+@media (max-width: 47.9375rem) {
+  .inicio {
+    padding-top: 1.75rem;
+  }
+
+  .composer {
+    padding: 1rem;
+  }
+
+  .composer__campo {
+    min-height: 150px;
+    max-height: 220px;
+  }
+
+  /* Полоса в две строки: действие во всю ширину, по нему целятся пальцем. */
+  .composer__barra {
+    flex-wrap: wrap;
+  }
+
+  .composer__acao {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .comofunciona {
+    margin-top: 4rem;
+  }
+
+  .comofunciona__lista {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+
+/* --- Вложения в нижней полосе composer ------------------------------- */
+
+.upload {
+  display: contents;
+}
+
+.upload__acoes {
+  display: none;
+  gap: 0.5rem;
+}
+
+.upload--pronto .upload__acoes {
+  display: flex;
+}
+
+/* Список — над полосой, во всю ширину: добавленный файл появляется сверху,
+   а не толкает кнопки вбок. */
+.composer .upload__lista {
+  /* Своей строкой над кнопками. Полоса переносится только когда список
+     непустой — пустой список скрыт, и полоса остаётся одной строкой. */
+  order: -1;
+  flex: 1 0 100%;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.composer .upload__lista:empty {
+  display: none;
+}
+
+/* Вложение — компактная пилюля, а не строка таблицы. */
+.upload__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  margin: 0 0.375rem 0.375rem 0;
+  padding: 0.3rem 0.3rem 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-subtle);
+  font-size: 0.8125rem;
+}
+
+.upload__miniatura {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--color-surface);
+  overflow: hidden;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.upload__miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload__dados {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.upload__nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 14rem;
+}
+
+.upload__meta {
+  flex-shrink: 0;
+  color: var(--color-muted);
+}
+
+.upload__meta--erro {
+  color: var(--color-danger);
+}
+
+/* Крестик: убрать вложение. Подпись — у aria-label, глазами виден знак. */
+.upload__remover {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.upload__remover:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.upload__limite {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+/* Перетаскивание подсвечивает всю карточку. */
+.composer:has(.upload__zona--sobre) {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
+@media (max-width: 47.9375rem) {
+  /*
+   * Кнопки вложений — одной строкой, по естественной ширине.
+   *
+   * Растянутые поровну они переносились друг под друга: половины ширины не
+   * хватало подписи «Adicionar documento». Вместе же, как есть, они занимают
+   * меньше строки даже на 390px.
+   */
+  .upload__acoes {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .upload__nome {
+    max-width: 9rem;
+  }
 }

@@ -25,12 +25,14 @@ describe("поле вложений", () => {
     // Кнопка называется действием, а не механикой: человек добавляет
     // документ, а не «выбирает файл».
     expect(pagina.text).toContain("Adicionar documento");
-    expect(pagina.text).toContain(
-      "Arraste o arquivo aqui ou escolha do dispositivo",
-    );
-    expect(pagina.text).toMatch(/PDF, JPG, PNG ou WEBP · até \d+ MB/);
     expect(pagina.text).toContain("Tirar foto");
-    expect(pagina.text).toMatch(/até \d+ arquivos/);
+
+    // Форматы и пределы больше не занимают место в поле ввода: они ушли в
+    // описание поля выбора — экранный диктор их читает, глаза не отвлекают.
+    // Перетаскивание работает, и там же о нём сказано.
+    expect(pagina.text).toMatch(/PDF, JPG, PNG ou WEBP, até \d+ MB cada/);
+    expect(pagina.text).toMatch(/no máximo\s+\d+ arquivos/);
+    expect(pagina.text).toContain("arrastar o arquivo para cá");
   });
 
   it("поле выбора остаётся в разметке и принимает несколько файлов", async () => {

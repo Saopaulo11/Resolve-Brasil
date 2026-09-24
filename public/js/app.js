@@ -159,7 +159,12 @@ document.addEventListener("input", function (event) {
     var entrada = bloco.querySelector("[data-upload-entrada]");
     var camera = bloco.querySelector("[data-upload-camera]");
     var lista = bloco.querySelector("[data-upload-lista]");
-    var zona = bloco.querySelector("[data-upload-zona]");
+    // Зона перетаскивания может быть самим блоком: querySelector ищет только
+    // среди потомков, и на разметке, где признак стоит на блоке, скрипт
+    // молча выходил — кнопки не появлялись вовсе.
+    var zona = bloco.hasAttribute("data-upload-zona")
+      ? bloco
+      : bloco.querySelector("[data-upload-zona]");
     if (!entrada || !lista || !zona) return;
 
     // Без DataTransfer нельзя ни убрать файл из выбора, ни свести два поля
@@ -241,7 +246,7 @@ document.addEventListener("input", function (event) {
         remover.type = "button";
         remover.className = "upload__remover";
         remover.setAttribute("aria-label", "Remover " + arquivo.name);
-        remover.textContent = "Remover";
+        remover.textContent = "×";
         // Убираем по идентификатору, а не по месту в списке: место меняется
         // при каждом добавлении, и обработчик, запомнивший старое, убрал бы
         // не тот файл.

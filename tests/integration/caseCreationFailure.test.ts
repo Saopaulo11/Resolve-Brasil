@@ -48,8 +48,13 @@ describe("когда дело не удалось создать", () => {
 
     expect(resposta.text).toContain("Não conseguimos analisar seu caso agora");
     expect(resposta.text).toContain("Seus dados foram preservados");
+    // Действие меняет подпись, но остаётся на месте: composer никуда не
+    // уходит, и повторить можно тем же нажатием.
     expect(resposta.text).toContain("Tentar novamente");
-    expect(resposta.text).toContain("Voltar ao início");
+    expect(resposta.text).toContain("composer__acao");
+    // Ссылки «на главную» здесь нет намеренно: человек уже на главной, и
+    // уводить его с неё значит терять набранный рассказ.
+    expect(resposta.text).not.toContain("Voltar ao início");
     // Общая заглушка больше не показывается.
     expect(resposta.text).not.toContain("Algo deu errado");
   });

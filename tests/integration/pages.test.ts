@@ -49,7 +49,9 @@ describe("публичные страницы", () => {
     const response = await request(app).get("/");
 
     for (const category of CATEGORIES) {
-      expect(response.text, category.slug).toContain(category.quickLabel);
+      // Под полем ввода — chipLabel: самая короткая подпись. quickLabel
+      // (фраза от первого лица) осталась для других мест.
+      expect(response.text, category.slug).toContain(category.chipLabel);
       expect(response.text, category.slug).toContain(`value="${category.slug}"`);
     }
   });

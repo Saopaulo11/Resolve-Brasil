@@ -20,6 +20,14 @@ export type CategoryDefinition = {
   label: string;
   /** Короткая формулировка от первого лица для быстрых кнопок (§13). */
   quickLabel: string;
+  /**
+   * Самая короткая подпись — для чипсов под полем ввода.
+   *
+   * Отдельно от quickLabel намеренно: там фраза от первого лица («Quero meu
+   * dinheiro de volta»), и восемь таких в ряд занимают три строки и спорят
+   * с полем за внимание. Здесь нужно только название ситуации.
+   */
+  chipLabel: string;
   icon: string;
   description: string;
 };
@@ -30,6 +38,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "reembolso-nao-recebido",
     label: "Reembolso não recebido",
     quickLabel: "Quero meu dinheiro de volta",
+    chipLabel: "Dinheiro de volta",
     icon: "💰",
     description:
       "O cancelamento foi aceito ou a devolução foi combinada, mas o valor não voltou.",
@@ -39,6 +48,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "produto-nao-recebido",
     label: "Produto não recebido",
     quickLabel: "Meu produto não chegou",
+    chipLabel: "Produto não chegou",
     icon: "📦",
     description: "A compra foi paga, o prazo passou e o produto não chegou.",
   },
@@ -47,6 +57,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "cobranca-indevida",
     label: "Cobrança indevida",
     quickLabel: "Fui cobrado indevidamente",
+    chipLabel: "Cobrança indevida",
     icon: "💳",
     description:
       "Apareceu uma cobrança que você não reconhece, em duplicidade ou fora do combinado.",
@@ -56,6 +67,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "cancelamento-nao-realizado",
     label: "Cancelamento não realizado",
     quickLabel: "Quero cancelar",
+    chipLabel: "Cancelamento",
     icon: "❌",
     description: "Você pediu o cancelamento e ele não foi feito.",
   },
@@ -64,6 +76,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "produto-com-defeito",
     label: "Produto com defeito",
     quickLabel: "Produto com defeito",
+    chipLabel: "Produto com defeito",
     icon: "🔧",
     description: "O produto chegou com defeito, incompleto ou diferente do anunciado.",
   },
@@ -72,6 +85,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "servico-nao-prestado",
     label: "Serviço não prestado",
     quickLabel: "Serviço não foi realizado",
+    chipLabel: "Serviço não realizado",
     icon: "📝",
     description: "O serviço foi contratado e pago, mas não foi executado.",
   },
@@ -80,6 +94,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "problema-com-pix",
     label: "Problema com Pix",
     quickLabel: "Tive um problema com Pix",
+    chipLabel: "Problema com Pix",
     icon: "⚡",
     description:
       "O Pix saiu da conta e o problema é com ele: golpe, valor não reconhecido, " +
@@ -90,6 +105,7 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     slug: "outro",
     label: "Outro problema",
     quickLabel: "Outro problema",
+    chipLabel: "Outro",
     icon: "❓",
     description: "Sua situação não se encaixa nas anteriores.",
   },

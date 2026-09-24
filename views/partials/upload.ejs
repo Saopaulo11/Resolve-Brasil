@@ -1,69 +1,65 @@
 <%#
-  Вложения (§6, §25).
+  Вложения внутри composer (§6, §25).
 
-  Локали: id, name, maxArquivos, maxArquivoMb, maxArquivoBytes,
-  obrigatorio (bool), comCamera (bool).
+  Никакой отдельной области загрузки: две подписи-кнопки в нижней полосе и
+  компактный список выбранного над ней. Поля выбора файла скрыты от глаз —
+  их открывают подписи.
 
-  Без JavaScript видны обычные поля выбора файла: браузер сам показывает,
-  что выбрано, и форма отправляется полностью. Скрипт ставит блоку признак
-  upload--pronto — только тогда появляются кнопки и список, а поля прячутся.
-  Порядок именно такой: не выполнится скрипт — останется рабочее поле, а не
-  кнопка, которая ничего не открывает.
+  Без JavaScript поля видны как есть: браузер сам покажет, что выбрано, и
+  форма отправится полностью. Кнопки появляются только вместе со скриптом,
+  который их и обслуживает, — иначе человек нажимал бы на то, что ничего
+  не открывает.
 %>
 <div class="upload"
      data-upload
      data-upload-max="<%= maxArquivos %>"
-     data-upload-bytes="<%= maxArquivoBytes %>">
+     data-upload-bytes="<%= maxArquivoBytes %>"
+     data-upload-zona>
 
-  <%# Список идёт раньше кнопок: добавленный файл появляется над ними, а не
-      выталкивает их вниз. aria-live проговаривает добавление. %>
+  <%# Список выбранного — первым в разметке, но выше полосы по порядку в
+      стилях: добавленный файл появляется над кнопками, а не толкает их. %>
   <ul class="upload__lista" data-upload-lista role="status" aria-live="polite"></ul>
 
-  <div class="upload__zona" data-upload-zona>
-    <div class="upload__acoes">
-      <label class="btn--discreto" for="<%= id %>">
-        <span aria-hidden="true">＋</span> Adicionar documento
-      </label>
-      <% if (comCamera) { %>
-        <label class="btn--discreto upload__camera" for="<%= id %>-camera">
-          <span aria-hidden="true">📷</span> Tirar foto
-        </label>
-      <% } %>
-    </div>
-
-    <%# Перетаскивание работает — значит о нём надо сказать. На узком экране
-        подпись скрыта стилями: там не перетаскивают. %>
-    <p class="upload__arrastar">Arraste o arquivo aqui ou escolha do dispositivo</p>
-
-    <p class="upload__formatos" id="<%= id %>-hint">
-      PDF, JPG, PNG ou WEBP · até <%= maxArquivoMb %> MB · até <%= maxArquivos %> arquivos
-    </p>
-
-    <input
-      type="file"
-      class="upload__entrada"
-      id="<%= id %>"
-      name="<%= name %>"
-      multiple
-      <%= obrigatorio ? 'required' : '' %>
-      data-upload-entrada
-      aria-describedby="<%= id %>-hint"
-      accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-    />
-
+  <div class="upload__acoes">
+    <label class="btn--discreto" for="<%= id %>">
+      <span aria-hidden="true">＋</span> Adicionar documento
+    </label>
     <% if (comCamera) { %>
-      <%# Отдельное поле для камеры: на телефоне оно открывает камеру, а не
-          список файлов. Имя то же — сервер принимает оба как вложения. %>
-      <input
-        type="file"
-        class="upload__entrada upload__entrada--camera"
-        id="<%= id %>-camera"
-        name="<%= name %>"
-        accept="image/*"
-        capture="environment"
-        data-upload-camera
-        aria-describedby="<%= id %>-hint"
-      />
+      <label class="btn--discreto upload__camera" for="<%= id %>-camera">
+        <span aria-hidden="true">📷</span> Tirar foto
+      </label>
     <% } %>
   </div>
+
+  <p class="upload__formatos visuallyhidden" id="<%= id %>-hint">
+    PDF, JPG, PNG ou WEBP, até <%= maxArquivoMb %> MB cada, no máximo
+    <%= maxArquivos %> arquivos. Você também pode arrastar o arquivo para cá.
+  </p>
+
+  <input
+    type="file"
+    class="upload__entrada"
+    id="<%= id %>"
+    name="<%= name %>"
+    multiple
+    <%= obrigatorio ? 'required' : '' %>
+    data-upload-entrada
+    aria-describedby="<%= id %>-hint"
+    accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+  />
+
+  <% if (comCamera) { %>
+    <%# Отдельное поле для камеры: на телефоне оно открывает камеру, а не
+        список файлов. Имя то же — сервер принимает оба как вложения. %>
+    <input
+      type="file"
+      class="upload__entrada upload__entrada--camera"
+      id="<%= id %>-camera"
+      name="<%= name %>"
+      accept="image/*"
+      capture="environment"
+      data-upload-camera
+      aria-describedby="<%= id %>-hint"
+    />
+  <% } %>
 </div>
