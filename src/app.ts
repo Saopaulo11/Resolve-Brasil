@@ -64,6 +64,26 @@ export function createApp(): Express {
   app.use(securityHeaders());
   app.use(globalRateLimit());
 
+  /*
+   * Service worker — своим маршрутом, до раздачи статики.
+   *
+   * Статика в production отдаётся с недельным сроком жизни, а этому файлу
+   * долгий срок противопоказан: пока браузер держит старую копию, он живёт
+   * по старым правилам. Современные браузеры и так берут скрипт воркера
+   * мимо HTTP-кэша, но полагаться на это не стоит — цена ошибки здесь
+   * недельная, и она на чужом устройстве.
+   */
+  app.get("/sw.js", (_req, res) => {
+    res.sendFile(path.join(PUBLIC_ROOT, "sw.js"), {
+      headers: {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "no-cache",
+        // Область — весь сайт: иначе воркер обслуживал бы только /sw.js.
+        "service-worker-allowed": "/",
+      },
+    });
+  });
+
   app.use(
     express.static(PUBLIC_ROOT, {
       maxAge: config.isProduction ? "7d" : 0,

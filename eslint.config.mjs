@@ -30,6 +30,21 @@ export default tseslint.config(
     },
   },
   {
+    // Service worker живёт в своём окружении: не в окне страницы и не в
+    // Node. Там нет document и window, зато есть self, caches и clients.
+    files: ["public/sw.js"],
+    languageOptions: {
+      globals: {
+        self: "readonly",
+        caches: "readonly",
+        clients: "readonly",
+        fetch: "readonly",
+        Response: "readonly",
+        URL: "readonly",
+      },
+    },
+  },
+  {
     // Скрипты из public/ выполняются в браузере, а не в Node: там другие
     // глобальные объекты, и правила Node давали бы ложные ошибки.
     files: ["public/js/**/*.js"],
