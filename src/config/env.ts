@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+import {
+  partesFaltando,
+  partsFromEnv,
+  resolveDatabaseUrl,
+} from "./databaseUrl";
+
 /**
  * Единственное место, где читается process.env (§40, §78).
  *
@@ -47,7 +53,8 @@ function buildConfig(env: NodeJS.ProcessEnv) {
     trustedProxyHops: intOr(env.TRUSTED_PROXY_HOPS, 1),
 
     database: {
-      url: optionalString(env.DATABASE_URL),
+      // Либо строка целиком, либо собранная из частей — см. databaseUrl.ts.
+      url: resolveDatabaseUrl(env),
     },
 
     session: {
@@ -225,7 +232,15 @@ function buildConfig(env: NodeJS.ProcessEnv) {
 function productionRequirements(config: AppConfig): string[] {
   const missing: string[] = [];
 
-  if (!config.database.url) missing.push("DATABASE_URL");
+  if (!config.database.url) {
+    // Называем не «DATABASE_URL», а оба пути: собранная из частей строка —
+    // такая же законная настройка, и человеку, который шёл по ней, отказ с
+    // именем одной переменной ничего не объясняет.
+    const faltando = partesFaltando(partsFromEnv(process.env));
+    missing.push(
+      `DATABASE_URL (или части: ${faltando.join(", ")})`,
+    );
+  }
   if (!config.session.secret || config.session.secret.length < 32) {
     missing.push("SESSION_SECRET (минимум 32 символа)");
   }

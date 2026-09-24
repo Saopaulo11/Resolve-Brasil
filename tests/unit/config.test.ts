@@ -9,7 +9,12 @@ function env(overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
 describe("требования production", () => {
   it("называет всё, чего не хватает", () => {
     const missing = productionRequirements(buildConfig(env()));
-    expect(missing).toContain("DATABASE_URL");
+    // Названы оба пути: строка целиком и части. Человеку, который настраивал
+    // базу по частям, отказ с именем одной переменной ничего не объясняет.
+    const base = missing.find((item) => item.startsWith("DATABASE_URL"));
+    expect(base).toBeDefined();
+    expect(base).toContain("DATABASE_HOST");
+    expect(base).toContain("DATABASE_PASSWORD");
     expect(missing.some((item) => item.startsWith("SESSION_SECRET"))).toBe(true);
     expect(missing).toContain("APP_URL");
   });
