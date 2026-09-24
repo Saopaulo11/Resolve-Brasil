@@ -125,6 +125,11 @@ function buildConfig(env: NodeJS.ProcessEnv) {
     storage: {
       provider: optionalString(env.STORAGE_PROVIDER) ?? "mock",
       bucket: optionalString(env.STORAGE_BUCKET),
+      /**
+       * Адрес хранилища. Для Supabase — адрес проекта, без пути:
+       * https://<ref>.supabase.co
+       */
+      endpoint: optionalString(env.STORAGE_ENDPOINT),
       accessKey: optionalString(env.STORAGE_ACCESS_KEY),
       secretKey: optionalString(env.STORAGE_SECRET_KEY),
       // §25: жёсткий потолок на размер файла.

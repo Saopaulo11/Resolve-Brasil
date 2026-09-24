@@ -3,6 +3,7 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { loadConfig } from "../config/env";
+import { buildSupabaseStorage } from "./supabaseStorage";
 
 /**
  * Приватное хранилище документов (§25).
@@ -137,8 +138,14 @@ export function storageProvider(): StorageProvider {
     return instance;
   }
 
+  if (config.storage.provider === "supabase") {
+    instance = buildSupabaseStorage();
+    return instance;
+  }
+
   throw new Error(
-    `STORAGE_PROVIDER=${config.storage.provider}: провайдер не реализован (PHASE 5).`,
+    `STORAGE_PROVIDER=${config.storage.provider}: провайдер не реализован. ` +
+      "Доступны: supabase, mock (только для разработки).",
   );
 }
 
