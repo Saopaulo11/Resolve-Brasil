@@ -279,23 +279,73 @@
       <p class="flash flash--aviso" role="status"><%= aviso %></p>
     <% } %>
 
-    <div class="panel">
-      <form method="post" action="/caso/<%= caso.publicId %>/analisar" class="actions">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit" name="tipo" value="classificar" class="btn btn--primary">
-          <%= classificacao ? "Analisar de novo" : "Analisar meu caso" %>
-        </button>
-        <button type="submit" name="tipo" value="perguntas" class="btn btn--secondary">
-          O que falta saber
-        </button>
-        <button type="submit" name="tipo" value="plano" class="btn btn--secondary">
-          Plano de ação
-        </button>
-        <button type="submit" name="tipo" value="rascunho" class="btn btn--secondary">
-          Preparar mensagem para a empresa
-        </button>
-      </form>
-    </div>
+    <% if (falhaDaAnalise) { %>
+      <%# Разбор сорвался. Дальше сам не идёт: повтор по кругу стоил бы
+          денег за каждое обращение к модели и ничего бы не менял. %>
+      <p class="flash flash--aviso" role="status"><%= falhaDaAnalise %></p>
+    <% } %>
+
+    <% if (autoAnalise) { %>
+      <%# Разбор идёт сам, по шагу на запрос (§3). Целиком в один запрос он не
+          укладывается: каждый шаг — обращение к модели.
+
+          Форма отправляется скриптом. Без него остаётся кнопка, и человек
+          проходит шаги вручную — но видит, какой именно шаг следующий, а не
+          угадывает порядок среди четырёх одинаковых кнопок. %>
+      <div class="panel panel--analise">
+        <form method="post" action="/caso/<%= caso.publicId %>/analisar"
+              data-auto-analise>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="tipo" value="<%= progresso.next %>" />
+
+          <p class="analise__passo" role="status" aria-live="polite">
+            <%= progresso.label %>…
+          </p>
+          <p class="analise__contagem">
+            Passo <%= progresso.done + 1 %> de <%= progresso.total %>
+          </p>
+
+          <%# Полоса из отрезков по числу шагов.
+
+              Не одна полоса с процентом в атрибуте style: CSP запрещает
+              встроенные стили, и такая полоса просто не заполнялась бы.
+              Отрезки заодно честнее — шагов четыре, а не непрерывная шкала,
+              и число их берётся отсюда же, а не повторяется в таблице стилей. %>
+          <div class="analise__barra" aria-hidden="true">
+            <% for (let i = 0; i < progresso.total; i += 1) { %>
+              <span class="<%= i < progresso.done ? 'analise__barra--feito' : '' %>"></span>
+            <% } %>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block"
+                  data-auto-analise-botao>
+            Continuar análise
+          </button>
+          <p class="small muted">
+            Isso leva alguns segundos. Você pode fechar a página e voltar
+            depois — o caso continua salvo.
+          </p>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="panel">
+        <form method="post" action="/caso/<%= caso.publicId %>/analisar" class="actions">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" name="tipo" value="classificar" class="btn btn--primary">
+            <%= classificacao ? "Analisar de novo" : "Analisar meu caso" %>
+          </button>
+          <button type="submit" name="tipo" value="perguntas" class="btn btn--secondary">
+            O que falta saber
+          </button>
+          <button type="submit" name="tipo" value="plano" class="btn btn--secondary">
+            Plano de ação
+          </button>
+          <button type="submit" name="tipo" value="rascunho" class="btn btn--secondary">
+            Preparar mensagem para a empresa
+          </button>
+        </form>
+      </div>
+    <% } %>
 
     <% if (classificacao) { %>
       <div class="panel">

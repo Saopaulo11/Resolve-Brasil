@@ -308,3 +308,37 @@ document.addEventListener("input", function (event) {
     }
   });
 })();
+
+/**
+ * Разбор дела идёт сам (§3).
+ *
+ * Сервер отдаёт форму со следующим шагом; здесь она отправляется без нажатия.
+ * Один шаг на запрос: все четыре обращения к модели в один вызов функции не
+ * укладываются.
+ *
+ * Кнопка остаётся в разметке и работает: без скрипта человек проходит шаги
+ * сам. Поэтому она не прячется, а лишь блокируется на время отправки — чтобы
+ * двойное нажатие не отправило шаг дважды.
+ */
+(function () {
+  var forma = document.querySelector("[data-auto-analise]");
+  if (!forma) return;
+
+  var botao = forma.querySelector("[data-auto-analise-botao]");
+
+  var enviar = function () {
+    if (botao) {
+      botao.disabled = true;
+      botao.textContent = "Analisando…";
+    }
+    forma.submit();
+  };
+
+  forma.addEventListener("submit", function () {
+    if (botao) botao.disabled = true;
+  });
+
+  // Небольшая задержка: страница успевает отрисоваться, и человек видит,
+  // какой шаг сейчас идёт, а не мелькание.
+  setTimeout(enviar, 600);
+})();

@@ -32,6 +32,7 @@ import { listReminders, PRESETS } from "../notifications/reminderService";
 import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
 import { megabytes } from "../utils/bytes";
+import { analysisProgress } from "../cases/analysisFlow";
 
 /**
  * Дела (§20, §21, §22).
@@ -276,6 +277,11 @@ export async function ver(
   // базе по разу на каждый ответ модели.
   const avaliados = await stores().feedback.ratedMessageIds(found.case.id, userId);
 
+  const progresso = analysisProgress(messages.map((message) => message.type));
+
+  const falhaDaAnalise =
+    typeof req.query.analise === "string" ? req.query.analise : null;
+
   renderPage(
     req,
     res,
@@ -343,6 +349,20 @@ export async function ver(
       // §31: у каждого источника показывается дата, когда его в последний
       // раз открывали. Без неё ссылка выглядит вечно актуальной.
       fonteVerificada: await sourceVerificationDates(latest("PLANO_DE_ACAO")),
+      /*
+       * Ход разбора (§3). Страница идёт по шагам сама — иначе человек
+       * получает четыре кнопки и обязанность угадать их порядок.
+       *
+       * Авторазбор останавливается, как только появилось предупреждение:
+       * шаг не удался, и продолжать значило бы ходить по кругу, каждый раз
+       * платя за обращение к модели. Дальше человек решает сам.
+       */
+      progresso,
+      autoAnalise:
+        progresso.next !== null &&
+        !falhaDaAnalise &&
+        !isClosedStatus(found.case.status),
+      falhaDaAnalise,
       classificacao: latest("CLASSIFICACAO"),
       perguntas: latest("PERGUNTAS"),
       plano: latest("PLANO_DE_ACAO"),
@@ -441,5 +461,7 @@ export async function analisar(
     return;
   }
 
-  res.redirect(303, `${target}?aviso=${encodeURIComponent(outcome.detail)}`);
+  // Свой параметр, не общий aviso: непринятый файл и сорвавшийся разбор —
+  // разные беды, и первая не должна останавливать вторую.
+  res.redirect(303, `${target}?analise=${encodeURIComponent(outcome.detail)}`);
 }

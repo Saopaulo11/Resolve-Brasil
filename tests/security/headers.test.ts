@@ -61,4 +61,20 @@ describe("заголовки безопасности", () => {
     expect(csrf).toContain("HttpOnly");
     expect(csrf).toContain("SameSite=Lax");
   });
+
+  it("страницы не полагаются на встроенные стили", async () => {
+    /*
+     * CSP их запрещает, и браузер отбрасывает такой стиль молча: вёрстка
+     * едет, а в ответе сервера всё выглядит правильно. Нашлось только в
+     * консоли браузера — блоки на «Sobre», «Termos» и «Privacidade» стояли
+     * слипшимися, потому что отступ задавался атрибутом style.
+     */
+    const paginas = ["/", "/entrar", "/sobre", "/termos", "/privacidade", "/como-funciona"];
+
+    for (const caminho of paginas) {
+      const resposta = await request(app).get(caminho);
+      expect(resposta.status, caminho).toBe(200);
+      expect(resposta.text, caminho).not.toMatch(/<[^>]+\sstyle=["']/);
+    }
+  });
 });

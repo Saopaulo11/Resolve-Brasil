@@ -1501,3 +1501,62 @@ input[type="email"] {
   border-left: 3px solid var(--border);
   white-space: pre-wrap;
 }
+
+/* --- Ход разбора дела ----------------------------------------------------- */
+
+.panel--analise {
+  text-align: center;
+}
+
+.analise__passo {
+  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.analise__contagem {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.analise__barra {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 1rem;
+}
+
+/* Отрезки делят ширину поровну — сколько бы шагов ни было. */
+.analise__barra span {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  transition: background-color 0.3s ease;
+}
+
+.analise__barra--feito {
+  background: var(--green-text);
+}
+
+/*
+ * Движение выключается там, где человек об этом попросил системной
+ * настройкой: для части людей анимация — причина головной боли, а не украшение.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .analise__barra span {
+    transition: none;
+  }
+}
+
+/*
+ * Второй и следующие блоки подряд.
+ *
+ * Раньше отступ задавался атрибутом style прямо в разметке — и не
+ * применялся вовсе: CSP запрещает встроенные стили, так что блоки на
+ * страницах «Sobre», «Termos» и «Privacidade» стояли слипшимися. Видно это
+ * было только в консоли браузера.
+ */
+.panel--seguinte {
+  margin-top: 1rem;
+}
