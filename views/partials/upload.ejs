@@ -1,0 +1,65 @@
+<%#
+  Поле вложений (§6, §25).
+
+  Локали: id, name, titulo, dica, maxArquivos, maxArquivoMb, maxArquivoBytes,
+  obrigatorio (bool), comCamera (bool).
+
+  Без JavaScript видны обычные поля выбора файла: браузер сам показывает, что
+  выбрано, и форма отправляется полностью. Скрипт добавляет классу upload
+  признак upload--pronto — только тогда появляются кнопки и список выбранных
+  файлов, а сами поля прячутся. Порядок именно такой: если скрипт не
+  выполнится, человек останется с рабочим полем, а не с кнопкой, которая
+  ничего не открывает.
+%>
+<div class="upload"
+     data-upload
+     data-upload-max="<%= maxArquivos %>"
+     data-upload-bytes="<%= maxArquivoBytes %>">
+
+  <p class="upload__titulo"><%= titulo %></p>
+  <p class="field__hint" id="<%= id %>-hint"><%= dica %></p>
+
+  <div class="upload__zona" data-upload-zona>
+    <p class="upload__chamada">Arraste o arquivo aqui ou escolha do dispositivo</p>
+    <p class="upload__formatos">
+      PDF, JPG, PNG ou WEBP · até <%= maxArquivoMb %> MB · até <%= maxArquivos %> arquivos
+    </p>
+
+    <div class="upload__acoes">
+      <label class="btn btn--secondary" for="<%= id %>">Escolher arquivo</label>
+      <% if (comCamera) { %>
+        <label class="btn btn--secondary" for="<%= id %>-camera">📷 Tirar foto</label>
+      <% } %>
+    </div>
+
+    <input
+      type="file"
+      class="upload__entrada"
+      id="<%= id %>"
+      name="<%= name %>"
+      multiple
+      <%= obrigatorio ? 'required' : '' %>
+      data-upload-entrada
+      aria-describedby="<%= id %>-hint"
+      accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+    />
+
+    <% if (comCamera) { %>
+      <%# Отдельное поле для камеры: на телефоне оно открывает камеру, а не
+          список файлов. Имя то же — сервер принимает оба как вложения. %>
+      <input
+        type="file"
+        class="upload__entrada upload__entrada--camera"
+        id="<%= id %>-camera"
+        name="<%= name %>"
+        accept="image/*"
+        capture="environment"
+        data-upload-camera
+        aria-describedby="<%= id %>-hint"
+      />
+    <% } %>
+  </div>
+
+  <%# Список заполняется скриптом. aria-live: добавленный файл проговаривается. %>
+  <ul class="upload__lista" data-upload-lista role="status" aria-live="polite"></ul>
+</div>

@@ -22,6 +22,17 @@ describe("заголовки безопасности", () => {
     expect(csp).not.toContain("unsafe-eval");
   });
 
+  it("blob: разрешён только картинкам — для предпросмотра вложения", async () => {
+    const response = await request(app).get("/");
+    const csp = response.headers["content-security-policy"] ?? "";
+
+    expect(csp).toContain("img-src 'self' data: blob:");
+    // Послабление не должно расползтись на то, что выполняется.
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).not.toMatch(/script-src[^;]*blob:/);
+    expect(csp).not.toMatch(/default-src[^;]*blob:/);
+  });
+
   it("запрещает угадывание типа содержимого", async () => {
     const response = await request(app).get("/");
     expect(response.headers["x-content-type-options"]).toBe("nosniff");

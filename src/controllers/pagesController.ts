@@ -5,6 +5,7 @@ import { DESCRIPTION_MAX, DESCRIPTION_MIN } from "../cases/description";
 import { loadConfig } from "../config/env";
 import { trackEvent } from "../analytics/events";
 import { renderPage } from "../utils/render";
+import { megabytes } from "../utils/bytes";
 
 const SLOGAN = "Conte o que aconteceu. Descubra o que fazer.";
 
@@ -18,6 +19,8 @@ export function home(req: Request, res: Response): void {
       "entender a situação, organizar as informações e encontrar os próximos passos.",
     categories: CATEGORIES,
     maxArquivos: loadConfig().storage.maxFilesPerUpload,
+    maxArquivoMb: megabytes(loadConfig().storage.maxFileSizeBytes),
+    maxArquivoBytes: loadConfig().storage.maxFileSizeBytes,
     descricaoMin: DESCRIPTION_MIN,
     descricaoMax: DESCRIPTION_MAX,
     // Пришёл с карточки категории — форма это помнит и передаёт дальше.

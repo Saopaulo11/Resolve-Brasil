@@ -83,6 +83,15 @@ export interface OtpStore {
   /** Возвращает новое число попыток после увеличения. */
   recordAttempt(challengeId: string): Promise<number>;
   consume(challengeId: string, now: Date): Promise<void>;
+  /**
+   * Убрать все коды номера вместе с историей.
+   *
+   * Нужна только для сброса в разработке: пауза между отправками считается
+   * от времени последнего созданного кода, и погасить код мало — отсчёт
+   * идёт от его created_at. Маршрут, который её вызывает, в production не
+   * регистрируется.
+   */
+  clearForPhone(phone: string): Promise<void>;
 }
 
 export interface SessionStore {
@@ -185,6 +194,10 @@ export class PrismaOtpStore implements OtpStore {
       where: { phone, consumedAt: null, invalidatedAt: null, expiresAt: { gt: now } },
       data: { invalidatedAt: now },
     });
+  }
+
+  async clearForPhone(phone: string): Promise<void> {
+    await db().otpChallenge.deleteMany({ where: { phone } });
   }
 
   async create(input: {

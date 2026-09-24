@@ -7,11 +7,16 @@ import { loadConfig } from "../config/env";
 import { MARKETING_CHECKBOX_LABEL } from "../privacy/consent";
 import { requestCode, verifyCode } from "../users/authService";
 import { revokeAllSessions, revokeSession } from "../services/session";
-import { VERDICT_MESSAGES, CODIGO_INCORRETO } from "../users/otpPolicy";
+import {
+  VERDICT_MESSAGES,
+  CODIGO_INCORRETO,
+  secondsUntilResend,
+} from "../users/otpPolicy";
+import { stores } from "../users/storeRegistry";
 import {
   formatBrazilianPhone,
   parseBrazilianPhone,
-  PHONE_ERROR_MESSAGES,
+  PHONE_ERROR_MESSAGE,
 } from "../utils/phone";
 import { ipPrefix } from "../utils/crypto";
 import { renderPage } from "../utils/render";
@@ -116,16 +121,34 @@ export async function enviarCodigo(
     );
   };
 
-  if (!parsed.success) return showError(PHONE_ERROR_MESSAGES.formato);
+  if (!parsed.success) return showError(PHONE_ERROR_MESSAGE);
 
   const phone = parseBrazilianPhone(parsed.data.phone);
-  if (!phone.ok) return showError(PHONE_ERROR_MESSAGES[phone.reason]);
+  if (!phone.ok) return showError(PHONE_ERROR_MESSAGE);
+
+  // Код входа уходит в WhatsApp, а WhatsApp живёт на мобильном номере: на
+  // городской он не придёт никогда. Раньше такой номер принимался, человек
+  // ждал сообщение, и ждать было нечего.
+  if (!phone.isMobile) return showError(PHONE_ERROR_MESSAGE);
 
   const result = await requestCode(phone.e164, ipPrefix(req.ip) ?? null);
 
   if (!result.ok && result.reason === "aguarde") {
+    // Начатый вход продолжается на шаге кода — туда и возвращаем: там идёт
+    // отсчёт и видно, сколько ждать. Выбрасывать человека на первый шаг
+    // значило бы потерять начатое.
+    //
+    // Но только если вход действительно начат этим же номером. Иначе кука
+    // истекла или её не было вовсе, шаг кода такого человека всё равно
+    // отправит назад — и он получит пустую страницу входа без объяснения.
+    // В этом случае причина называется прямо здесь.
+    if (pendingPhone(req) === phone.e164) {
+      res.redirect(303, `/entrar/codigo?next=${encodeURIComponent(nextUrl)}`);
+      return;
+    }
+
     return showError(
-      `Aguarde ${result.secondsUntilResend} segundos para pedir um novo código.`,
+      `Você poderá solicitar um novo código em ${result.secondsUntilResend} segundos.`,
     );
   }
 
@@ -152,7 +175,7 @@ function pendingPhone(req: Request): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-export function codigoForm(req: Request, res: Response): void {
+export async function codigoForm(req: Request, res: Response): Promise<void> {
   const phone = pendingPhone(req);
   if (!phone) {
     res.redirect(303, "/entrar");
@@ -165,9 +188,51 @@ export function codigoForm(req: Request, res: Response): void {
     phoneMasked: formatBrazilianPhone(phone),
     nextUrl: safeNext(req.query.next),
     marketingLabel: MARKETING_CHECKBOX_LABEL,
+    // Сколько ещё нельзя просить новый код. Считает сервер: на клиенте это
+    // была бы просьба, а не правило, и часы у всех свои.
+    aguardeSegundos: await segundosAteReenvio(phone),
     values: {},
     errors: {},
   });
+}
+
+/** Остаток паузы до повторной отправки — 0, если просить можно сейчас. */
+async function segundosAteReenvio(phone: string): Promise<number> {
+  const config = loadConfig();
+  const latest = await stores().otp.findLatest(phone);
+  return secondsUntilResend(
+    latest?.createdAt ?? null,
+    config.otp.resendCooldownSeconds,
+  );
+}
+
+/**
+ * DEVELOPMENT ONLY (§79) — снять паузу между отправками кода.
+ *
+ * Нужен, чтобы проходить вход подряд при проверке: пауза в минуту делает
+ * ручной прогон и автотест против живого стенда невыносимыми.
+ *
+ * В production маршрут не существует — он не регистрируется вовсе
+ * (см. routes/index.ts), а не закрывается проверкой внутри. Проверку внутри
+ * можно однажды обойти опечаткой в условии; несуществующий маршрут обойти
+ * нечем. Здесь стоит вторая проверка на тот случай, если обработчик всё же
+ * подключат где-то ещё.
+ *
+ * Код при этом не раскрывается: гасятся действующие вызовы, и следующий
+ * запрос выдаёт новый код обычным путём.
+ */
+export async function reiniciarEsperaDev(req: Request, res: Response): Promise<void> {
+  if (loadConfig().isProduction) {
+    res.status(404).type("text/plain").send("Not found");
+    return;
+  }
+
+  // Именно удаление, а не гашение: пауза считается от времени создания
+  // последнего кода, и погашенный код её не отпускает.
+  const phone = pendingPhone(req);
+  if (phone) await stores().otp.clearForPhone(phone);
+
+  res.redirect(303, "/entrar/codigo");
 }
 
 const codeSchema = z.object({
@@ -189,6 +254,10 @@ export async function confirmarCodigo(
   const nextUrl = safeNext(body.next);
   const marketingConsent = body.marketing === "on" || body.marketing === "true";
 
+  // Считаем один раз на запрос: неверный код не отменяет паузу, и отсчёт на
+  // странице должен продолжиться с того же места, а не начаться заново.
+  const aguardeSegundos = await segundosAteReenvio(phone);
+
   const showError = (message: string) => {
     res.status(400);
     renderPage(
@@ -201,6 +270,7 @@ export async function confirmarCodigo(
         phoneMasked: formatBrazilianPhone(phone),
         nextUrl,
         marketingLabel: MARKETING_CHECKBOX_LABEL,
+        aguardeSegundos,
         values: { marketing: marketingConsent },
         errors: { code: message },
       },

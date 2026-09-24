@@ -13,6 +13,7 @@ import * as health from "../controllers/healthController";
 import * as pages from "../controllers/pagesController";
 import * as privacy from "../controllers/privacyController";
 import { findCategoryBySlug } from "../cases/categories";
+import { loadConfig } from "../config/env";
 import { aiRateLimit, otpRequestRateLimit } from "../middleware/rateLimit";
 import { requirePermission } from "../middleware/adminSession";
 import { requireAuth } from "../middleware/session";
@@ -123,6 +124,12 @@ export function buildRouter(): Router {
   router.post("/entrar", otpRequestRateLimit(), auth.enviarCodigo);
   router.get("/entrar/codigo", auth.codigoForm);
   router.post("/entrar/codigo", auth.confirmarCodigo);
+
+  // DEVELOPMENT ONLY (§79): снять паузу между отправками кода. В production
+  // маршрут не регистрируется — его просто нет, и обойти нечего.
+  if (!loadConfig().isProduction) {
+    router.post("/entrar/reiniciar-espera", auth.reiniciarEsperaDev);
+  }
   router.post("/sair", auth.sair);
   router.post("/sair-de-todos", requireAuth(), auth.sairDeTodos);
 

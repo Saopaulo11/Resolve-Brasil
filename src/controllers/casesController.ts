@@ -31,6 +31,7 @@ import { logger } from "../utils/logger";
 import { listReminders, PRESETS } from "../notifications/reminderService";
 import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
+import { megabytes } from "../utils/bytes";
 
 /**
  * Дела (§20, §21, §22).
@@ -94,6 +95,8 @@ function renderHome(
       description: HOME_DESCRIPTION,
       categories: CATEGORIES,
       maxArquivos: loadConfig().storage.maxFilesPerUpload,
+      maxArquivoMb: megabytes(loadConfig().storage.maxFileSizeBytes),
+      maxArquivoBytes: loadConfig().storage.maxFileSizeBytes,
       descricaoMin: DESCRIPTION_MIN,
       descricaoMax: DESCRIPTION_MAX,
       values: { description: state.description ?? "" },
@@ -284,6 +287,8 @@ export async function ver(
       // Предел берётся из конфигурации, а не пишется в шаблоне: иначе
       // подсказка и то, что на самом деле примет сервер, разъедутся.
       maxArquivos: loadConfig().storage.maxFilesPerUpload,
+      maxArquivoMb: megabytes(loadConfig().storage.maxFileSizeBytes),
+      maxArquivoBytes: loadConfig().storage.maxFileSizeBytes,
       statusLabel: status.label,
       statusHint: status.hint,
       statusTone: status.tone,

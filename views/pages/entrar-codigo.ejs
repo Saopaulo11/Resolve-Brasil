@@ -1,9 +1,8 @@
 <section class="section">
   <div class="container container--narrow">
     <h1>Confirme o código</h1>
-    <p class="lede">
-      Enviamos um código para <strong><%= phoneMasked %></strong>.
-    </p>
+    <p class="lede">Enviamos um código para seu telefone.</p>
+    <p class="small muted"><%= phoneMasked %></p>
 
     <div class="panel">
       <form method="post" action="/entrar/codigo" novalidate>
@@ -48,13 +47,34 @@
       </form>
     </div>
 
-    <form method="post" action="/entrar" class="resend">
+    <%
+      /* Пауза между отправками (§67). Её считает сервер и он же её
+         применяет — разметка ниже только показывает остаток.
+
+         Кнопка приходит доступной намеренно. Заблокировать её может лишь
+         скрипт: если он не выполнится, заблокированная разметкой кнопка
+         осталась бы мёртвой навсегда, и повторная отправка стала бы
+         недоступна вовсе. Поэтому запрет ставится только там, где есть кому
+         его снять, а без скрипта отказ придёт с сервера — тем же текстом. */
+    %>
+    <form method="post" action="/entrar" class="resend"
+          data-reenvio="<%= aguardeSegundos %>">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="hidden" name="next" value="<%= nextUrl %>" />
       <input type="hidden" name="phone" value="<%= phoneMasked %>" />
-      <button type="submit" class="btn btn--secondary btn--block">
-        Não recebi o código
+
+      <button type="submit" class="btn btn--secondary btn--block"
+              data-reenvio-botao>
+        Reenviar código
       </button>
+
+      <%# aria-live: отсчёт проговаривается экранным диктором, не перебивая. %>
+      <p class="small muted resend__espera" data-reenvio-aviso
+         role="status" aria-live="polite">
+        <% if (aguardeSegundos > 0) { %>
+          Você poderá solicitar um novo código em <%= aguardeSegundos %> segundos.
+        <% } %>
+      </p>
     </form>
 
     <p class="small muted">

@@ -95,35 +95,18 @@
         </fieldset>
 
         <%# §6: вложения прямо при вводе. Чек и переписка есть у человека
-            сейчас, а через шаг он их приложить забудет. Работает и без
-            JavaScript: браузер сам показывает, сколько файлов выбрано. %>
-        <div class="field upload">
-          <label for="arquivo">Tem algum documento ou comprovante?</label>
-          <p class="field__hint" id="arquivo-hint">
-            Nota fiscal, comprovante de Pix, pedido, conversa com a empresa.
-            PDF, JPG, PNG ou WEBP — até <%= maxArquivos %> arquivos.
-          </p>
-          <input
-            type="file"
-            id="arquivo"
-            name="arquivo"
-            multiple
-            aria-describedby="arquivo-hint"
-            accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-          />
-
-          <%# Отдельное поле для камеры: на телефоне оно открывает камеру, а
-              не список файлов. Имя то же — сервер принимает оба как вложения. %>
-          <label for="arquivo-camera" class="upload__camera">Tirar foto</label>
-          <input
-            type="file"
-            id="arquivo-camera"
-            name="arquivo"
-            accept="image/*"
-            capture="environment"
-            aria-describedby="arquivo-hint"
-          />
-        </div>
+            сейчас, а через шаг он их приложить забудет. %>
+        <%- include("../partials/upload", {
+              id: "arquivo",
+              name: "arquivo",
+              titulo: "Adicionar documento",
+              dica: "Nota fiscal, comprovante de Pix, pedido, conversa com a empresa.",
+              maxArquivos: maxArquivos,
+              maxArquivoMb: maxArquivoMb,
+              maxArquivoBytes: maxArquivoBytes,
+              obrigatorio: false,
+              comCamera: true,
+            }) %>
 
         <button type="submit" class="btn btn--primary btn--block">
           <%= falhou ? 'Tentar novamente' : 'Analisar meu caso' %>

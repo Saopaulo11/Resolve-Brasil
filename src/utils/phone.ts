@@ -36,19 +36,41 @@ export type PhoneError =
   | "celular_invalido"
   | "fixo_invalido";
 
-/** Текст ошибки для интерфейса — pt-BR, без технических подробностей. */
+/**
+ * Текст ошибки для интерфейса — один на все случаи.
+ *
+ * Разбор различает причины (они нужны тестам и логам), но человеку у поля
+ * ввода показывается одна фраза. Разбирать, чем «DDD inválido» отличается от
+ * «fixo inválido», — работа не его: он видит поле, которое не приняли, и ему
+ * нужно знать, что туда положить. Пример формата стоит рядом, в подсказке под
+ * меткой, и он там всегда, а не только после ошибки.
+ */
+export const PHONE_ERROR_MESSAGE = "Digite um número de celular válido com DDD.";
+
+/** Оставлено для совместимости: все причины ведут к одному тексту. */
 export const PHONE_ERROR_MESSAGES: Record<PhoneError, string> = {
-  vazio: "Informe seu número de telefone.",
-  formato: "Número inválido. Use DDD + número, por exemplo (11) 98765-4321.",
-  curto: "Faltam dígitos. Com o DDD são 11 no celular e 10 no fixo, por exemplo (11) 98765-4321.",
-  longo: "Dígitos demais. Com o DDD são 11 no celular e 10 no fixo, por exemplo (11) 98765-4321.",
-  ddd_invalido: "DDD inválido. Verifique os dois primeiros dígitos.",
-  celular_invalido: "Número de celular inválido. Ele deve começar com 9 após o DDD.",
-  fixo_invalido: "Número fixo inválido. Depois do DDD ele não começa com 0 nem com 1.",
+  vazio: PHONE_ERROR_MESSAGE,
+  formato: PHONE_ERROR_MESSAGE,
+  curto: PHONE_ERROR_MESSAGE,
+  longo: PHONE_ERROR_MESSAGE,
+  ddd_invalido: PHONE_ERROR_MESSAGE,
+  celular_invalido: PHONE_ERROR_MESSAGE,
+  fixo_invalido: PHONE_ERROR_MESSAGE,
 };
 
+/**
+ * Приводит ввод к цифрам.
+ *
+ * Скобки, дефисы, точки, пробелы и неразрывные пробелы человек ставит так,
+ * как привык, и как подставляет клавиатура телефона. Плюс и код страны тоже
+ * убираются: «+55 11 98765-4321» и «11987654321» — один и тот же номер.
+ */
+export function normalizeBrazilianPhone(input: string): string {
+  return (input ?? "").replace(/\D/g, "");
+}
+
 export function parseBrazilianPhone(input: string): PhoneParseResult {
-  const digits = (input ?? "").replace(/\D/g, "");
+  const digits = normalizeBrazilianPhone(input);
   if (digits.length === 0) return { ok: false, reason: "vazio" };
 
   // Код страны может быть, а может и не быть — принимаем оба варианта.

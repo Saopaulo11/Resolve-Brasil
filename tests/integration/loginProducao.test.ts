@@ -116,4 +116,25 @@ describe("вход в production", () => {
     const emDesenvolvimento = await new MockOtpProvider().send("+5511987654321", "123456");
     expect(emDesenvolvimento.delivered).toBe(true);
   });
+
+  it("маршрут сброса паузы в production не существует", async () => {
+    // Он не закрыт проверкой, а не зарегистрирован вовсе: обходить нечего.
+    produção();
+    const app = createApp();
+
+    // С настоящим токеном формы: иначе 403 от защиты CSRF сказал бы лишь
+    // то, что токена нет, а не то, что маршрута не существует.
+    const pagina = await request(app).get("/entrar");
+    const token = /name="_csrf" value="([^"]+)"/.exec(pagina.text)?.[1] ?? "";
+    const cookies = (pagina.headers["set-cookie"] as unknown as string[]) ?? [];
+    expect(token).not.toBe("");
+
+    const resposta = await request(app)
+      .post("/entrar/reiniciar-espera")
+      .set("Cookie", cookies)
+      .type("form")
+      .send({ _csrf: token });
+
+    expect(resposta.status).toBe(404);
+  });
 });

@@ -176,10 +176,17 @@ describe("одноразовость кода (§67)", () => {
       .type("form")
       .send({ _csrf: resend.token, phone: PHONE });
 
-    expect(response.status).toBe(400);
-    expect(response.text).toContain("Aguarde");
+    // Возврат на шаг кода: там идёт отсчёт и видно, сколько ждать. Прежде
+    // отказ показывался на первом шаге и выкидывал человека из начатого входа.
+    expect(response.status).toBe(303);
+    expect(response.headers.location).toContain("/entrar/codigo");
     // Второй код не создан — значит первый, уже отправленный, ещё действует.
     expect(harness.otpProvider.sent).toHaveLength(1);
+
+    const volta = await request(harness.app)
+      .get("/entrar/codigo")
+      .set("Cookie", page.cookies);
+    expect(volta.text).toMatch(/Você poderá solicitar um novo código em \d+ segundos/);
   });
 });
 

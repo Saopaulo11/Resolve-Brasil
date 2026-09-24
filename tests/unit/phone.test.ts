@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatBrazilianPhone,
   parseBrazilianPhone,
+  normalizeBrazilianPhone,
   PHONE_ERROR_MESSAGES,
 } from "../../src/utils/phone";
 
@@ -58,15 +59,54 @@ describe("нормализация бразильских телефонов", (
     if (!longo.ok) expect(longo.reason).toBe("longo");
   });
 
-  it("на лишнюю цифру отвечает подсказкой про длину, а не общим отказом", () => {
-    // Ровно этот случай человек видел на входе: двенадцать цифр вместо
-    // одиннадцати и сообщение, из которого не следует, что именно не так.
-    const result = parseBrazilianPhone("120997847612");
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.reason).toBe("longo");
-      expect(PHONE_ERROR_MESSAGES[result.reason]).toContain("Dígitos demais");
+  it("человеку показывает одну фразу, какой бы ни была причина", () => {
+    // Причины различаются внутри — для тестов и логов. У поля ввода человек
+    // видит одно понятное требование, а не разбор своего ввода.
+    const entradas = ["120997847612", "119", "20987654321", "11887654321", ""];
+
+    for (const entrada of entradas) {
+      const result = parseBrazilianPhone(entrada);
+      expect(result.ok, entrada).toBe(false);
+      if (!result.ok) {
+        expect(PHONE_ERROR_MESSAGES[result.reason], entrada).toBe(
+          "Digite um número de celular válido com DDD.",
+        );
+      }
     }
+  });
+
+  it("принимает номер в любой привычной записи", () => {
+    // Скобки, дефисы, пробелы и код страны человек ставит как привык — и как
+    // подставляет клавиатура телефона.
+    const variantes = [
+      "(11) 98765-4321",
+      "11987654321",
+      "+55 11 98765-4321",
+      "+5511987654321",
+      "55 11 98765.4321",
+      "  11 9 8765 4321  ",
+    ];
+
+    for (const variante of variantes) {
+      const result = parseBrazilianPhone(variante);
+      expect(result.ok, variante).toBe(true);
+      if (result.ok) {
+        expect(result.e164, variante).toBe("+5511987654321");
+        expect(result.isMobile, variante).toBe(true);
+      }
+    }
+  });
+
+  it("нормализация оставляет только цифры", () => {
+    expect(normalizeBrazilianPhone("+55 (11) 98765-4321")).toBe("5511987654321");
+    expect(normalizeBrazilianPhone("11 9.8765 4321")).toBe("11987654321");
+  });
+
+  it("DDD не может начинаться с нуля", () => {
+    // 01 нет среди действующих кодов: такой номер не существует.
+    const result = parseBrazilianPhone("01987654321");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("ddd_invalido");
   });
 
   it("отклоняет городской номер, до которого код не дойдёт", () => {

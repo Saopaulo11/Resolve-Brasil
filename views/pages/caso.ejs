@@ -143,15 +143,17 @@
             enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-        <div class="field">
-          <label for="arquivo">Arquivos</label>
-          <p class="field__hint" id="arquivo-hint">
-            Você pode escolher vários de uma vez. Até <%= maxArquivos %> por envio.
-          </p>
-          <input type="file" id="arquivo" name="arquivo" required multiple
-                 aria-describedby="arquivo-hint"
-                 accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" />
-        </div>
+        <%- include("../partials/upload", {
+              id: "arquivo",
+              name: "arquivo",
+              titulo: "Adicionar documento",
+              dica: "Você pode escolher vários de uma vez.",
+              maxArquivos: maxArquivos,
+              maxArquivoMb: maxArquivoMb,
+              maxArquivoBytes: maxArquivoBytes,
+              obrigatorio: true,
+              comCamera: true,
+            }) %>
 
         <div class="field">
           <label for="tipo-documento">O que é este arquivo?</label>

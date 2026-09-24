@@ -124,6 +124,12 @@ export class MemoryOtpStore implements OtpStore {
     return challenge;
   }
 
+  async clearForPhone(phone: string): Promise<void> {
+    for (const [id, challenge] of this.challenges) {
+      if (challenge.phone === phone) this.challenges.delete(id);
+    }
+  }
+
   async findLatest(phone: string): Promise<OtpChallengeRecord | null> {
     let latest: OtpChallengeRecord | null = null;
     for (const challenge of this.challenges.values()) {

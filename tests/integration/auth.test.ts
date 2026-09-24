@@ -48,7 +48,8 @@ describe("вход по телефону и коду", () => {
       .send({ _csrf: start.token, phone: "20987654321" });
 
     expect(response.status).toBe(400);
-    expect(response.text).toContain("DDD inválido");
+    // Человеку — одно понятное требование, без разбора его ввода.
+    expect(response.text).toContain("Digite um número de celular válido com DDD.");
     expect(harness.otpProvider.sent).toHaveLength(0);
   });
 
