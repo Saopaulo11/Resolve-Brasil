@@ -36,6 +36,21 @@ export function uploadedFiles(req: Request): UploadedFile[] {
   return Array.isArray(files) ? (files as UploadedFile[]) : [];
 }
 
+/**
+ * Насколько потолок разбора выше нашего предела на файл.
+ *
+ * Multer, упёршись в свой лимит, обрывает разбор всего запроса: тело до
+ * обработчика не доходит, и вместе с ним пропадает рассказ, который человек
+ * только что написал. Для файла чуть больше предела — а это самый частый
+ * случай, снимок с телефона — такой обрыв обходится слишком дорого.
+ *
+ * Поэтому потолок разбора выше предела: файл доезжает целиком и его
+ * отвергает наша проверка — обычным сообщением, не теряя ни текста, ни
+ * остальных вложений. Сам потолок остаётся: он защищает память от
+ * заведомо неподъёмного файла, и там обрыв уместен.
+ */
+const FOLGA_DE_ANALISE_BYTES = 2 * 1024 * 1024;
+
 export function uploadParser(): RequestHandler {
   const config = loadConfig();
   const maxFiles = config.storage.maxFilesPerUpload;
@@ -43,7 +58,7 @@ export function uploadParser(): RequestHandler {
   const parser = multer({
     storage: multer.memoryStorage(),
     limits: {
-      fileSize: config.storage.maxFileSizeBytes,
+      fileSize: config.storage.maxFileSizeBytes + FOLGA_DE_ANALISE_BYTES,
       files: maxFiles,
       // Поля формы у нас короткие: токен, тип документа, решение по факту.
       fieldSize: 8 * 1024,

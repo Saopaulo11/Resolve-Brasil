@@ -248,6 +248,67 @@ export async function readDocument(input: {
   }
 }
 
+/**
+ * Удаление документа человеком (§21, §25).
+ *
+ * Файл уходит из хранилища сразу, а запись помечается удалённой, но
+ * остаётся: по ней видно, что документ был и когда исчез. Без этого
+ * невозможно ответить на вопрос «куда делся чек», а для дела, которое
+ * тянется неделями, это обычный вопрос.
+ *
+ * Чужой и несуществующий документ неотличимы: оба дают отказ без
+ * подробностей — иначе по ответу можно перебирать чужие номера.
+ */
+export async function removeDocument(input: {
+  documentId: string;
+  userId: string;
+  ipPrefix: string | null;
+}): Promise<{ ok: boolean }> {
+  const document = await stores().documents.findById(input.documentId);
+  if (!document || document.deletedAt) return { ok: false };
+
+  const caseRecord = await stores().cases.findById(document.caseId);
+  if (!caseRecord || caseRecord.userId !== input.userId) {
+    logger().warn(
+      { documentId: document.id },
+      "tentativa de remover documento de outro usuário",
+    );
+    return { ok: false };
+  }
+
+  // Сначала файл, потом отметка: если хранилище откажет, документ останется
+  // видимым и человек сможет повторить. Обратный порядок оставил бы запись
+  // удалённой при живом файле — и он пролежал бы там навсегда.
+  try {
+    await storageProvider().remove(document.storageKey);
+  } catch (error) {
+    logger().error({ err: error, documentId: document.id }, "falha ao remover arquivo");
+    return { ok: false };
+  }
+
+  await stores().documents.softDelete(document.id, new Date());
+
+  await stores().audit.record({
+    adminUserId: null,
+    action: "document.remove",
+    entityType: "Document",
+    entityId: document.id,
+    metadata: { caseId: caseRecord.publicId },
+    ipPrefix: input.ipPrefix,
+  });
+
+  await stores().cases.addEvent({
+    caseId: caseRecord.id,
+    type: "documento_removido",
+    title: "Documento removido",
+    description: document.filename,
+    eventDate: new Date(),
+    source: "USER_FACT",
+  });
+
+  return { ok: true };
+}
+
 export type ExtractionResult =
   | { ok: true; facts: CaseFactRecord[] }
   | { ok: false; reason: "sem_ia" | "falhou"; detail: string };

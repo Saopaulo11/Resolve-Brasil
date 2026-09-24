@@ -60,6 +60,11 @@ export function buildRouter(): Router {
     aiRateLimit(),
     documents.extrair,
   );
+  router.post(
+    "/caso/:publicId/documentos/:documentId/remover",
+    requireAuth(),
+    documents.remover,
+  );
   router.post("/caso/:publicId/fatos/:factId", requireAuth(), documents.revisarFato);
 
   // --- Администрирование (§50, §51) ---

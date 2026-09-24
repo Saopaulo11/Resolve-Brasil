@@ -886,6 +886,35 @@ input:focus {
   font-size: 0.9375rem;
 }
 
+/* --- Действия над документом ----------------------------------------------- */
+
+.doc__acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/*
+ * Удаление — действие необратимое и редкое. Кнопкой наравне с остальными оно
+ * зовёт нажать себя по ошибке, поэтому выглядит ссылкой и держится в стороне.
+ */
+.btn--link {
+  padding: 0.375rem 0.25rem;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.btn--link:hover {
+  color: var(--danger);
+}
+
 /* --- Вложения при вводе --------------------------------------------------- */
 
 .upload input[type="file"] {

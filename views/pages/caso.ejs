@@ -185,17 +185,31 @@
               </div>
               <%# Извлечение — отдельное действие: это единственная операция,
                   где сам файл уходит провайдеру модели (§47, §48). %>
-              <% if (doc.extractionStatus === "CONCLUIDA") { %>
-                <span class="tag tag--concluido">Lido</span>
-              <% } else { %>
+              <div class="doc__acoes">
+                <% if (doc.extractionStatus === "CONCLUIDA") { %>
+                  <span class="tag tag--concluido">Lido</span>
+                <% } else { %>
+                  <form method="post"
+                        action="/caso/<%= caso.publicId %>/documentos/<%= doc.id %>/extrair">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button type="submit" class="btn btn--secondary">
+                      Ler dados do documento
+                    </button>
+                  </form>
+                <% } %>
+
+                <%# Приложить не то легко — с телефона особенно. Без способа
+                    убрать файл человек либо бросает дело, либо оставляет в нём
+                    чужой документ (§21). %>
                 <form method="post"
-                      action="/caso/<%= caso.publicId %>/documentos/<%= doc.id %>/extrair">
+                      action="/caso/<%= caso.publicId %>/documentos/<%= doc.id %>/remover">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-                  <button type="submit" class="btn btn--secondary">
-                    Ler dados do documento
+                  <button type="submit" class="btn btn--link"
+                          aria-label="Remover <%= doc.filename %>">
+                    Remover
                   </button>
                 </form>
-              <% } %>
+              </div>
             </li>
           <% }); %>
         </ul>

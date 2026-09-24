@@ -107,7 +107,26 @@ describe("подмена типа файла (§25)", () => {
     const big = Buffer.concat([PDF_BYTES, Buffer.alloc(11 * 1024 * 1024, 0x20)]);
     const response = await upload(alice, publicId, big, "grande.pdf", "application/pdf");
 
-    // Не 500: слишком большой файл — обычный отказ, а не поломка сервиса.
+    // Не 500 и не страница ошибки: слишком большой файл — обычный отказ.
+    // Страницей ошибки это быть перестало намеренно: она уносила с собой
+    // рассказ, набранный на той же форме (см. uploadLimits.test.ts).
+    expect(response.status).toBe(303);
+    expect(decodeURIComponent(response.headers.location ?? "")).toContain("grande.pdf");
+
+    // Главное: в деле его нет.
+    const caso = await harness.cases.findByPublicId(publicId);
+    expect(await harness.documents.listForCase(caso?.id ?? "")).toHaveLength(0);
+  });
+
+  it("файл заведомо неподъёмного размера обрывается разбором", async () => {
+    // Потолок разбора выше предела, но не бесконечен: иначе одна форма
+    // способна занять всю память процесса.
+    const alice = await login(harness, "11987654321");
+    const publicId = await createCase(alice);
+
+    const enorme = Buffer.concat([PDF_BYTES, Buffer.alloc(13 * 1024 * 1024, 0x20)]);
+    const response = await upload(alice, publicId, enorme, "enorme.pdf", "application/pdf");
+
     expect(response.status).toBe(413);
     expect(response.text).toContain("Arquivo não aceito");
   });

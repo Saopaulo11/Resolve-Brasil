@@ -4,6 +4,7 @@ import { getCaseForUser } from "../cases/caseService";
 import {
   extractFromDocument,
   readDocument,
+  removeDocument,
   reviewFact,
   uploadDocuments,
   UPLOAD_MESSAGES,
@@ -101,6 +102,38 @@ export async function enviar(
   }
 
   res.redirect(303, `${target}?aviso=${encodeURIComponent(aviso)}`);
+}
+
+export async function remover(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) return;
+
+  const found = await resolveCase(req, userId);
+  if (!found) return next();
+
+  const documentId = typeof req.params.documentId === "string" ? req.params.documentId : "";
+  if (documentId.length === 0) return next();
+
+  const result = await removeDocument({
+    documentId,
+    userId,
+    ipPrefix: ipPrefix(req.ip) ?? null,
+  });
+
+  const target = `/caso/${found.case.publicId}`;
+  if (result.ok) {
+    res.redirect(303, `${target}#documentos`);
+    return;
+  }
+
+  res.redirect(
+    303,
+    `${target}?aviso=${encodeURIComponent("Não foi possível remover esse arquivo.")}#documentos`,
+  );
 }
 
 /**
