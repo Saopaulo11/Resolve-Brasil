@@ -8,7 +8,7 @@ import { config as loadDotenv } from "dotenv";
 
 loadDotenv();
 
-import { createApp } from "./createApp";
+import { createApp } from "./app";
 import { startFailureServer } from "./boot/failureServer";
 import { loadConfig } from "./config/env";
 import { disconnectDb } from "./services/db";

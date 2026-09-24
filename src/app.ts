@@ -1,19 +1,13 @@
 /**
  * Сборка Express-приложения.
- *
- * Файл намеренно не называется app.ts. Vercel сам ищет точку входа по
- * имени файла, и src/app.* он считает точкой входа — ждёт оттуда готовое
- * приложение в экспорте по умолчанию. Здесь же фабрика с именованным
- * экспортом, и платформа падала на каждом запросе: «Invalid export found
- * in module /var/task/src/app.js». Переименование обратно вернёт эту
- * ошибку — и снова без единого слова в ответе, одной заглушкой платформы.
  */
 import path from "node:path";
 
 import cookieParser from "cookie-parser";
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import pinoHttp from "pino-http";
 
+import { corpoDaFalha } from "./boot/failureServer";
 import { loadConfig } from "./config/env";
 import { attachAdmin } from "./middleware/adminSession";
 import { attachSession } from "./middleware/session";
@@ -95,4 +89,44 @@ export function createApp(): Express {
   app.use(errorHandler);
 
   return app;
+}
+
+/**
+ * Экспорт по умолчанию — для платформы, и только для неё.
+ *
+ * Vercel выбирает точку входа сам: из файлов с известными именами
+ * (server.js, src/server.ts, src/app.ts) он берёт тот, который импортирует
+ * express, и ждёт оттуда приложение или функцию-обработчик в экспорте по
+ * умолчанию. Обоим условиям отвечает только этот файл — отсюда и место
+ * обёртки. Сборка без неё падает с «No entrypoint found which imports
+ * express», а с ней, но без экспорта по умолчанию, собирается зелёной и
+ * отвечает пятисоткой на каждый запрос: «Invalid export found in module».
+ *
+ * Приложение строится при первом запросе, а не при импорте: тесты
+ * импортируют createApp и собирают своё, и лишний экземпляр на каждый
+ * импорт им только мешал бы.
+ */
+let instancia: Express | null = null;
+
+export default function handler(req: Request, res: Response): void {
+  if (!instancia) {
+    try {
+      instancia = createApp();
+    } catch (error) {
+      // Иначе причина сбоя остаётся внутри, а наружу уходит одна и та же
+      // заглушка платформы — одинаковая для любой поломки.
+      //
+      // Здесь console, а не logger(): логгер сам читает конфигурацию, и на
+      // сломанной конфигурации упал бы прямо в этом обработчике.
+      console.error(error);
+      res.writeHead(503, {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+      });
+      res.end(corpoDaFalha(error));
+      return;
+    }
+  }
+
+  instancia(req, res);
 }

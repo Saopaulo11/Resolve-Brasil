@@ -1,7 +1,7 @@
 import request from "supertest";
 import type { Express } from "express";
 
-import { createApp } from "../../src/createApp";
+import { createApp } from "../../src/app";
 import { setOtpProvider } from "../../src/users/otpProvider";
 import {
   createMemoryStores,
