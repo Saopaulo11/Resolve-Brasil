@@ -19,6 +19,7 @@ type Recebido = {
   method: string;
   url: string;
   authorization: string | undefined;
+  apikey: string | undefined;
   upsert: string | undefined;
   contentType: string | undefined;
   body: Buffer;
@@ -40,6 +41,7 @@ beforeEach(async () => {
         method: req.method ?? "",
         url: req.url ?? "",
         authorization: req.headers.authorization,
+        apikey: req.headers.apikey as string | undefined,
         upsert: req.headers["x-upsert"] as string | undefined,
         contentType: req.headers["content-type"],
         body: Buffer.concat(partes),
@@ -84,6 +86,9 @@ describe("отправка файла", () => {
     expect(pedido.method).toBe("POST");
     expect(pedido.url).toBe("/storage/v1/object/documentos/casos/abc/doc.pdf");
     expect(pedido.authorization).toBe(`Bearer ${CHAVE}`);
+    // Ключ идёт двумя заголовками: старый service_role и новый secret key
+    // ожидаются в разных местах, и вкладка в консоли не должна ничего решать.
+    expect(pedido.apikey).toBe(CHAVE);
     expect(pedido.contentType).toBe("application/pdf");
     // Ключ уникален по построению: перезапись означала бы столкновение.
     expect(pedido.upsert).toBe("false");

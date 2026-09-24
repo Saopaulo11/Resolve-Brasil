@@ -39,8 +39,20 @@ export class SupabaseStorageProvider implements StorageProvider {
     return this.url("object", encodeURIComponent(this.bucket), caminho);
   }
 
+  /**
+   * Заголовки доступа.
+   *
+   * Ключ идёт двумя заголовками сразу: Supabase принимает и старый
+   * service_role, и новый secret key, но ожидает их в разных местах. Так
+   * работает и то, и другое — и выбор вкладки в консоли перестаёт решать,
+   * поднимется ли загрузка.
+   */
   private headers(extra: Record<string, string> = {}): Record<string, string> {
-    return { authorization: `Bearer ${this.secretKey}`, ...extra };
+    return {
+      authorization: `Bearer ${this.secretKey}`,
+      apikey: this.secretKey,
+      ...extra,
+    };
   }
 
   /**
