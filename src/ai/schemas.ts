@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { CATEGORIES } from "../cases/categories";
+import type { CaseCategory } from "../generated/prisma/enums";
 
 /**
  * Схемы структурированного вывода AI (§8, §44).
@@ -9,15 +11,20 @@ import { z } from "zod";
  * и будет выглядеть как подтверждённый факт.
  */
 
-export const caseCategorySchema = z.enum([
-  "PRODUTO_NAO_RECEBIDO",
-  "REEMBOLSO_NAO_RECEBIDO",
-  "COBRANCA_INDEVIDA",
-  "CANCELAMENTO_NAO_REALIZADO",
-  "PRODUTO_COM_DEFEITO",
-  "SERVICO_NAO_PRESTADO",
-  "OUTRO",
-]);
+/**
+ * Категории берутся из общего списка, а не переписываются здесь.
+ *
+ * Раньше список был скопирован: добавленная категория оказывалась в форме и
+ * в базе, но не в схеме ответа модели — классификатор про неё не знал, а
+ * вернув её, не прошёл бы проверку. Такое расхождение не видно ни в одном
+ * тесте, который смотрит на что-то одно.
+ */
+const CATEGORY_VALUES = CATEGORIES.map((categoria) => categoria.value) as [
+  CaseCategory,
+  ...CaseCategory[],
+];
+
+export const caseCategorySchema = z.enum(CATEGORY_VALUES);
 
 export const factSourceSchema = z.enum([
   "USER_FACT",

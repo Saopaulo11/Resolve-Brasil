@@ -8,8 +8,9 @@ import type { CaseCategory } from "../generated/prisma/enums";
  * в разных местах, ярлык в интерфейсе рано или поздно разъедется со
  * значением в базе.
  *
- * Расширение до telecom, banking, Pix, INSS и прочего (§11) делается
- * добавлением значения в enum и строки сюда — переписывать логику не нужно.
+ * Расширение до telecom, banking, INSS и прочего (§11) делается добавлением
+ * значения в enum и строки сюда — переписывать логику не нужно. Pix так и
+ * добавлен: значение в enum, миграция, строка здесь.
  */
 export type CategoryDefinition = {
   value: CaseCategory;
@@ -73,6 +74,16 @@ export const CATEGORIES: readonly CategoryDefinition[] = [
     quickLabel: "Serviço não foi realizado",
     icon: "📝",
     description: "O serviço foi contratado e pago, mas não foi executado.",
+  },
+  {
+    value: "PROBLEMA_COM_PIX",
+    slug: "problema-com-pix",
+    label: "Problema com Pix",
+    quickLabel: "Tive um problema com Pix",
+    icon: "⚡",
+    description:
+      "O Pix saiu da conta e o problema é com ele: golpe, valor não reconhecido, " +
+      "destinatário errado ou pagamento a uma empresa que não entregou.",
   },
   {
     value: "OUTRO",
