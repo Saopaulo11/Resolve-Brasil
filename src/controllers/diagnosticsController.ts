@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { limparMensagem } from "../boot/failureServer";
 import { loadConfig } from "../config/env";
 import { classifyError, statusDoErro } from "../errors/categories";
-import { openAiClient } from "../ai/openai/client";
+import { AiError, openAiClient, probeStructured } from "../ai/openai/client";
 import { databaseUrlSource, stripTlsParams } from "../config/databaseUrl";
 import { db, isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
@@ -19,6 +19,29 @@ import { logger } from "../utils/logger";
  * символа и длиной — этого хватает, чтобы отличить «задан не тот ключ» от
  * «не задан вовсе», и не хватает ни для чего другого (§76).
  */
+
+/**
+ * Пускать ли к диагностике.
+ *
+ * В production — только по токену, и при его отсутствии страница отвечает
+ * 404, а не 403: «доступ запрещён» подтвердило бы, что она вообще есть.
+ * Вне production токен не нужен: там нечего охранять.
+ *
+ * Сравнение посимвольное, но токен здесь не открывает ничего, кроме
+ * сведений о настройке, — времязависимое сравнение тут было бы театром.
+ */
+function permitido(req: Request, res: Response): boolean {
+  const config = loadConfig();
+  if (!config.isProduction) return true;
+
+  const esperado = config.diagnosticToken;
+  const recebido = typeof req.query.token === "string" ? req.query.token : "";
+
+  if (esperado && recebido === esperado) return true;
+
+  res.status(404).type("text/plain").send("Not found");
+  return false;
+}
 
 /** Начало ключа и длина — чтобы отличить «не тот» от «нет вовсе». */
 function pistaDaChave(chave: string | undefined): string | null {
@@ -40,6 +63,8 @@ function mensagemDoErro(error: unknown): string {
  * Текст пользователя сюда не попадает — только просьба ответить «OK».
  */
 export async function ai(req: Request, res: Response): Promise<void> {
+  if (!permitido(req, res)) return;
+
   const config = loadConfig();
   const chave = config.ai.openai.apiKey;
 
@@ -106,13 +131,46 @@ export async function ai(req: Request, res: Response): Promise<void> {
       store: false,
     });
 
-    res.status(200).json({
-      ...base,
-      openaiRequest: "success",
+    const simples = {
+      openaiRequest: "success" as const,
       status: 200,
       latencyMs: Date.now() - comecou,
       outputPresent: typeof resposta.output_text === "string",
-    });
+    };
+
+    /*
+     * Второй запрос — тем же путём, каким идёт разбор дела: со схемой.
+     * Обычный запрос может проходить, когда этот отвергается, и тогда
+     * «провайдер отвечает» означает ровно ничего.
+     */
+    const inicioEstruturado = Date.now();
+    try {
+      const provado = await probeStructured();
+      res.status(200).json({
+        ...base,
+        ...simples,
+        structured: "success",
+        structuredLatencyMs: Date.now() - inicioEstruturado,
+        structuredOutput: provado.data.status,
+      });
+    } catch (error) {
+      const categoria = classifyError(error);
+      logger().error(
+        { categoria, err: error },
+        "diagnóstico: saída estruturada falhou",
+      );
+      res.status(200).json({
+        ...base,
+        ...simples,
+        structured: "error",
+        structuredLatencyMs: Date.now() - inicioEstruturado,
+        structuredStatus: statusDoErro(error),
+        structuredErrorCode: categoria,
+        structuredAiCode:
+          error instanceof AiError ? error.code : null,
+        structuredMessage: mensagemDoErro(error),
+      });
+    }
   } catch (error) {
     const categoria = classifyError(error);
     const status = statusDoErro(error);
@@ -143,7 +201,9 @@ const ROLLBACK = Symbol("rollback");
  * создаётся именно записью. Проба пишет настоящую строку тем же клиентом и
  * той же схемой, а затем откатывает транзакцию — в базе не остаётся ничего.
  */
-export async function database(_req: Request, res: Response): Promise<void> {
+export async function database(req: Request, res: Response): Promise<void> {
+  if (!permitido(req, res)) return;
+
   if (!isDatabaseConfigured()) {
     res.status(503).json({
       configured: false,

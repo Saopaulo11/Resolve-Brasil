@@ -12,6 +12,7 @@ import { refreshProjection } from "../analytics/pipeline";
 import { logger } from "../utils/logger";
 import { stores } from "../users/storeRegistry";
 import type { CaseEventRecord, CaseMessageRecord, CaseRecord } from "./caseStore";
+import { classifyError } from "../errors/categories";
 
 /**
  * Запуск анализа дела (§8, §27, §28, §33, §34).
@@ -83,6 +84,31 @@ export async function runAnalysis(input: {
     };
   }
 
+  /*
+   * Этапы разбора в журнале (§41).
+   *
+   * Снаружи видно одно «не получилось». Чтобы знать, где оборвалось —
+   * на обращении к провайдеру, на разборе ответа или на записи в базу, —
+   * каждый рубеж отмечается отдельно. Ни текста дела, ни документов, ни
+   * ключа здесь нет: только номер дела, вид разбора и исход.
+   */
+  const marco = (evento: string, extra: Record<string, unknown> = {}) => {
+    logger().info(
+      { evento, caso: input.caseRecord.publicId, tipo: input.kind, ...extra },
+      "analise",
+    );
+  };
+
+  marco("ANALYZE_REQUEST_STARTED");
+
+  /*
+   * После успеха провайдера всё, что ломается дальше, ломается на записи.
+   * Флаг нужен, чтобы внешний перехват не назвал отказом провайдера то,
+   * что провайдер уже отдал: иначе оба этапа сливаются в одну запись и
+   * разделять их становится нечем.
+   */
+  let respostaObtida = false;
+
   const context = buildCaseContext({
     case: input.caseRecord,
     timeline: input.timeline,
@@ -92,7 +118,11 @@ export async function runAnalysis(input: {
     confirmedFacts: await confirmedFacts(input.caseRecord.id),
   });
 
+  marco("ANALYZE_REQUEST_VALIDATED");
+
   try {
+    marco("AI_REQUEST_STARTED");
+
     const result =
       input.kind === "classificar"
         ? await provider.classifyCase(context)
@@ -101,6 +131,12 @@ export async function runAnalysis(input: {
           : input.kind === "plano"
             ? await provider.createActionPlan(context, await officialSources())
             : await provider.createDraft(context);
+
+    // Схема уже проверена внутри runStructured: сюда попадает только то,
+    // что ей соответствует.
+    respostaObtida = true;
+    marco("AI_REQUEST_SUCCESS", { latenciaMs: result.meta.latencyMs });
+    marco("AI_RESPONSE_VALIDATED");
 
     const aiRequestId = await recordAiRequest(result.meta);
 
@@ -113,6 +149,8 @@ export async function runAnalysis(input: {
       metadata: result.data,
       aiRequestId,
     });
+
+    marco("CASE_SAVE_SUCCESS");
 
     if (input.kind === "plano") {
       await linkPlanSources(input.caseRecord.id, result.data as { sources?: unknown });
@@ -133,6 +171,15 @@ export async function runAnalysis(input: {
 
     return { ok: true, message };
   } catch (error) {
+    /*
+     * Который из двух этапов — решает флаг. Ответ получен и оплачен, а
+     * потерян на записи — это другая беда и чинится в другом месте, чем
+     * отказ провайдера.
+     */
+    marco(respostaObtida ? "CASE_SAVE_FAILED" : "AI_REQUEST_FAILED", {
+      categoria: classifyError(error),
+      codigo: error instanceof AiError ? error.code : null,
+    });
     // Неудача тоже попадает в учёт: по одним успехам не видно доли отказов.
     if (error instanceof AiError && error.meta) {
       await recordAiRequest(error.meta);

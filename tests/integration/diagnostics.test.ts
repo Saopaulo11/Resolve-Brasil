@@ -145,3 +145,59 @@ describe("GET /health/db", () => {
     expect(resposta.body.errorCode).toBe("DATABASE_ERROR");
   });
 });
+
+describe("проба структурированного пути", () => {
+  /*
+   * Главное различие, ради которого проба и заведена: обычный запрос к
+   * провайдеру и запрос со схемой — разные пути. Первый может проходить,
+   * когда второй отвергается, и тогда «провайдер отвечает» не значит ничего.
+   */
+  it("удачный обычный запрос и удачная схема сообщаются отдельно", async () => {
+    usarOpenAi();
+    setOpenAiClient(
+      cliente({
+        output_text: JSON.stringify({ status: "OK" }),
+        usage: { input_tokens: 5, output_tokens: 2 },
+      }),
+    );
+
+    const { body } = await request(harness.app).get("/health/ai");
+    expect(body.openaiRequest).toBe("success");
+    expect(body.structured).toBe("success");
+    expect(body.structuredOutput).toBe("OK");
+  });
+
+  it("ответ не по схеме виден как отказ схемы, а не провайдера", async () => {
+    // Ровно тот случай, который не поймал бы простой запрос.
+    usarOpenAi();
+    setOpenAiClient(
+      cliente({
+        output_text: JSON.stringify({ outroCampo: 1 }),
+        usage: { input_tokens: 5, output_tokens: 2 },
+      }),
+    );
+
+    const { body } = await request(harness.app).get("/health/ai");
+    expect(body.openaiRequest).toBe("success");
+    expect(body.structured).toBe("error");
+    expect(body.structuredErrorCode).toBe("AI_SCHEMA_VALIDATION_ERROR");
+    expect(body.structuredAiCode).toBe("ESQUEMA_INVALIDO");
+  });
+
+  it("ответ не JSON отличается от ответа не по схеме", async () => {
+    usarOpenAi();
+    setOpenAiClient(cliente({ output_text: "OK", usage: {} }));
+
+    const { body } = await request(harness.app).get("/health/ai");
+    expect(body.structured).toBe("error");
+    expect(body.structuredAiCode).toBe("JSON_INVALIDO");
+  });
+
+  it("секрета нет и в ответе про схему", async () => {
+    usarOpenAi();
+    setOpenAiClient(cliente({ output_text: "nao json", usage: {} }));
+
+    const { body } = await request(harness.app).get("/health/ai");
+    expect(JSON.stringify(body)).not.toContain(CHAVE.slice(0, 12));
+  });
+});

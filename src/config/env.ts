@@ -117,6 +117,16 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       evalMinAccuracy: floatOrNull(env.AI_EVAL_MIN_ACCURACY) ?? 0.8,
     },
 
+    /**
+     * Токен для страниц диагностики (§41).
+     *
+     * Они делают настоящий запрос к провайдеру — то есть стоят денег — и
+     * рассказывают о настройке больше, чем нужно постороннему. В production
+     * без токена их просто нет: не «403», а 404, чтобы сам факт их
+     * существования не подтверждался.
+     */
+    diagnosticToken: optionalString(env.AI_DIAGNOSTIC_TOKEN),
+
     otp: {
       provider: optionalString(env.OTP_PROVIDER) ?? "mock",
       apiKey: optionalString(env.OTP_API_KEY),

@@ -204,3 +204,26 @@ export async function runStructured<T>(call: StructuredCall<T>): Promise<Structu
 }
 
 export { jsonSchemaFormat };
+
+/**
+ * Проба структурированного пути — тем же кодом, что и разбор дела.
+ *
+ * Обычный запрос к провайдеру и запрос со схемой — разные пути. Первый
+ * может проходить, когда второй отвергается: модель может не принимать
+ * json_schema, схема может оказаться неподходящей, ответ может не пройти
+ * валидацию. Проверка «провайдер отвечает» об этом не говорит ничего.
+ *
+ * Схема здесь нарочно крошечная: проверяется путь, а не умение модели.
+ */
+export async function probeStructured(): Promise<StructuredResult<{ status: string }>> {
+  const { z: zod } = await import("zod");
+
+  return runStructured({
+    operation: "diagnostico",
+    promptVersion: "1",
+    schemaName: "diagnostico",
+    schema: zod.object({ status: zod.string() }),
+    instructions: "Responda com o campo status igual a OK.",
+    input: "ping",
+  });
+}

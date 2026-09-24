@@ -1,10 +1,11 @@
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetAiProviderCache } from "../../src/ai";
 import { setOpenAiClient, type ResponsesLike } from "../../src/ai/openai/client";
 import { resetConfigCache } from "../../src/config/env";
 import { createHarness, login, openPage, type Harness } from "../helpers/auth";
+import { logger } from "../../src/utils/logger";
 
 /**
  * Весь путь анализа: кнопка → сервис → провайдер → валидация → сохранение →
@@ -299,5 +300,100 @@ describe("доступ к анализу", () => {
 
     // CSRF отсекает раньше авторизации — до модели запрос не доходит.
     expect([302, 403]).toContain(response.status);
+  });
+});
+
+describe("этапы разбора в журнале (§41)", () => {
+  /*
+   * Снаружи любой сбой выглядит одинаково: «не получилось». Эти отметки —
+   * единственный способ узнать, где именно оборвалось, поэтому они и сами
+   * под проверкой: без неё диагностика тихо перестанет различать этапы,
+   * и production снова станет непрозрачным.
+   */
+  function capturarEventos(): string[] {
+    const eventos: string[] = [];
+    vi.spyOn(logger(), "info").mockImplementation(((
+      primeiro: unknown,
+      ...resto: unknown[]
+    ) => {
+      if (primeiro && typeof primeiro === "object" && "evento" in primeiro) {
+        eventos.push(String((primeiro as { evento: unknown }).evento));
+      }
+      void resto;
+      return undefined as never;
+    }) as never);
+    return eventos;
+  }
+
+  beforeEach(() => {
+    useOpenAi();
+    harness = createHarness();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("успешный разбор отмечает все рубежи по порядку", async () => {
+    setOpenAiClient(stub(jsonReply(CLASSIFICATION_HIGH)));
+    const { cookies, publicId } = await setupCase();
+
+    const eventos = capturarEventos();
+    await analisar(cookies, publicId, "classificar");
+
+    expect(eventos).toEqual(
+      expect.arrayContaining([
+        "ANALYZE_REQUEST_STARTED",
+        "ANALYZE_REQUEST_VALIDATED",
+        "AI_REQUEST_STARTED",
+        "AI_REQUEST_SUCCESS",
+        "AI_RESPONSE_VALIDATED",
+        "CASE_SAVE_SUCCESS",
+      ]),
+    );
+    expect(eventos.indexOf("AI_REQUEST_STARTED")).toBeLessThan(
+      eventos.indexOf("AI_REQUEST_SUCCESS"),
+    );
+    expect(eventos.indexOf("AI_RESPONSE_VALIDATED")).toBeLessThan(
+      eventos.indexOf("CASE_SAVE_SUCCESS"),
+    );
+    expect(eventos).not.toContain("AI_REQUEST_FAILED");
+  });
+
+  it("отказ провайдера отмечается как AI_REQUEST_FAILED", async () => {
+    setOpenAiClient({
+      responses: {
+        async create() {
+          throw new Error("provedor fora do ar");
+        },
+      },
+    });
+    const { cookies, publicId } = await setupCase();
+
+    const eventos = capturarEventos();
+    await analisar(cookies, publicId, "classificar");
+
+    expect(eventos).toContain("AI_REQUEST_FAILED");
+    expect(eventos).not.toContain("AI_REQUEST_SUCCESS");
+    expect(eventos).not.toContain("CASE_SAVE_FAILED");
+  });
+
+  it("потеря ответа при записи — CASE_SAVE_FAILED, а не отказ провайдера", async () => {
+    // Ответ получен и оплачен, но потерян на записи в базу. Если этот
+    // случай попадёт в журнал как отказ провайдера, чинить пойдут не туда.
+    setOpenAiClient(stub(jsonReply(CLASSIFICATION_HIGH)));
+    const { cookies, publicId } = await setupCase();
+
+    vi.spyOn(harness.cases, "addMessage").mockRejectedValue(
+      new Error("база недоступна"),
+    );
+
+    const eventos = capturarEventos();
+    await analisar(cookies, publicId, "classificar");
+
+    expect(eventos).toContain("AI_REQUEST_SUCCESS");
+    expect(eventos).toContain("CASE_SAVE_FAILED");
+    expect(eventos).not.toContain("AI_REQUEST_FAILED");
+    expect(eventos).not.toContain("CASE_SAVE_SUCCESS");
   });
 });
