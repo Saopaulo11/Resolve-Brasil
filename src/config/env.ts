@@ -122,6 +122,23 @@ function buildConfig(env: NodeJS.ProcessEnv) {
     whatsapp: {
       provider: optionalString(env.WHATSAPP_PROVIDER) ?? "mock",
       apiKey: optionalString(env.WHATSAPP_API_KEY),
+      /** Идентификатор номера отправителя из кабинета Meta. */
+      phoneNumberId: optionalString(env.WHATSAPP_PHONE_NUMBER_ID),
+      /**
+       * Версия Graph API. Умолчания нет намеренно: версии Meta заводит и
+       * снимает с поддержки сама, и угаданная здесь однажды сломается молча.
+       * Пользователь берёт её в своём кабинете и видит рядом с ключом.
+       */
+      apiVersion: optionalString(env.WHATSAPP_API_VERSION),
+      /** Имя одобренного шаблона категории Authentication. */
+      template: optionalString(env.WHATSAPP_TEMPLATE),
+      language: optionalString(env.WHATSAPP_TEMPLATE_LANGUAGE) ?? "pt_BR",
+      /**
+       * Кнопка шаблона: url (автозаполнение), copy_code (скопировать) или
+       * nenhum. Шаблон заводится руками, и число параметров должно совпасть
+       * — иначе Meta отвергает сообщение целиком.
+       */
+      otpButton: optionalString(env.WHATSAPP_OTP_BUTTON) ?? "url",
     },
 
     email: {
@@ -254,6 +271,22 @@ function productionRequirements(config: AppConfig): string[] {
   }
   if (config.ai.provider === "anthropic" && !config.ai.anthropic.apiKey) {
     missing.push("ANTHROPIC_API_KEY (выбран AI_PROVIDER=anthropic)");
+  }
+
+  // Вход по коду — не украшение: без доставки в production никто не войдёт
+  // вообще. Проверяем при старте, чтобы это выяснилось в сборке, а не у
+  // первого человека, набравшего свой номер.
+  if (config.otp.provider === "whatsapp") {
+    const faltando = [
+      !config.whatsapp.apiKey && "WHATSAPP_API_KEY",
+      !config.whatsapp.phoneNumberId && "WHATSAPP_PHONE_NUMBER_ID",
+      !config.whatsapp.apiVersion && "WHATSAPP_API_VERSION",
+      !config.whatsapp.template && "WHATSAPP_TEMPLATE",
+    ].filter((item): item is string => typeof item === "string");
+
+    if (faltando.length > 0) {
+      missing.push(`${faltando.join(", ")} (выбран OTP_PROVIDER=whatsapp)`);
+    }
   }
 
   return missing;

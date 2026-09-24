@@ -35,11 +35,22 @@ export async function health(_req: Request, res: Response): Promise<void> {
         : `AI_PROVIDER=${config.ai.provider}`,
   };
 
+  // То же и про вход: на mock код никуда не уходит, и в production войти
+  // нельзя вообще. Это видно здесь, а не по молчанию первого человека,
+  // набравшего свой номер.
+  const otp: Check = {
+    ok: config.otp.provider !== "mock",
+    detail:
+      config.otp.provider === "mock"
+        ? "OTP_PROVIDER=mock — nenhum código é enviado"
+        : `OTP_PROVIDER=${config.otp.provider}`,
+  };
+
   const ok = database.ok;
 
   res.status(ok ? 200 : 503).json({
     status: ok ? "ok" : "error",
-    checks: { database, ai },
+    checks: { database, ai, otp },
     tookMs: Date.now() - startedAt,
     checkedAt: new Date().toISOString(),
   });
