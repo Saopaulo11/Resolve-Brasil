@@ -30,15 +30,21 @@ export type PhoneParseResult =
 export type PhoneError =
   | "vazio"
   | "formato"
+  | "curto"
+  | "longo"
   | "ddd_invalido"
-  | "celular_invalido";
+  | "celular_invalido"
+  | "fixo_invalido";
 
 /** Текст ошибки для интерфейса — pt-BR, без технических подробностей. */
 export const PHONE_ERROR_MESSAGES: Record<PhoneError, string> = {
   vazio: "Informe seu número de telefone.",
   formato: "Número inválido. Use DDD + número, por exemplo (11) 98765-4321.",
+  curto: "Faltam dígitos. Com o DDD são 11 no celular e 10 no fixo, por exemplo (11) 98765-4321.",
+  longo: "Dígitos demais. Com o DDD são 11 no celular e 10 no fixo, por exemplo (11) 98765-4321.",
   ddd_invalido: "DDD inválido. Verifique os dois primeiros dígitos.",
   celular_invalido: "Número de celular inválido. Ele deve começar com 9 após o DDD.",
+  fixo_invalido: "Número fixo inválido. Depois do DDD ele não começa com 0 nem com 1.",
 };
 
 export function parseBrazilianPhone(input: string): PhoneParseResult {
@@ -52,9 +58,12 @@ export function parseBrazilianPhone(input: string): PhoneParseResult {
   }
 
   // 10 цифр — городской номер, 11 — мобильный.
-  if (national.length !== 10 && national.length !== 11) {
-    return { ok: false, reason: "formato" };
-  }
+  //
+  // Недобор и перебор разделены намеренно. Человек с лишней цифрой и
+  // человек с недостающей исправляют ввод по-разному, а общее «номер
+  // неверный» не подсказывает ни тому, ни другому, что именно менять.
+  if (national.length < 10) return { ok: false, reason: "curto" };
+  if (national.length > 11) return { ok: false, reason: "longo" };
 
   const ddd = Number.parseInt(national.slice(0, 2), 10);
   if (!VALID_DDD.has(ddd)) return { ok: false, reason: "ddd_invalido" };
@@ -65,6 +74,14 @@ export function parseBrazilianPhone(input: string): PhoneParseResult {
   // С 2016 года все мобильные девятизначные и начинаются с 9.
   if (isMobile && !subscriber.startsWith("9")) {
     return { ok: false, reason: "celular_invalido" };
+  }
+
+  // У городского номера первой цифрой не бывает 0 — это выход на межгород,
+  // и не бывает 1 — за ней закреплены служебные номера вроде 190. Раньше
+  // такой номер принимался молча: человек ждал код, а код не мог прийти
+  // никогда, и причины он не видел.
+  if (!isMobile && /^[01]/.test(subscriber)) {
+    return { ok: false, reason: "fixo_invalido" };
   }
 
   return { ok: true, e164: `+55${national}`, ddd, isMobile };

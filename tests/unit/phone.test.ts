@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatBrazilianPhone,
   parseBrazilianPhone,
+  PHONE_ERROR_MESSAGES,
 } from "../../src/utils/phone";
 
 describe("нормализация бразильских телефонов", () => {
@@ -46,9 +47,36 @@ describe("нормализация бразильских телефонов", (
     if (!result.ok) expect(result.reason).toBe("celular_invalido");
   });
 
-  it("отклоняет слишком короткий и слишком длинный ввод", () => {
-    expect(parseBrazilianPhone("119876").ok).toBe(false);
-    expect(parseBrazilianPhone("119876543219999").ok).toBe(false);
+  it("различает недобор и перебор цифр", () => {
+    // Это две разные ошибки ввода, и человек исправляет их по-разному.
+    const curto = parseBrazilianPhone("119876");
+    expect(curto.ok).toBe(false);
+    if (!curto.ok) expect(curto.reason).toBe("curto");
+
+    const longo = parseBrazilianPhone("119876543219999");
+    expect(longo.ok).toBe(false);
+    if (!longo.ok) expect(longo.reason).toBe("longo");
+  });
+
+  it("на лишнюю цифру отвечает подсказкой про длину, а не общим отказом", () => {
+    // Ровно этот случай человек видел на входе: двенадцать цифр вместо
+    // одиннадцати и сообщение, из которого не следует, что именно не так.
+    const result = parseBrazilianPhone("120997847612");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("longo");
+      expect(PHONE_ERROR_MESSAGES[result.reason]).toContain("Dígitos demais");
+    }
+  });
+
+  it("отклоняет городской номер, до которого код не дойдёт", () => {
+    // 0 после DDD — выход на межгород, 1 — служебные номера. Раньше такой
+    // номер принимался, и человек ждал код, которого не могло быть.
+    for (const numero of ["1209978476", "1119978476"]) {
+      const result = parseBrazilianPhone(numero);
+      expect(result.ok, numero).toBe(false);
+      if (!result.ok) expect(result.reason).toBe("fixo_invalido");
+    }
   });
 
   it("отличает пустой ввод от неверного формата", () => {

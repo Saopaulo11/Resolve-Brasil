@@ -288,6 +288,7 @@ describe("сессия после входа", () => {
 describe("лимит запросов кода (§66)", () => {
   afterEach(() => {
     delete process.env.RATE_LIMIT_OTP_PER_PHONE_PER_HOUR;
+    delete process.env.OTP_RESEND_COOLDOWN_SECONDS;
     resetConfigCache();
   });
 
@@ -305,6 +306,10 @@ describe("лимит запросов кода (§66)", () => {
     // Иначе лимит обходится запятой в поле ввода: «(11) 98765-4321» и
     // «+5511987654321» — один и тот же человек и один и тот же номер.
     process.env.RATE_LIMIT_OTP_PER_PHONE_PER_HOUR = "2";
+    // Бюджет считает отправленные коды, а не попытки: паузу между
+    // отправками здесь нужно убрать, иначе до лимита дойдёт не счётчик, а
+    // она, и проверка перестанет говорить о корзинах.
+    process.env.OTP_RESEND_COOLDOWN_SECONDS = "0";
     resetConfigCache();
     harness = createHarness();
 
@@ -315,6 +320,8 @@ describe("лимит запросов кода (§66)", () => {
     // Третья запись того же номера упирается в лимит, израсходованный
     // первыми двумя — значит корзина у них одна.
     expect(terceiro.status).toBe(429);
+    // И ровно два кода ушло: третья запись не добавила своего.
+    expect(harness.otpProvider.sent).toHaveLength(2);
   });
 
   it("другой номер не расходует чужой лимит", async () => {

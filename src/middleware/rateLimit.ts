@@ -1,8 +1,9 @@
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
-import type { Request, RequestHandler } from "express";
+import type { Request, RequestHandler, Response } from "express";
 
 import { loadConfig } from "../config/env";
 import { parseBrazilianPhone } from "../utils/phone";
+import { renderPage } from "../utils/render";
 
 /**
  * Ограничение частоты (§46, §66).
@@ -12,8 +13,32 @@ import { parseBrazilianPhone } from "../utils/phone";
  * инстансам: тогда сюда нужно подключить общее хранилище. Оставляю это
  * явным, чтобы лимит не считали более надёжным, чем он есть.
  */
-function message(text: string) {
-  return { error: text };
+/**
+ * Ответ при срабатывании лимита.
+ *
+ * Раньше отдавался JSON: человек, набравший телефон, видел вместо страницы
+ * строку `{"error":"Muitas tentativas…"}` — без вёрстки, без пути назад и без
+ * своего ввода. Сайт отрисовывается на сервере, и отказ должен выглядеть как
+ * остальные его страницы.
+ *
+ * Заголовок 429 и RateLimit-* остаются: их читают не глазами.
+ */
+function paginaDeLimite(heading: string, text: string): RequestHandler {
+  return function limiteAtingido(req: Request, res: Response) {
+    res.status(429);
+
+    try {
+      renderPage(req, res, "erro", {
+        title: `${heading} — Resolve Brasil`,
+        description: text,
+        heading,
+        message: text,
+      });
+    } catch {
+      // Макет мог не отрисоваться — тогда простой текст, но не JSON.
+      res.type("text/plain").send(text);
+    }
+  };
 }
 
 /**
@@ -33,7 +58,10 @@ export function globalRateLimit(): RequestHandler {
     limit: config.rateLimits.globalPerMinute,
     standardHeaders: "draft-7",
     legacyHeaders: false,
-    message: message("Muitas requisições. Tente novamente em instantes."),
+    handler: paginaDeLimite(
+      "Muitas requisições",
+      "Tente novamente em instantes.",
+    ),
   });
 }
 
@@ -58,7 +86,29 @@ export function otpRequestRateLimit(): RequestHandler {
       const parsed = parseBrazilianPhone(phone);
       return parsed.ok ? `phone:${parsed.e164}` : addressKey(req);
     },
-    message: message("Muitas tentativas. Aguarde antes de pedir um novo código."),
+    /**
+     * Неразобранный номер не тратит бюджет.
+     *
+     * Лимит нужен, чтобы не рассылать коды, а не чтобы наказывать за
+     * опечатку. Раньше неверный номер уходил в корзину по адресу, и человек,
+     * трижды промахнувшийся в поле, оказывался заблокирован, не получив ни
+     * одного кода. На общем выходном адресе — а у бессерверной платформы он
+     * общий — так блокировались бы и посторонние.
+     *
+     * Поток при этом не остаётся без защиты: общий лимит на минуту считает
+     * все запросы подряд, включая эти.
+     */
+    skip: (req) => {
+      const phone = (req.body as Record<string, unknown> | undefined)?.phone;
+      if (typeof phone !== "string") return true;
+      return !parseBrazilianPhone(phone).ok;
+    },
+    // И не считаем попытки, которые до отправки кода не дошли.
+    skipFailedRequests: true,
+    handler: paginaDeLimite(
+      "Muitas tentativas",
+      "Aguarde alguns minutos antes de pedir um novo código.",
+    ),
   });
 }
 
@@ -71,6 +121,9 @@ export function aiRateLimit(): RequestHandler {
     standardHeaders: "draft-7",
     legacyHeaders: false,
     keyGenerator: (req) => req.session?.userId ?? addressKey(req),
-    message: message("Limite de análises atingido. Tente novamente mais tarde."),
+    handler: paginaDeLimite(
+      "Limite de análises atingido",
+      "Você já fez várias análises nesta hora. Tente novamente mais tarde.",
+    ),
   });
 }
