@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 
+import { limparMensagem } from "../boot/failureServer";
 import { loadConfig } from "../config/env";
 import { db, isDatabaseConfigured } from "../services/db";
 
@@ -8,6 +9,11 @@ import { db, isDatabaseConfigured } from "../services/db";
  *
  * 200 — приложение видит базу и умеет из неё читать.
  * 503 — не видит; причина указывается словами, а не общим «ошибка».
+ *
+ * Маршрут открыт без входа — иначе он бесполезен как проверка. Поэтому
+ * причина проходит ту же очистку, что и страница отказа при старте: в
+ * сообщении драйвера базы приезжает строка подключения целиком, вместе с
+ * паролем (§6, §41).
  */
 type Check = { ok: boolean; detail: string };
 
@@ -46,7 +52,7 @@ async function checkDatabase(): Promise<Check> {
   } catch (error) {
     return {
       ok: false,
-      detail: error instanceof Error ? error.message : String(error),
+      detail: limparMensagem(error),
     };
   }
 }
