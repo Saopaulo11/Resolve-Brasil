@@ -17,6 +17,16 @@ let harness: Harness;
 
 const CHAVE = "sk-proj-CHAVE-DE-TESTE-QUE-NAO-DEVE-VAZAR-1234567890";
 
+/** Ответ, который проходит настоящую схему классификации. */
+const CLASSIFICACAO_VALIDA = {
+  category: "PRODUTO_NAO_RECEBIDO",
+  subcategory: "compra online sem entrega",
+  confidence: 0.9,
+  missing_information: ["Número do pedido"],
+  recommended_questions: ["Você tem o comprovante do Pix?"],
+  risk_flags: ["Pagamento feito sem entrega"],
+};
+
 function usarOpenAi(extra: Record<string, string> = {}) {
   process.env.AI_PROVIDER = "openai";
   process.env.OPENAI_API_KEY = CHAVE;
@@ -157,15 +167,19 @@ describe("проба структурированного пути", () => {
     usarOpenAi();
     setOpenAiClient(
       cliente({
-        output_text: JSON.stringify({ status: "OK" }),
-        usage: { input_tokens: 5, output_tokens: 2 },
+        output_text: JSON.stringify(CLASSIFICACAO_VALIDA),
+        usage: { input_tokens: 240, output_tokens: 90 },
       }),
     );
 
     const { body } = await request(harness.app).get("/health/ai");
     expect(body.openaiRequest).toBe("success");
     expect(body.structured).toBe("success");
-    expect(body.structuredOutput).toBe("OK");
+    // Проба идёт настоящей схемой разбора, а не мелкой {status: string}:
+    // ломается обычно она, а не сам факт поддержки json_schema.
+    expect(body.structuredSchema).toBe("case_classification");
+    expect(body.structuredOutput.category).toBe("PRODUTO_NAO_RECEBIDO");
+    expect(body.structuredTokens).toEqual({ input: 240, output: 90 });
   });
 
   it("ответ не по схеме виден как отказ схемы, а не провайдера", async () => {

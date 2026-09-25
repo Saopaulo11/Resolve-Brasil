@@ -3,7 +3,8 @@ import type { Request, Response } from "express";
 import { limparMensagem } from "../boot/failureServer";
 import { loadConfig } from "../config/env";
 import { classifyError, statusDoErro } from "../errors/categories";
-import { AiError, openAiClient, probeStructured } from "../ai/openai/client";
+import { AiError, openAiClient } from "../ai/openai/client";
+import { probeClassification } from "../ai/probe";
 import { databaseUrlSource, stripTlsParams } from "../config/databaseUrl";
 import { db, isDatabaseConfigured } from "../services/db";
 import { logger } from "../utils/logger";
@@ -146,19 +147,33 @@ export async function ai(req: Request, res: Response): Promise<void> {
     };
 
     /*
-     * Второй запрос — тем же путём, каким идёт разбор дела: со схемой.
-     * Обычный запрос может проходить, когда этот отвергается, и тогда
-     * «провайдер отвечает» означает ровно ничего.
+     * Второй запрос — тем же кодом, каким идёт разбор дела: тот же промпт,
+     * та же строгая схема, тот же предел токенов. Обычный запрос может
+     * проходить, когда этот отвергается, и тогда «провайдер отвечает»
+     * означает ровно ничего.
+     *
+     * Дело в пробе выдуманное и постоянное — ничьи данные наружу не идут.
      */
     const inicioEstruturado = Date.now();
     try {
-      const provado = await probeStructured();
+      const provado = await probeClassification();
       res.status(200).json({
         ...base,
         ...simples,
         structured: "success",
+        structuredSchema: "case_classification",
         structuredLatencyMs: Date.now() - inicioEstruturado,
-        structuredOutput: provado.data.status,
+        // Что модель ответила про выдуманное дело: видно, что это разбор, а
+        // не просто принятая схема.
+        structuredOutput: {
+          category: provado.data.category,
+          confidence: provado.data.confidence,
+          campos: Object.keys(provado.data).length,
+        },
+        structuredTokens: {
+          input: provado.meta.inputTokens,
+          output: provado.meta.outputTokens,
+        },
       });
     } catch (error) {
       const categoria = classifyError(error);
@@ -170,6 +185,7 @@ export async function ai(req: Request, res: Response): Promise<void> {
         ...base,
         ...simples,
         structured: "error",
+        structuredSchema: "case_classification",
         structuredLatencyMs: Date.now() - inicioEstruturado,
         structuredStatus: statusDoErro(error),
         structuredErrorCode: categoria,
