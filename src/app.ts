@@ -4,7 +4,12 @@
 import path from "node:path";
 
 import cookieParser from "cookie-parser";
-import express, { type Express, type Request, type Response } from "express";
+import express, {
+  type Express,
+  type Request,
+  type RequestHandler,
+  type Response,
+} from "express";
 import pinoHttp from "pino-http";
 
 import { corpoDaFalha } from "./boot/failureServer";
@@ -39,6 +44,34 @@ function resolveCookieSecret(): string {
       "Сессии не переживут перезапуск. Так можно только в разработке.",
   );
   return randomToken(32);
+}
+
+/**
+ * Отдать разбор кук cookie-parser, даже если его уже сделали за нас.
+ *
+ * Хостинг отдаёт запрос приложению не сырым: его адаптер кое-что разбирает
+ * заранее и кладёт в запрос готовое `cookies`. А cookie-parser начинается со
+ * строки `if (req.cookies) return next()` — увидев готовое поле, он не делает
+ * ничего, и вместе с ним не появляется ни `req.secret`, ни `req.signedCookies`.
+ *
+ * Дальше всё рушится молча: подписанная кука не читается никогда, а первая же
+ * попытка её записать бросает «cookieParser("secret") required for signed
+ * cookies». На стенде это выглядело так: дело в базе создавалось, вложения
+ * прикреплялись, а человек получал «Algo deu errado» — обрыв приходился ровно
+ * на куку с номером дела. Локально не воспроизводилось никогда: там перед
+ * Express никого нет.
+ *
+ * Поэтому готовый разбор отбрасывается. Ничего не теряется: источник правды —
+ * заголовок Cookie, и cookie-parser разбирает его сам, заодно проверяя подписи.
+ */
+function exigirAnaliseDasCookies(): RequestHandler {
+  return function cookiesCruas(req, _res, next) {
+    // Через запись, а не через Request: в типах Express `cookies` обязательное
+    // поле, и удалить его иначе нельзя.
+    const campos = req as unknown as Record<string, unknown>;
+    if (campos.cookies) delete campos.cookies;
+    next();
+  };
 }
 
 export function createApp(): Express {
@@ -98,6 +131,7 @@ export function createApp(): Express {
   // Порядок важен: multipart разбирается до CSRF, иначе тело запроса пустое
   // и любая загрузка файла выглядит как подделка (см. middleware/upload.ts).
   app.use(uploadParser());
+  app.use(exigirAnaliseDasCookies());
   app.use(cookieParser(resolveCookieSecret()));
   app.use(csrfProtection());
   app.use(attachSession());
