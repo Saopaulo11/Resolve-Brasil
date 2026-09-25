@@ -91,22 +91,29 @@
 
           <h2 class="analise__titulo">Analisando seu caso</h2>
 
-          <p class="analise__passo" role="status" aria-live="polite">
-            <span class="analise__marca" aria-hidden="true">●</span>
-            <%= progresso.label %>…
-          </p>
+          <%# Список настоящих этапов разбора с их состоянием. Не процент:
+              процент внутри шага нам неизвестен, и рисовать его значило бы
+              выдумывать. Здесь же каждая строка — факт: сделано или нет.
 
-          <div class="analise__barra"
-               role="img"
-               aria-label="Passo <%= progresso.done + 1 %> de <%= progresso.total %>">
-            <% for (let i = 0; i < progresso.total; i += 1) { %>
-              <span class="<%= i < progresso.done ? 'analise__barra--feito' : '' %>"></span>
-            <% } %>
-          </div>
-
-          <p class="analise__contagem">
-            Passo <%= progresso.done + 1 %> de <%= progresso.total %>
-          </p>
+              Значки декоративны, состояние проговаривается словами рядом —
+              иначе экранный читатель произносит список одинаковых строк. %>
+          <ul class="analise__passos" role="status" aria-live="polite">
+            <% passos.forEach(function (passo) { %>
+              <li class="analise__passo analise__passo--<%= passo.estado %>">
+                <span class="analise__marca" aria-hidden="true"><%=
+                  passo.estado === "feito" ? "✓" : passo.estado === "agora" ? "●" : "○"
+                %></span>
+                <span><%= passo.label %></span>
+                <span class="visuallyhidden"><%=
+                  passo.estado === "feito"
+                    ? " — concluído"
+                    : passo.estado === "agora"
+                      ? " — em andamento"
+                      : " — a fazer"
+                %></span>
+              </li>
+            <% }); %>
+          </ul>
 
           <button type="submit" class="btn btn--primary btn--block"
                   data-auto-analise-botao>

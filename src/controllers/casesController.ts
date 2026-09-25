@@ -35,7 +35,7 @@ import { listReminders, PRESETS } from "../notifications/reminderService";
 import { usableSources } from "../sources/sourceService";
 import { renderPage } from "../utils/render";
 import { megabytes } from "../utils/bytes";
-import { analysisProgress } from "../cases/analysisFlow";
+import { ANALYSIS_ORDER, STEP_LABEL, analysisProgress } from "../cases/analysisFlow";
 import { classifyError } from "../errors/categories";
 
 /**
@@ -443,6 +443,23 @@ async function renderCaso(
        * платя за обращение к модели. Дальше человек решает сам.
        */
       progresso,
+      /*
+       * Шаги разбора с их состоянием — чтобы человек видел, что именно уже
+       * сделано, а не одну полосу.
+       *
+       * Названия берутся из STEP_LABEL, а не пишутся в шаблоне: свой список
+       * разошёлся бы с настоящим порядком при первом же его изменении, и
+       * страница показывала бы шаги, которых нет.
+       */
+      passos: ANALYSIS_ORDER.map((kind, indice) => ({
+        label: STEP_LABEL[kind],
+        estado:
+          indice < progresso.done
+            ? "feito"
+            : indice === progresso.done
+              ? "agora"
+              : "espera",
+      })),
       autoAnalise:
         progresso.next !== null &&
         !falhaDaAnalise &&

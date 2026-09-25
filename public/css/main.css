@@ -1532,41 +1532,6 @@ input[type="email"] {
   font-weight: 600;
 }
 
-.analise__contagem {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.analise__barra {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 1rem;
-}
-
-/* Отрезки делят ширину поровну — сколько бы шагов ни было. */
-.analise__barra span {
-  flex: 1 1 0;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--bg-soft);
-  transition: background-color 0.3s ease;
-}
-
-.analise__barra--feito {
-  background: var(--green-text);
-}
-
-/*
- * Движение выключается там, где человек об этом попросил системной
- * настройкой: для части людей анимация — причина головной боли, а не украшение.
- */
-@media (prefers-reduced-motion: reduce) {
-  .analise__barra span {
-    transition: none;
-  }
-}
-
 /*
  * Второй и следующие блоки подряд.
  *
@@ -3045,22 +3010,43 @@ a:focus-visible {
   font-weight: 650;
 }
 
+/* Этапы разбора: сделанное, текущее и то, что впереди. Разница видна не
+   только значком, но и цветом с насыщенностью — значок один символ, и на
+   телефоне его легко не разглядеть. */
+.analise .analise__passos {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.625rem;
+}
+
 .analise .analise__passo {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 1rem;
+  align-items: baseline;
+  gap: 0.625rem;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.analise .analise__passo--feito {
   color: var(--color-text);
 }
 
+.analise .analise__passo--agora {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 .analise__marca {
+  flex: none;
+  width: 1rem;
+  text-align: center;
   color: var(--color-primary);
 }
 
-.analise .analise__contagem {
-  margin: 0.625rem 0 1.25rem;
-  font-size: 0.8125rem;
-  color: var(--color-muted);
+.analise__passo--espera .analise__marca {
+  color: var(--color-border);
 }
 
 /* --- Разбор сорвался --------------------------------------------------- */

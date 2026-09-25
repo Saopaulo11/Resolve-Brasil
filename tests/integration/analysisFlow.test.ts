@@ -90,9 +90,16 @@ describe("разбор дела идёт сам", () => {
       .set("Cookie", cookies);
 
     expect(pagina.status).toBe(200);
-    // Шаг назван словами, и видно, какой он по счёту.
+    // Шаги названы словами, и видно, какой идёт сейчас. Счётчика «Passo N
+    // de 4» больше нет: список этапов говорит то же самое, но по существу —
+    // что именно уже сделано, а не сколько штук.
     expect(pagina.text).toContain("Entendendo sua situação");
-    expect(pagina.text).toContain("Passo 1 de 4");
+    expect(pagina.text).toContain("Montando seu plano de ação");
+    expect(pagina.text).toMatch(
+      /analise__passo--agora[^>]*>\s*<span[^>]*>●/,
+    );
+    // Ни один шаг ещё не сделан.
+    expect(pagina.text).not.toContain("analise__passo--feito");
     // Форма следующего шага готова к отправке.
     expect(pagina.text).toMatch(/data-auto-analise/);
     expect(pagina.text).toMatch(/name="tipo" value="classificar"/);
@@ -117,7 +124,8 @@ describe("разбор дела идёт сам", () => {
       .set("Cookie", cookies);
 
     expect(depois.text).toContain("Vendo o que ainda falta");
-    expect(depois.text).toContain("Passo 2 de 4");
+    // Пройденный шаг отмечен сделанным — это и есть «видно, где мы».
+    expect(depois.text).toContain("analise__passo--feito");
     expect(depois.text).toMatch(/name="tipo" value="perguntas"/);
   });
 
