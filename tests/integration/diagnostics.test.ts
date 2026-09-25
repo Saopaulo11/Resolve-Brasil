@@ -49,6 +49,7 @@ afterEach(() => {
   delete process.env.AI_PROVIDER;
   delete process.env.OPENAI_API_KEY;
   delete process.env.OPENAI_MODEL;
+  delete process.env.AI_DIAGNOSTIC_TOKEN;
   resetConfigCache();
   resetAiProviderCache();
 });
@@ -199,5 +200,51 @@ describe("проба структурированного пути", () => {
 
     const { body } = await request(harness.app).get("/health/ai");
     expect(JSON.stringify(body)).not.toContain(CHAVE.slice(0, 12));
+  });
+});
+
+describe("охрана диагностики", () => {
+  /*
+   * Проверка держится на заданном токене, а не на NODE_ENV. Значение
+   * NODE_ENV разбирается с запасным «development»: стоило бы ему в рабочем
+   * окружении оказаться пустым, и правило «закрыто только в production»
+   * открыло бы обе страницы всем желающим вместе с настоящим обращением к
+   * провайдеру за наш счёт.
+   */
+  it("с заданным токеном без токена в запросе — 404, а не 403", async () => {
+    usarOpenAi({ AI_DIAGNOSTIC_TOKEN: "segredo-de-teste" });
+    setOpenAiClient(cliente({ output_text: "OK" }));
+
+    const resposta = await request(harness.app).get("/health/ai");
+
+    // Именно 404: 403 подтвердил бы, что страница есть.
+    expect(resposta.status).toBe(404);
+    expect(JSON.stringify(resposta.body)).not.toContain(CHAVE.slice(0, 12));
+  });
+
+  it("неверный токен тоже 404", async () => {
+    usarOpenAi({ AI_DIAGNOSTIC_TOKEN: "segredo-de-teste" });
+    setOpenAiClient(cliente({ output_text: "OK" }));
+
+    const resposta = await request(harness.app).get("/health/ai?token=errado");
+    expect(resposta.status).toBe(404);
+  });
+
+  it("с верным токеном страница отвечает", async () => {
+    usarOpenAi({ AI_DIAGNOSTIC_TOKEN: "segredo-de-teste" });
+    setOpenAiClient(cliente({ output_text: "OK" }));
+
+    const resposta = await request(harness.app).get(
+      "/health/ai?token=segredo-de-teste",
+    );
+    expect(resposta.status).toBe(200);
+    expect(resposta.body.openaiRequest).toBe("success");
+  });
+
+  it("база под той же охраной", async () => {
+    usarOpenAi({ AI_DIAGNOSTIC_TOKEN: "segredo-de-teste" });
+
+    const resposta = await request(harness.app).get("/health/db");
+    expect(resposta.status).toBe(404);
   });
 });

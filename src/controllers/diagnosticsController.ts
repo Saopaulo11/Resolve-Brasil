@@ -23,20 +23,27 @@ import { logger } from "../utils/logger";
 /**
  * Пускать ли к диагностике.
  *
- * В production — только по токену, и при его отсутствии страница отвечает
- * 404, а не 403: «доступ запрещён» подтвердило бы, что она вообще есть.
- * Вне production токен не нужен: там нечего охранять.
+ * Открыто ровно в одном случае: это не production И токен не задан — то
+ * есть на машине разработчика, где охранять нечего. Как только токен в
+ * окружении есть, он спрашивается всегда, независимо от NODE_ENV: значение
+ * NODE_ENV разбирается с `.catch("development")`, и если в рабочем
+ * окружении оно вдруг окажется пустым, проверка «только в production»
+ * открыла бы страницы всему интернету. Заданный токен — намерение закрыть,
+ * и оно весомее догадки о том, где мы запущены.
+ *
+ * Отказ — 404, а не 403: «доступ запрещён» подтвердило бы, что страница
+ * вообще есть.
  *
  * Сравнение посимвольное, но токен здесь не открывает ничего, кроме
  * сведений о настройке, — времязависимое сравнение тут было бы театром.
  */
 function permitido(req: Request, res: Response): boolean {
   const config = loadConfig();
-  if (!config.isProduction) return true;
-
   const esperado = config.diagnosticToken;
-  const recebido = typeof req.query.token === "string" ? req.query.token : "";
 
+  if (!esperado && !config.isProduction) return true;
+
+  const recebido = typeof req.query.token === "string" ? req.query.token : "";
   if (esperado && recebido === esperado) return true;
 
   res.status(404).type("text/plain").send("Not found");

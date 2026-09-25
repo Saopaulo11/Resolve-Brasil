@@ -281,6 +281,24 @@ function productionRequirements(config: AppConfig): string[] {
   }
   if (!process.env.APP_URL?.trim()) missing.push("APP_URL");
 
+  /*
+   * Провайдер в production называется явно.
+   *
+   * Значение разбирается с `.catch("mock")`: опечатка вроде «OpenAI» или
+   * лишний пробел не роняют разбор, а тихо дают заглушку. В разработке это
+   * удобно, в production — нет: заглушка возвращает пустой разбор с пометкой
+   * MOCK, и человек получает её вместо ответа, не узнав, что дело в опечатке
+   * в одной переменной (§79).
+   */
+  if (config.ai.provider === "mock") {
+    const bruto = process.env.AI_PROVIDER?.trim();
+    missing.push(
+      bruto
+        ? `AI_PROVIDER: «${bruto}» — не провайдер. Допустимо: openai, anthropic`
+        : "AI_PROVIDER (openai или anthropic; mock в production недопустим)",
+    );
+  }
+
   if (config.ai.provider === "openai" && !config.ai.openai.apiKey) {
     missing.push("OPENAI_API_KEY (выбран AI_PROVIDER=openai)");
   }

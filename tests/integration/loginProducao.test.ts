@@ -22,7 +22,13 @@ function produção(extra: Record<string, string> = {}) {
   process.env.DATABASE_URL = "postgresql://u:p@localhost:6543/postgres";
   process.env.SESSION_SECRET = "x".repeat(40);
   process.env.APP_URL = "https://exemplo.test";
-  process.env.AI_PROVIDER = "mock";
+  // Провайдер модели настоящий: заглушка в production больше не считается
+  // настройкой, и конфигурация с ней не поднимается. Здесь проверяется
+  // канал доставки кода, а не разбор дела, — но окружение должно быть
+  // таким, каким production бывает.
+  process.env.AI_PROVIDER = "openai";
+  process.env.OPENAI_API_KEY = "chave-de-teste-nao-real";
+  process.env.OPENAI_MODEL = "modelo-de-teste";
   delete process.env.OTP_PROVIDER;
   Object.assign(process.env, extra);
   resetConfigCache();
