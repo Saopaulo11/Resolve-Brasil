@@ -236,7 +236,7 @@ describe("план действий", () => {
       .set("Cookie", cookies);
 
     expect(page.text).toContain("Entre em contato com a empresa");
-    expect(page.text).toContain("Não foi possível confirmar essa informação");
+    expect(page.text).toContain("Não foi possível confirmar uma fonte oficial");
     // Шаг помечен как предположение, а не как требование закона (§5).
     expect(page.text).toContain("Sugestão da IA");
   });

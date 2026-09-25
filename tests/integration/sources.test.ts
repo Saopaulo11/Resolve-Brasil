@@ -166,7 +166,7 @@ describe("источники в плане действий (§29–§32)", () =
       .set("Cookie", cookies);
 
     expect(page.text).not.toContain("pagina-que-ninguem-verificou");
-    expect(page.text).toContain("Não foi possível confirmar essa informação");
+    expect(page.text).toContain("Não foi possível confirmar uma fonte oficial");
   });
 
   it("без единого источника план честно говорит об этом (§32)", async () => {
@@ -177,7 +177,7 @@ describe("источники в плане действий (§29–§32)", () =
       .get(`/caso/${publicId}`)
       .set("Cookie", cookies);
 
-    expect(page.text).toContain("Não foi possível confirmar essa informação");
+    expect(page.text).toContain("Não foi possível confirmar uma fonte oficial");
   });
 
   it("устаревшая проверка снимает источник с использования", async () => {

@@ -49,7 +49,7 @@ describe("создание дела вошедшим пользователем"
 
     expect(page.status).toBe(200);
     expect(page.text).toContain(DESCRIPTION);
-    expect(page.text).toContain("Linha do tempo");
+    expect(page.text).toContain("Histórico do caso");
     expect(page.text).toContain("Caso registrado");
   });
 

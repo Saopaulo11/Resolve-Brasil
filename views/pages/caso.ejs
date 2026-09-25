@@ -7,16 +7,22 @@
 %>
 <section class="caso">
   <header class="caso__cabecalho">
-    <p class="caso__numero">Caso <strong><%= caso.publicId %></strong></p>
+    <%# Номер дела и дата — вторым планом: человек пришёл не за ними. Номер
+        нужен, когда о деле надо с кем-то говорить, дата — чтобы понимать,
+        сколько оно уже идёт. %>
+    <p class="caso__numero">
+      Caso <strong><%= caso.publicId %></strong>
+      <span aria-hidden="true">·</span>
+      <span>Criado em
+        <time datetime="<%= caso.createdAt.toISOString() %>"><%= caso.createdAt.toLocaleDateString("pt-BR") %></time>
+      </span>
+    </p>
     <h1 class="caso__titulo">Seu caso</h1>
 
+    <%# Категории здесь нет нарочно: она стоит крупно сразу под шапкой, и
+        дважды на одном экране одно и то же — лишний шум. %>
     <div class="caso__marcas">
       <span class="marca marca--<%= statusTone %>"><%= statusLabel %></span>
-      <%# Подпись, а не значение перечисления: та же категория в шапке
-          называется так же, как в разборе ниже и в списке на главной. %>
-      <% if (classificacaoLabel) { %>
-        <span class="marca"><%= classificacaoLabel %></span>
-      <% } %>
       <% if (caso.companyName) { %>
         <span class="marca"><%= caso.companyName %></span>
       <% } %>
@@ -41,49 +47,66 @@
       </div>
     <% } %>
 
-    <h2>Análise</h2>
+    <%# Порядок разделов повторяет порядок решения: что за проблема → как мы
+        её поняли → чего не хватает → что делать → чем написать → на чём это
+        держится. Всё остальное — ниже: оно нужно реже. %>
 
     <% if (aviso) { %>
       <p class="flash flash--aviso" role="status"><%= aviso %></p>
     <% } %>
 
     <% if (falhaDaAnalise) { %>
-      <%# Разбор сорвался. Дальше сам не идёт: повтор по кругу стоил бы
-          денег за каждое обращение к модели и ничего бы не менял. %>
-      <p class="flash flash--aviso" role="status"><%= falhaDaAnalise %></p>
+      <%# Разбор сорвался. Не страница-заглушка во весь экран: дело цело,
+          рассказ и вложения на месте, и человеку нужен один понятный шаг, а
+          не сообщение о том, что всё пропало. Сам по кругу разбор не идёт —
+          каждый повтор стоит денег за обращение к модели. %>
+      <div class="bloco falha" role="status">
+        <p class="falha__texto"><%= falhaDaAnalise %></p>
+        <p class="falha__dado">Seus dados foram preservados.</p>
+        <% if (progresso.next) { %>
+          <form method="post" action="/caso/<%= caso.publicId %>/analisar">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="tipo" value="<%= progresso.next %>" />
+            <button type="submit" class="btn btn--primary">Tentar novamente</button>
+          </form>
+        <% } %>
+      </div>
     <% } %>
 
     <% if (autoAnalise) { %>
-      <%# Разбор идёт сам, по шагу на запрос (§3). Целиком в один запрос он не
-          укладывается: каждый шаг — обращение к модели.
+      <%# Разбор идёт сам, по шагу на запрос (§3): все четыре в один вызов
+          бессерверной функции не укладываются.
 
-          Форма отправляется скриптом. Без него остаётся кнопка, и человек
-          проходит шаги вручную — но видит, какой именно шаг следующий, а не
-          угадывает порядок среди четырёх одинаковых кнопок. %>
-      <div class="panel panel--analise">
+          Полоса из отрезков по числу шагов, а не процент: процент пришлось бы
+          выдумывать — настоящего прогресса внутри шага мы не знаем. Отрезки
+          честны: столько шагов сделано из стольких.
+
+          Форму отправляет скрипт. Без него остаётся кнопка, и человек проходит
+          шаги сам, видя, какой именно следующий. %>
+      <div class="bloco analise" aria-busy="true">
         <form method="post" action="/caso/<%= caso.publicId %>/analisar"
               data-auto-analise>
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <input type="hidden" name="tipo" value="<%= progresso.next %>" />
 
+          <h2 class="analise__titulo">Analisando seu caso</h2>
+
           <p class="analise__passo" role="status" aria-live="polite">
+            <span class="analise__marca" aria-hidden="true">●</span>
             <%= progresso.label %>…
           </p>
-          <p class="analise__contagem">
-            Passo <%= progresso.done + 1 %> de <%= progresso.total %>
-          </p>
 
-          <%# Полоса из отрезков по числу шагов.
-
-              Не одна полоса с процентом в атрибуте style: CSP запрещает
-              встроенные стили, и такая полоса просто не заполнялась бы.
-              Отрезки заодно честнее — шагов четыре, а не непрерывная шкала,
-              и число их берётся отсюда же, а не повторяется в таблице стилей. %>
-          <div class="analise__barra" aria-hidden="true">
+          <div class="analise__barra"
+               role="img"
+               aria-label="Passo <%= progresso.done + 1 %> de <%= progresso.total %>">
             <% for (let i = 0; i < progresso.total; i += 1) { %>
               <span class="<%= i < progresso.done ? 'analise__barra--feito' : '' %>"></span>
             <% } %>
           </div>
+
+          <p class="analise__contagem">
+            Passo <%= progresso.done + 1 %> de <%= progresso.total %>
+          </p>
 
           <button type="submit" class="btn btn--primary btn--block"
                   data-auto-analise-botao>
@@ -97,113 +120,183 @@
       </div>
     <% } %>
 
-    <% if (classificacao) { %>
-      <div class="bloco resultado">
-        <%# Опознанная проблема — словами человека, а не значением перечисления.
-            Процента уверенности здесь нет: он говорит о модели, а не о деле, и
-            выглядит измеренной величиной, хотя измерять тут нечего (§87). %>
-        <% if (classificacaoLabel) { %>
-          <p class="resultado__rotulo">Problema identificado</p>
-          <h3 class="resultado__titulo"><%= classificacaoLabel %></h3>
-        <% } else { %>
-          <h3 class="resultado__titulo">Entendemos o que aconteceu</h3>
-        <% } %>
+    <%# ── Problema identificado ─────────────────────────────────────────
+        Категория словами человека. Ни значения перечисления, ни процента
+        уверенности: первое — наша константа, второе говорит о модели, а не о
+        деле, но читается как измеренная величина. %>
+    <% if (classificacao && classificacaoLabel) { %>
+      <section class="bloco resultado resultado--principal">
+        <p class="resultado__rotulo">Problema identificado</p>
+        <h2 class="resultado__titulo"><%= classificacaoLabel %></h2>
 
-        <% if (classificacao.subcategory) { %>
-          <p class="resultado__lead"><%= classificacao.subcategory %></p>
-        <% } %>
-
-        <%# Ниже порога разбор показан предположением, а не установленным
-            фактом: по такой уверенности мы и сами категорию дела не меняем. %>
         <% if (classificacaoIncerta) { %>
-          <p class="notice">
+          <p class="resultado__ressalva">
             Ainda não é certeza: pode ser outro tipo de problema. Responda o
             que falta abaixo para confirmar.
           </p>
         <% } %>
-
-        <% if (classificacao.risk_flags.length > 0) { %>
-          <h4>Pontos de atenção</h4>
-          <ul>
-            <% classificacao.risk_flags.forEach(function (item) { %>
-              <li><%= item %></li>
-            <% }); %>
-          </ul>
-        <% } %>
-
-        <%- include('../partials/ai-disclaimer') %>
-        <%- include('../partials/avaliacao', {
-              mensagemId: mensagemId.classificacao,
-              publicId: caso.publicId,
-            }) %>
-      </div>
+      </section>
     <% } %>
 
-    <%# Что нужно узнать.
+    <%# ── O que entendemos ──────────────────────────────────────────────
+        Рассказ человека — цитатой и с подписью: это его слова (§5 USER FACT),
+        а не вывод модели. Пересказывать их своими словами мы не можем —
+        выдумки в пересказе не отличить от факта. %>
+    <section class="bloco entendemos">
+      <h2>O que entendemos</h2>
 
-        Вопросы приходят отдельным шагом разбора, и до него ответить нечем —
-        но уже после опознания видно, каких сведений не хватает. Поэтому до
-        вопросов здесь стоит именно этот список: раздел не пустует, а человек
-        не ждёт следующего обращения к модели, чтобы понять, что от него нужно.
+      <% if (classificacao && classificacao.subcategory) { %>
+        <p class="entendemos__lead"><%= classificacao.subcategory %></p>
+      <% } %>
 
-        Когда пришли вопросы, показываются они: в них есть ещё и «зачем». %>
+      <figure class="citacao">
+        <blockquote><%= caso.description %></blockquote>
+        <figcaption>Foi o que você contou.</figcaption>
+      </figure>
+
+      <% if (classificacao && classificacao.risk_flags.length > 0) { %>
+        <h3 class="entendemos__sub">Pontos de atenção</h3>
+        <ul class="lista">
+          <% classificacao.risk_flags.forEach(function (item) { %>
+            <li><%= item %></li>
+          <% }); %>
+        </ul>
+      <% } %>
+
+      <%- include('../partials/avaliacao', {
+            mensagemId: mensagemId.classificacao,
+            publicId: caso.publicId,
+          }) %>
+    </section>
+
+    <%# ── O que precisamos saber ────────────────────────────────────────
+        Вопросы приходят отдельным шагом. До него ответить нечем, но уже
+        после опознания видно, каких сведений не хватает, — раздел не пустует
+        и человек не ждёт следующего обращения к модели, чтобы понять, что от
+        него нужно. Нечего показать — раздела нет вовсе. %>
     <% const faltantes = classificacao ? classificacao.missing_information : []; %>
     <% if ((perguntas && perguntas.questions.length > 0) || faltantes.length > 0) { %>
-      <div class="bloco">
-        <h3>O que precisamos saber</h3>
+      <section class="bloco">
+        <h2>O que precisamos saber</h2>
         <% if (perguntas && perguntas.questions.length > 0) { %>
-          <ul class="saber">
+          <ol class="saber">
             <% perguntas.questions.forEach(function (q) { %>
               <li>
                 <p class="saber__pergunta"><%= q.question %></p>
                 <p class="small muted"><%= q.why %></p>
               </li>
             <% }); %>
-          </ul>
-          <%- include('../partials/ai-disclaimer') %>
+          </ol>
         <% } else { %>
-          <ul class="saber">
+          <ol class="saber">
             <% faltantes.forEach(function (item) { %>
               <li><p class="saber__pergunta"><%= item %></p></li>
             <% }); %>
-          </ul>
-        <% } %>
-      </div>
-    <% } %>
-
-    <% if (plano) { %>
-      <div class="bloco resultado">
-        <p class="resultado__rotulo">Próximo passo</p>
-        <% if (plano.steps.length > 0) { %>
-          <%# Номера рисует сам список счётчиком CSS: своя цифра в разметке
-              разошлась бы с порядком, стоило бы шагу пропасть или добавиться. %>
-          <ol class="passos">
-            <% plano.steps.forEach(function (step) { %>
-              <li>
-                <p class="passos__titulo"><%= step.title %></p>
-                <p class="small"><%= step.detail %></p>
-                <%# §5: видно, на чём держится шаг — на источнике или на предположении %>
-                <% if (step.source === "OFFICIAL_SOURCE") { %>
-                  <p class="tag tag--fonte">Fonte oficial</p>
-                <% } else { %>
-                  <p class="tag tag--ai">Sugestão da IA</p>
-                <% } %>
-              </li>
-            <% }); %>
           </ol>
         <% } %>
+      </section>
+    <% } %>
 
+    <%# ── O que fazer agora ─────────────────────────────────────────────
+        Главный блок страницы. Номера рисует счётчик CSS: своя цифра в
+        разметке разошлась бы с порядком, стоило бы шагу пропасть. %>
+    <% if (plano && plano.steps.length > 0) { %>
+      <section class="bloco">
+        <h2>O que fazer agora</h2>
+        <ol class="passos">
+          <% plano.steps.forEach(function (step) { %>
+            <li>
+              <p class="passos__titulo"><%= step.title %></p>
+              <% if (step.detail) { %>
+                <p class="passos__detalhe"><%= step.detail %></p>
+              <% } %>
+              <%# §5: видно, на чём держится шаг — на источнике или на догадке. %>
+              <% if (step.source === "OFFICIAL_SOURCE") { %>
+                <p class="tag tag--fonte">Fonte oficial</p>
+              <% } else { %>
+                <p class="tag tag--ai">Sugestão da IA</p>
+              <% } %>
+            </li>
+          <% }); %>
+        </ol>
+
+        <% if (plano.uncertainties.length > 0) { %>
+          <h3 class="entendemos__sub">O que não foi possível confirmar</h3>
+          <ul class="lista">
+            <% plano.uncertainties.forEach(function (item) { %>
+              <li><%= item %></li>
+            <% }); %>
+          </ul>
+        <% } %>
+
+        <%- include('../partials/avaliacao', {
+              mensagemId: mensagemId.plano,
+              publicId: caso.publicId,
+            }) %>
+      </section>
+    <% } %>
+
+    <%# ── Mensagem para a empresa ───────────────────────────────────────
+        Письмо под раскрытием: на экране оно занимает больше места, чем всё
+        остальное вместе, и, открытое сразу, отодвигает шаги, которые надо
+        сделать до отправки. Раскрытие на <details> — работает без скрипта, а
+        встроенные стили запрещены политикой безопасности.
+
+        Отправляет человек сам: Resolve Brasil не пишет компаниям за него. %>
+    <% if (rascunho && rascunho.body) { %>
+      <details class="bloco pronta">
+        <summary class="pronta__botao">
+          <span>Ver mensagem pronta</span>
+          <span class="pronta__seta" aria-hidden="true">→</span>
+        </summary>
+
+        <div class="pronta__corpo">
+          <h2>Mensagem para a empresa</h2>
+
+          <label for="draft-subject">Assunto</label>
+          <input type="text" id="draft-subject" value="<%= rascunho.subject %>" readonly />
+
+          <label for="draft-body">Mensagem</label>
+          <textarea id="draft-body" rows="12" readonly><%= rascunho.body %></textarea>
+
+          <p>
+            <button type="button" class="btn btn--primary" data-copy="#draft-body">
+              Copiar mensagem
+            </button>
+          </p>
+
+          <p class="small muted">
+            Mensagem gerada com base nas informações fornecidas por você.
+            Revise o texto antes de enviar. O envio é feito por você.
+          </p>
+
+          <% if (rascunho.warnings.length > 0) { %>
+            <h3 class="entendemos__sub">Antes de enviar</h3>
+            <ul class="lista">
+              <% rascunho.warnings.forEach(function (item) { %>
+                <li><%= item %></li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </details>
+    <% } %>
+
+    <%# ── Fontes oficiais ───────────────────────────────────────────────
+        §31: у каждой ссылки дата последней проверки — без неё она выглядит
+        вечно актуальной. §32: подтверждения нет — так и сказано, ссылку мы не
+        придумываем. %>
+    <% if (plano) { %>
+      <section class="bloco">
+        <h2>Fontes oficiais</h2>
         <% if (plano.sources.length > 0) { %>
-          <h4>Fontes oficiais</h4>
           <ul class="source-list">
             <% plano.sources.forEach(function (source) { %>
               <li class="source">
-                <span class="tag tag--fonte">Fonte oficial</span>
                 <a href="<%= source.url %>" rel="noopener noreferrer" target="_blank">
                   <%= source.organization %> — <%= source.title %>
                 </a>
                 <span class="source__url"><%= source.url %></span>
-                <%# §31: без даты проверки ссылка выглядит вечно актуальной. %>
                 <% if (fonteVerificada[source.url]) { %>
                   <span class="small muted">
                     Verificada em <%= fonteVerificada[source.url] %>
@@ -213,73 +306,28 @@
             <% }); %>
           </ul>
         <% } else { %>
-          <p class="notice">Não foi possível confirmar essa informação em uma fonte oficial.</p>
+          <p class="small muted">
+            Não foi possível confirmar uma fonte oficial relevante para este caso.
+          </p>
         <% } %>
-
-        <% if (plano.uncertainties.length > 0) { %>
-          <h4>O que não foi possível confirmar</h4>
-          <ul>
-            <% plano.uncertainties.forEach(function (item) { %>
-              <li><%= item %></li>
-            <% }); %>
-          </ul>
-        <% } %>
-
-        <%- include('../partials/ai-disclaimer') %>
-        <%- include('../partials/avaliacao', {
-              mensagemId: mensagemId.plano,
-              publicId: caso.publicId,
-            }) %>
-      </div>
+      </section>
     <% } %>
 
-    <% if (rascunho && rascunho.body) { %>
-      <%# Письмо — под раскрытием: на экране оно занимает больше места, чем всё
-          остальное вместе, и, открытое сразу, отодвигает шаги, которые надо
-          сделать до отправки. Раскрытие на <details>: работает без скрипта, а
-          встроенные стили нам всё равно запрещены политикой безопасности. %>
-      <details class="bloco pronta">
-        <summary class="pronta__botao">Ver mensagem pronta</summary>
-
-        <h3>Mensagem para a empresa</h3>
-        <label for="draft-subject">Assunto</label>
-        <input type="text" id="draft-subject" value="<%= rascunho.subject %>" readonly />
-        <label for="draft-body">Mensagem</label>
-        <textarea id="draft-body" rows="12" readonly><%= rascunho.body %></textarea>
-        <p>
-          <button type="button" class="btn btn--secondary" data-copy="#draft-body">
-            Copiar mensagem
-          </button>
-        </p>
-
-        <% if (rascunho.warnings.length > 0) { %>
-          <h4>Antes de enviar</h4>
-          <ul>
-            <% rascunho.warnings.forEach(function (item) { %>
-              <li><%= item %></li>
-            <% }); %>
-          </ul>
-        <% } %>
-
-        <p class="small muted">
-          Revise o texto antes de enviar. O envio é feito por você.
-        </p>
-
-        <%- include('../partials/ai-disclaimer') %>
-      </details>
+    <%# §4: дисклеймер под ответами модели — один на весь разбор, спокойным
+        текстом. Повторённый под каждым блоком он превращается в шум, который
+        перестают читать; ниже по странице идут уже не ответы модели, а
+        документы и хронология. %>
+    <% if (classificacao || plano || rascunho) { %>
+      <%- include('../partials/ai-disclaimer') %>
     <% } %>
 
-    <%# Повторный разбор — после ответа, а не до него.
-
-        Пока разбор идёт, сверху стоит его ход: читать ещё нечего. Когда он
-        закончен, первое на экране — сам ответ, а четыре кнопки «сделать ещё
-        раз» ниже: они нужны тому, кого ответ не устроил, то есть уже
-        прочитавшему. %>
     <% if (!autoAnalise) { %>
-      <div class="bloco">
+      <%# Повторный разбор — после ответа: эти кнопки нужны тому, кого ответ
+          не устроил, то есть уже прочитавшему. %>
+      <div class="refazer">
         <form method="post" action="/caso/<%= caso.publicId %>/analisar" class="actions">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button type="submit" name="tipo" value="classificar" class="btn btn--primary">
+          <button type="submit" name="tipo" value="classificar" class="btn btn--secondary">
             <%= classificacao ? "Analisar de novo" : "Analisar meu caso" %>
           </button>
           <button type="submit" name="tipo" value="perguntas" class="btn btn--secondary">
@@ -296,135 +344,7 @@
     <% } %>
 
     <div class="bloco">
-      <h2>Resumo</h2>
-      <dl class="rows">
-        <div class="row">
-          <dt>Empresa</dt>
-          <dd><%= caso.companyName || "Ainda não informada" %></dd>
-        </div>
-        <div class="row">
-          <dt>Valor</dt>
-          <dd><%= amountFormatted || "Ainda não informado" %></dd>
-        </div>
-        <div class="row">
-          <dt>Canal atual</dt>
-          <dd><%= escalationLabel %></dd>
-        </div>
-        <div class="row">
-          <dt>Estado</dt>
-          <dd><%= estadoNome || "Não informado" %></dd>
-        </div>
-      </dl>
-    </div>
-
-    <div class="bloco">
-      <h3>Seu estado</h3>
-      <%# §57: спрашивается только штат. Procon у каждого штата свой, и без
-          него «куда идти» ответить нельзя. Города нет и не будет: вместе с
-          суммой и категорией он опознаёт человека не хуже имени (§55). %>
-      <p class="muted small">
-        O Procon é estadual, então o estado muda para onde o caso pode ir.
-        Não perguntamos sua cidade nem seu endereço.
-      </p>
-
-      <form method="post" action="/caso/<%= caso.publicId %>/estado">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-        <div class="field">
-          <label for="estado">Estado</label>
-          <select id="estado" name="estado">
-            <option value="">Prefiro não informar</option>
-            <% estados.forEach(function (estado) { %>
-              <option value="<%= estado.uf %>" <%= estadoAtual === estado.uf ? "selected" : "" %>>
-                <%= estado.name %>
-              </option>
-            <% }); %>
-          </select>
-        </div>
-
-        <button type="submit" class="btn btn--secondary">Salvar estado</button>
-      </form>
-    </div>
-
-    <div class="bloco">
-      <h2>O que você contou</h2>
-      <%# Текст пользователя — это USER FACT (§5), а не вывод модели. %>
-      <p class="case-description"><%= caso.description %></p>
-    </div>
-
-    <h2>Linha do tempo</h2>
-    <div class="bloco">
-      <ol class="timeline">
-        <% timeline.forEach(function (event) { %>
-          <li class="timeline__item">
-            <time class="timeline__date" datetime="<%= event.eventDate.toISOString() %>">
-              <%= event.eventDate.toLocaleDateString("pt-BR") %>
-            </time>
-            <div>
-              <p class="timeline__title"><%= event.title %></p>
-              <% if (event.description) { %>
-                <p class="small muted"><%= event.description %></p>
-              <% } %>
-              <% if (event.source === "AI_SUGGESTION") { %>
-                <p class="tag tag--ai">Sugestão da IA</p>
-              <% } else if (event.source === "OFFICIAL_SOURCE") { %>
-                <p class="tag tag--fonte">Fonte oficial</p>
-              <% } %>
-            </div>
-          </li>
-        <% }); %>
-      </ol>
-    </div>
-
-    <% if (pix) { %>
-      <h2 id="pix">Sobre o Pix</h2>
-      <div class="bloco">
-        <%# §36: мошенничество, платёж не тем и спор с реальной компанией
-            ведут в разные стороны. Различить их по рассказу нельзя, поэтому
-            выбирает человек, а не система (§5). %>
-        <p class="muted small">
-          Pix tem caminhos diferentes dependendo do que aconteceu. Qual das
-          situações abaixo descreve melhor o seu caso?
-        </p>
-
-        <% if (pix.atualLabel) { %>
-          <p><strong>Situação informada:</strong> <%= pix.atualLabel %></p>
-        <% } %>
-
-        <form method="post" action="/caso/<%= caso.publicId %>/pix">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-          <fieldset class="choices">
-            <legend class="sr-only">Situação do Pix</legend>
-            <% pix.opcoes.forEach(function (opcao) { %>
-              <div class="choice">
-                <input type="radio" id="pix-<%= opcao.value %>" name="situacao"
-                       value="<%= opcao.value %>"
-                       <%= pix.atual === opcao.value ? "checked" : "" %> />
-                <label for="pix-<%= opcao.value %>">
-                  <span class="choice__label"><%= opcao.label %></span>
-                  <span class="choice__hint"><%= opcao.hint %></span>
-                </label>
-              </div>
-            <% }); %>
-          </fieldset>
-
-          <button type="submit" class="btn btn--primary">Salvar situação</button>
-        </form>
-
-        <%# §9: конкретные процедуры и сроки сюда не вписываются — они
-            меняются и обязаны приходить из проверенного источника. %>
-        <p class="small muted">
-          Essa informação entra no seu caso como um fato seu e orienta as
-          próximas sugestões. Prazos e procedimentos aparecem apenas quando
-          houver uma fonte oficial confirmada para eles.
-        </p>
-      </div>
-    <% } %>
-
-    <h2 id="documentos">Documentos</h2>
-
-    <div class="bloco">
+      <h2 id="documentos">Documentos</h2>
       <p class="muted small">
         Nota fiscal, comprovante de Pix, pedido, conversa com a empresa.
         Aceitamos PDF, JPG, PNG e WEBP.
@@ -512,6 +432,127 @@
         </p>
       <% } %>
     </div>
+
+    <div class="bloco">
+      <h2 id="historico">Histórico do caso</h2>
+      <ol class="timeline">
+        <% timeline.forEach(function (event) { %>
+          <li class="timeline__item">
+            <time class="timeline__date" datetime="<%= event.eventDate.toISOString() %>">
+              <%= event.eventDate.toLocaleDateString("pt-BR") %>
+            </time>
+            <div>
+              <p class="timeline__title"><%= event.title %></p>
+              <% if (event.description) { %>
+                <p class="small muted"><%= event.description %></p>
+              <% } %>
+              <% if (event.source === "AI_SUGGESTION") { %>
+                <p class="tag tag--ai">Sugestão da IA</p>
+              <% } else if (event.source === "OFFICIAL_SOURCE") { %>
+                <p class="tag tag--fonte">Fonte oficial</p>
+              <% } %>
+            </div>
+          </li>
+        <% }); %>
+      </ol>
+    </div>
+
+    <div class="bloco">
+      <h2>Resumo</h2>
+      <dl class="rows">
+        <div class="row">
+          <dt>Empresa</dt>
+          <dd><%= caso.companyName || "Ainda não informada" %></dd>
+        </div>
+        <div class="row">
+          <dt>Valor</dt>
+          <dd><%= amountFormatted || "Ainda não informado" %></dd>
+        </div>
+        <div class="row">
+          <dt>Canal atual</dt>
+          <dd><%= escalationLabel %></dd>
+        </div>
+        <div class="row">
+          <dt>Estado</dt>
+          <dd><%= estadoNome || "Não informado" %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="bloco">
+      <h3>Seu estado</h3>
+      <%# §57: спрашивается только штат. Procon у каждого штата свой, и без
+          него «куда идти» ответить нельзя. Города нет и не будет: вместе с
+          суммой и категорией он опознаёт человека не хуже имени (§55). %>
+      <p class="muted small">
+        O Procon é estadual, então o estado muda para onde o caso pode ir.
+        Não perguntamos sua cidade nem seu endereço.
+      </p>
+
+      <form method="post" action="/caso/<%= caso.publicId %>/estado">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="">Prefiro não informar</option>
+            <% estados.forEach(function (estado) { %>
+              <option value="<%= estado.uf %>" <%= estadoAtual === estado.uf ? "selected" : "" %>>
+                <%= estado.name %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn--secondary">Salvar estado</button>
+      </form>
+    </div>
+
+    <% if (pix) { %>
+      <h2 id="pix">Sobre o Pix</h2>
+      <div class="bloco">
+        <%# §36: мошенничество, платёж не тем и спор с реальной компанией
+            ведут в разные стороны. Различить их по рассказу нельзя, поэтому
+            выбирает человек, а не система (§5). %>
+        <p class="muted small">
+          Pix tem caminhos diferentes dependendo do que aconteceu. Qual das
+          situações abaixo descreve melhor o seu caso?
+        </p>
+
+        <% if (pix.atualLabel) { %>
+          <p><strong>Situação informada:</strong> <%= pix.atualLabel %></p>
+        <% } %>
+
+        <form method="post" action="/caso/<%= caso.publicId %>/pix">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+          <fieldset class="choices">
+            <legend class="sr-only">Situação do Pix</legend>
+            <% pix.opcoes.forEach(function (opcao) { %>
+              <div class="choice">
+                <input type="radio" id="pix-<%= opcao.value %>" name="situacao"
+                       value="<%= opcao.value %>"
+                       <%= pix.atual === opcao.value ? "checked" : "" %> />
+                <label for="pix-<%= opcao.value %>">
+                  <span class="choice__label"><%= opcao.label %></span>
+                  <span class="choice__hint"><%= opcao.hint %></span>
+                </label>
+              </div>
+            <% }); %>
+          </fieldset>
+
+          <button type="submit" class="btn btn--primary">Salvar situação</button>
+        </form>
+
+        <%# §9: конкретные процедуры и сроки сюда не вписываются — они
+            меняются и обязаны приходить из проверенного источника. %>
+        <p class="small muted">
+          Essa informação entra no seu caso como um fato seu e orienta as
+          próximas sugestões. Prazos e procedimentos aparecem apenas quando
+          houver uma fonte oficial confirmada para eles.
+        </p>
+      </div>
+    <% } %>
 
     <% if (fatos.length > 0) { %>
       <h2 id="dados-extraidos">Dados encontrados nos documentos</h2>

@@ -92,9 +92,12 @@ describe("вопрос о Pix", () => {
 
     // Проверяется сам блок про Pix, а не вся страница: сроки напоминаний
     // на ней есть законно, и они к процедуре отношения не имеют.
+    // Срез до «Lembretes»: документы переехали выше блока про Pix, и
+    // прежняя граница оказалась перед его началом — срез выходил пустым, а
+    // проверка на запреты проходила бы, ничего не проверяя.
     const bloco = page.text.slice(
       page.text.indexOf('id="pix"'),
-      page.text.indexOf('id="documentos"'),
+      page.text.indexOf('id="lembretes"'),
     );
 
     expect(bloco.length).toBeGreaterThan(100);

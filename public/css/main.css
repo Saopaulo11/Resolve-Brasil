@@ -462,16 +462,13 @@ input:focus {
 /* --- Дисклеймер AI (§4) --------------------------------------------------- */
 
 .ai-disclaimer {
-  display: flex;
-  gap: 0.625rem;
-  align-items: flex-start;
-  background: #fffbe9;
-  border: 1px solid #f0dca4;
-  border-left: 4px solid var(--yellow);
-  border-radius: var(--radius);
-  padding: 0.875rem 1rem;
-  font-size: 0.875rem;
-  color: #5c4708;
+  display: block;
+  margin: 0.5rem 0 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--color-muted);
 }
 
 /* --- Предупреждение о незавершённом этапе --------------------------------- */
@@ -2769,66 +2766,152 @@ a:focus-visible {
   }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   Результат разбора: опознание, шаги, готовое письмо.
+/* ═════════════════════════════════════════════════════════════════════════
+   ЭКРАН РЕЗУЛЬТАТА
 
-   Порядок на экране повторяет порядок решения: что за проблема → чего не
-   хватает → что делать → чем написать. Нумерация шагов рисуется счётчиком,
-   а не цифрами в разметке: своя цифра разошлась бы с порядком, стоило бы
-   шагу пропасть или добавиться.
-   ───────────────────────────────────────────────────────────────────────── */
+   Порядок на экране повторяет порядок решения: что за проблема → как мы её
+   поняли → чего не хватает → что делать → чем написать → на чём держится.
 
-/* Селекторы ниже написаны в два класса нарочно: в таблице уже есть
-   .bloco p и .bloco h3 — класс плюс тег, — и одиночный класс им проигрывает.
-   Без этого подпись уходила в серый, а заголовок оставался размером с
-   обычный подзаголовок. */
+   Селекторы ниже часто написаны в два класса нарочно: в таблице уже есть
+   .bloco p и .bloco h2 — класс плюс тег, — и одиночный класс им проигрывает.
+   Без этого подписи уходят в серый, а заголовки остаются размером с обычный
+   подзаголовок.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* Разделы разбора стоят просторнее обычных блоков: это то, ради чего человек
+   пришёл, и скучиваться им незачем. */
+.caso section.bloco {
+  padding: 1.75rem;
+}
+
+.caso section.bloco + section.bloco,
+.caso section.bloco + details.bloco,
+.caso details.bloco + section.bloco {
+  margin-top: 1rem;
+}
+
+.caso .bloco h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 650;
+  /* .caso h2 делает из заголовков дела мелкие заглавные подписи. Для
+     разделителей ниже по странице это уместно, а заголовок раздела разбора
+     так читать тяжело: «MENSAGEM PARA A EMPRESA» выглядит ярлыком, а не тем,
+     что человеку сейчас читать. Поэтому здесь и начертание, и разрядка
+     задаются заново, а не только размер. */
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* --- Опознанная проблема -------------------------------------------- */
+
+.resultado--principal {
+  border-color: var(--color-primary-border);
+  background: var(--color-primary-soft);
+}
+
 .resultado .resultado__rotulo {
   margin: 0 0 0.375rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  /* Заглавные — начертанием, а не в тексте: с заглавными в разметке
-     экранный читатель произносит подпись по буквам. */
+  /* Заглавные начертанием, а не в тексте: с заглавными в разметке экранный
+     читатель произносит подпись по буквам. */
   text-transform: uppercase;
   color: var(--color-primary);
 }
 
 .resultado .resultado__titulo {
   margin: 0;
-  font-size: 1.5rem;
-  line-height: 1.25;
-  font-weight: 650;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
-.resultado .resultado__lead {
-  margin: 0.375rem 0 0;
+.resultado .resultado__ressalva {
+  margin: 0.875rem 0 0;
+  font-size: 0.9375rem;
   color: var(--color-muted);
 }
 
-.resultado > .notice {
-  margin-top: 1rem;
+/* --- Как мы поняли --------------------------------------------------- */
+
+.entendemos .entendemos__lead {
+  margin: -0.5rem 0 1rem;
+  color: var(--color-muted);
 }
 
-/* Что нужно узнать: перечень без маркеров — каждый пункт и так отдельным
-   блоком, а точка перед вопросом добавляет шум, не добавляя смысла. */
+.entendemos .entendemos__sub,
+.bloco .entendemos__sub {
+  margin: 1.5rem 0 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--color-text);
+}
+
+/* Рассказ человека — цитатой: видно, что это его слова, а не наш пересказ. */
+.citacao {
+  margin: 0;
+  padding: 0 0 0 1.125rem;
+  border-left: 3px solid var(--color-border);
+}
+
+.citacao blockquote {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  white-space: pre-wrap;
+}
+
+.citacao figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.bloco .lista {
+  margin: 0;
+  padding-left: 1.125rem;
+  display: grid;
+  gap: 0.375rem;
+  color: var(--color-muted);
+}
+
+/* --- Что нужно узнать ------------------------------------------------ */
+
 .saber {
-  margin: 1rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
+  counter-reset: pergunta;
   display: grid;
-  gap: 0.875rem;
+  gap: 1rem;
 }
 
 .saber > li {
-  padding-left: 1rem;
-  border-left: 2px solid var(--color-border);
+  counter-increment: pergunta;
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  column-gap: 0.75rem;
+}
+
+.saber > li::before {
+  content: counter(pergunta);
+  grid-row: 1 / span 2;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .saber .saber__pergunta {
   margin: 0;
   font-weight: 550;
-  /* Цвет задаётся явно: .bloco p красит абзацы в серый, а вопрос — это то,
-     что человек должен прочитать, а не фон. */
   color: var(--color-text);
 }
 
@@ -2836,36 +2919,35 @@ a:focus-visible {
   margin: 0.25rem 0 0;
 }
 
-/* Шаги. */
+/* --- Что делать сейчас ----------------------------------------------- */
+
 .passos {
-  margin: 1rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
   counter-reset: passo;
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .passos > li {
   counter-increment: passo;
   display: grid;
-  grid-template-columns: 2rem 1fr;
-  column-gap: 0.875rem;
-  row-gap: 0.25rem;
+  grid-template-columns: 2.25rem 1fr;
+  column-gap: 1rem;
+  row-gap: 0.3125rem;
 }
 
+/* Номер рисует счётчик: своя цифра в разметке разошлась бы с порядком,
+   стоило бы шагу пропасть или добавиться. */
 .passos > li::before {
-  content: counter(passo);
-  grid-row: 1 / span 4;
-  width: 2rem;
-  height: 2rem;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-size: 0.9375rem;
+  content: counter(passo, decimal-leading-zero);
+  grid-row: 1 / span 3;
+  font-size: 0.875rem;
   font-weight: 700;
+  line-height: 1.5;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .passos .passos__titulo {
@@ -2874,46 +2956,52 @@ a:focus-visible {
   color: var(--color-text);
 }
 
-.passos > li > .small,
-.passos > li > .tag {
+.passos .passos__detalhe {
   margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-muted);
 }
 
 .passos > li > .tag {
+  margin: 0.125rem 0 0;
   justify-self: start;
 }
 
-/* Готовое письмо — за раскрытием. */
+/* --- Готовое письмо --------------------------------------------------- */
+
 .pronta {
   padding: 0;
+  border-color: var(--color-primary-border);
 }
 
 .pronta__botao {
-  /* Подпись раскрытия ведёт себя как кнопка, но остаётся <summary>: без
-     скрипта она всё равно открывает блок. */
+  /* Ведёт себя как главная кнопка, но остаётся <summary>: без скрипта она
+     всё равно раскрывает блок. */
   list-style: none;
   cursor: pointer;
-  padding: 1.25rem 1.5rem;
-  font-weight: 600;
-  color: var(--color-primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem 1.75rem;
+  font-weight: 650;
+  color: var(--color-primary);
 }
 
 .pronta__botao::-webkit-details-marker {
   display: none;
 }
 
-.pronta__botao::after {
-  content: "›";
-  font-size: 1.125rem;
-  line-height: 1;
-  color: var(--color-muted);
+.pronta__seta {
+  transition: transform 0.15s ease;
 }
 
-.pronta[open] > .pronta__botao::after {
-  content: "⌄";
+.pronta[open] .pronta__seta {
+  transform: rotate(90deg);
+}
+
+.pronta__botao:hover {
+  background: var(--color-primary-soft);
 }
 
 .pronta__botao:focus-visible {
@@ -2922,21 +3010,110 @@ a:focus-visible {
   border-radius: var(--radius-md);
 }
 
-/* Содержимое раскрытия отделено от подписи — так видно, что письмо
-   относится к ней, а не к следующему блоку. */
 .pronta[open] > .pronta__botao {
   border-bottom: 1px solid var(--color-border);
 }
 
-.pronta > :not(.pronta__botao) {
-  margin-left: 1.5rem;
-  margin-right: 1.5rem;
+.pronta__corpo {
+  padding: 1.5rem 1.75rem 1.75rem;
 }
 
-.pronta > :last-child {
-  margin-bottom: 1.5rem;
+.pronta__corpo > h2 {
+  margin-top: 0;
 }
 
-.pronta > h3 {
-  margin-top: 1.25rem;
+/* --- Источники -------------------------------------------------------- */
+
+.bloco .source-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1rem;
+}
+
+.bloco .source {
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* --- Разбор идёт ------------------------------------------------------ */
+
+.analise .analise__titulo {
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.analise .analise__passo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  color: var(--color-text);
+}
+
+.analise__marca {
+  color: var(--color-primary);
+}
+
+.analise .analise__contagem {
+  margin: 0.625rem 0 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+/* --- Разбор сорвался --------------------------------------------------- */
+
+.falha .falha__texto {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.falha .falha__dado {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  color: var(--color-muted);
+}
+
+/* --- Разобрать заново -------------------------------------------------- */
+
+.refazer {
+  margin-top: 1.5rem;
+}
+
+.refazer .actions {
+  gap: 0.5rem;
+}
+
+/* --- Телефон ----------------------------------------------------------- */
+
+@media (max-width: 40rem) {
+  .caso section.bloco {
+    padding: 1.25rem;
+  }
+
+  .resultado .resultado__titulo {
+    font-size: 1.5rem;
+  }
+
+  .pronta__botao {
+    padding: 1.125rem 1.25rem;
+  }
+
+  .pronta__corpo {
+    padding: 1.25rem;
+  }
+
+  .passos > li {
+    grid-template-columns: 1.75rem 1fr;
+    column-gap: 0.75rem;
+  }
+
+  /* Кнопки в ряд не помещаются — каждая на своей строке, во всю ширину. */
+  .refazer .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
