@@ -21,6 +21,17 @@ const ESPERADAS = [
   "AI_PROVIDER",
   "OPENAI_API_KEY",
   "OPENAI_MODEL",
+  // Канал одноразовых кодов. Настраивается четырьмя переменными, и отказ
+  // обычно в том, что заполнены не все: страница называет каждую отдельно,
+  // иначе «OTP_PROVIDER задан, а старта нет» выглядит противоречием.
+  "OTP_PROVIDER",
+  "WHATSAPP_API_KEY",
+  "WHATSAPP_PHONE_NUMBER_ID",
+  "WHATSAPP_API_VERSION",
+  "WHATSAPP_TEMPLATE",
+  "TWILIO_ACCOUNT_SID",
+  "TWILIO_AUTH_TOKEN",
+  "TWILIO_FROM",
 ] as const;
 
 /**

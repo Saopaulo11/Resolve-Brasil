@@ -60,4 +60,19 @@ describe("страница отказа", () => {
     expect(corpo).toContain("APP_URL: AUSENTE");
     expect(corpo).not.toContain("valor-que-nao-deve-aparecer");
   });
+
+  it("называет и канал кода — но не токен канала", () => {
+    // Из четырёх переменных канала обычно заполнены не все, и отказ без их
+    // перечисления выглядит противоречием: провайдер выбран, а старта нет.
+    process.env.OTP_PROVIDER = "whatsapp";
+    process.env.WHATSAPP_API_KEY = "token-que-nao-deve-aparecer";
+    delete process.env.WHATSAPP_TEMPLATE;
+
+    const corpo = corpoDaFalha(new Error("faltou configuração"));
+
+    expect(corpo).toContain("OTP_PROVIDER: definida");
+    expect(corpo).toContain("WHATSAPP_TEMPLATE: AUSENTE");
+    expect(corpo).toContain("WHATSAPP_API_KEY: definida");
+    expect(corpo).not.toContain("token-que-nao-deve-aparecer");
+  });
 });

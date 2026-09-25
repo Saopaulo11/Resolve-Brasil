@@ -159,6 +159,21 @@ function buildConfig(env: NodeJS.ProcessEnv) {
       otpButton: optionalString(env.WHATSAPP_OTP_BUTTON) ?? "url",
     },
 
+    /**
+     * SMS через Twilio — второй канал кода входа.
+     *
+     * Ключ и токен берутся в консоли Twilio. Отправитель задаётся одним из
+     * двух: конкретным номером (TWILIO_FROM) или пулом Messaging Service,
+     * который выбирает номер сам. Придумывать значения за пользователя
+     * нельзя — они заводятся в его аккаунте.
+     */
+    twilio: {
+      accountSid: optionalString(env.TWILIO_ACCOUNT_SID),
+      authToken: optionalString(env.TWILIO_AUTH_TOKEN),
+      from: optionalString(env.TWILIO_FROM),
+      messagingServiceSid: optionalString(env.TWILIO_MESSAGING_SERVICE_SID),
+    },
+
     email: {
       provider: optionalString(env.EMAIL_PROVIDER) ?? "mock",
       apiKey: optionalString(env.EMAIL_API_KEY),
@@ -322,6 +337,22 @@ function productionRequirements(config: AppConfig): string[] {
 
     if (faltando.length > 0) {
       missing.push(`${faltando.join(", ")} (выбран OTP_PROVIDER=whatsapp)`);
+    }
+  }
+
+  if (config.otp.provider === "twilio") {
+    const faltando = [
+      !config.twilio.accountSid && "TWILIO_ACCOUNT_SID",
+      !config.twilio.authToken && "TWILIO_AUTH_TOKEN",
+      // Отправитель — одно из двух, и требовать оба было бы неверно: при
+      // заданном Messaging Service номер выбирает сам Twilio.
+      !config.twilio.from &&
+        !config.twilio.messagingServiceSid &&
+        "TWILIO_FROM или TWILIO_MESSAGING_SERVICE_SID",
+    ].filter((item): item is string => typeof item === "string");
+
+    if (faltando.length > 0) {
+      missing.push(`${faltando.join(", ")} (выбран OTP_PROVIDER=twilio)`);
     }
   }
 

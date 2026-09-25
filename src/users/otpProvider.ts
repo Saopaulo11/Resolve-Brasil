@@ -1,12 +1,18 @@
 import { loadConfig } from "../config/env";
 import { logger, maskPhone } from "../utils/logger";
 
-// Обратная ссылка в whatsappOtpProvider — только на тип, она стирается при
-// сборке, поэтому кольца модулей во время выполнения не возникает.
+// Обратная ссылка в whatsappOtpProvider и twilioOtpProvider — только на тип,
+// она стирается при сборке, поэтому кольца модулей во время выполнения не
+// возникает.
+import { TwilioOtpProvider } from "./twilioOtpProvider";
 import { WhatsappOtpProvider } from "./whatsappOtpProvider";
 
 /**
  * Доставка одноразовых кодов (§15, §79).
+ *
+ * Провайдер только доставляет. Сам код, его хеш, срок жизни и счётчик попыток
+ * живут у нас (§67): провайдер, который выдаёт и проверяет код сам, увёл бы
+ * половину этих правил на чужую сторону, и починить их стало бы нельзя.
  */
 export interface OtpProvider {
   readonly name: string;
@@ -64,9 +70,14 @@ export function otpProvider(): OtpProvider {
     return instance;
   }
 
+  if (config.otp.provider === "twilio") {
+    instance = new TwilioOtpProvider();
+    return instance;
+  }
+
   throw new Error(
     `OTP_PROVIDER=${config.otp.provider}: провайдер не реализован. ` +
-      "Доступны whatsapp и mock (mock — только вне production).",
+      "Доступны whatsapp, twilio и mock (mock — только вне production).",
   );
 }
 
