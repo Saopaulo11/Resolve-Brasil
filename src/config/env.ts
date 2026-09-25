@@ -324,6 +324,33 @@ function productionRequirements(config: AppConfig): string[] {
     missing.push("ANTHROPIC_API_KEY (выбран AI_PROVIDER=anthropic)");
   }
 
+  /*
+   * Канал доставки кода в production называется явно.
+   *
+   * Незаданный OTP_PROVIDER даёт «mock», и стенд при этом поднимается как
+   * обычно. Отказ выясняется только у того, кто дошёл до ввода номера, и
+   * выглядит как поломка входа, а не как незаполненная переменная. Войти
+   * при этом нельзя вообще — ни одному человеку (§79).
+   *
+   * Опечатка в имени провайдера останавливается здесь же. Иначе она доживает
+   * до первой отправки кода: провайдер не находится, и разбирается это уже на
+   * боевом стенде.
+   */
+  const CANAIS = ["whatsapp", "twilio"] as const;
+
+  if (config.otp.provider === "mock") {
+    missing.push(
+      process.env.OTP_PROVIDER?.trim()
+        ? `OTP_PROVIDER: mock — заглушка, в production недопустима. Допустимо: ${CANAIS.join(", ")}`
+        : `OTP_PROVIDER (${CANAIS.join(" или ")}; mock в production недопустим)`,
+    );
+  } else if (!CANAIS.some((canal) => canal === config.otp.provider)) {
+    missing.push(
+      `OTP_PROVIDER: «${config.otp.provider}» — провайдер не реализован. ` +
+        `Допустимо: ${CANAIS.join(", ")}`,
+    );
+  }
+
   // Вход по коду — не украшение: без доставки в production никто не войдёт
   // вообще. Проверяем при старте, чтобы это выяснилось в сборке, а не у
   // первого человека, набравшего свой номер.

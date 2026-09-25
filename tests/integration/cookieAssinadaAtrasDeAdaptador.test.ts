@@ -4,8 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../../src/app";
 import { resetConfigCache } from "../../src/config/env";
-import { createMemoryStores } from "../../src/users/memoryStoreSet";
-import { setStores } from "../../src/users/storeRegistry";
+import { ambienteDeProducao } from "../helpers/producao";
 
 /**
  * Подписанные куки за платформенным адаптером.
@@ -56,15 +55,7 @@ function atrasDeAdaptador() {
 }
 
 function producao() {
-  process.env.NODE_ENV = "production";
-  process.env.DATABASE_URL = "postgresql://u:p@localhost:6543/postgres";
-  process.env.SESSION_SECRET = "x".repeat(40);
-  process.env.APP_URL = "https://exemplo.test";
-  process.env.AI_PROVIDER = "openai";
-  process.env.OPENAI_API_KEY = "chave-de-teste-nao-real";
-  process.env.OPENAI_MODEL = "modelo-de-teste";
-  resetConfigCache();
-  setStores(createMemoryStores());
+  ambienteDeProducao();
 }
 
 async function criarComoConvidado(app: express.Express) {

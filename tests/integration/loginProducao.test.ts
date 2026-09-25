@@ -2,10 +2,9 @@ import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../../src/app";
-import { resetConfigCache } from "../../src/config/env";
-import { createMemoryStores } from "../../src/users/memoryStoreSet";
-import { setStores } from "../../src/users/storeRegistry";
+import { loadConfig, resetConfigCache } from "../../src/config/env";
 import { resetOtpProviderCache } from "../../src/users/otpProvider";
+import { ambienteDeProducao } from "../helpers/producao";
 
 /**
  * Вход в production-режиме целиком, от страницы до отправки кода.
@@ -18,22 +17,20 @@ import { resetOtpProviderCache } from "../../src/users/otpProvider";
 const salvo = { ...process.env };
 
 function produção(extra: Record<string, string> = {}) {
-  process.env.NODE_ENV = "production";
-  process.env.DATABASE_URL = "postgresql://u:p@localhost:6543/postgres";
-  process.env.SESSION_SECRET = "x".repeat(40);
-  process.env.APP_URL = "https://exemplo.test";
-  // Провайдер модели настоящий: заглушка в production больше не считается
-  // настройкой, и конфигурация с ней не поднимается. Здесь проверяется
-  // канал доставки кода, а не разбор дела, — но окружение должно быть
-  // таким, каким production бывает.
-  process.env.AI_PROVIDER = "openai";
-  process.env.OPENAI_API_KEY = "chave-de-teste-nao-real";
-  process.env.OPENAI_MODEL = "modelo-de-teste";
-  delete process.env.OTP_PROVIDER;
-  Object.assign(process.env, extra);
-  resetConfigCache();
-  resetOtpProviderCache();
-  setStores(createMemoryStores());
+  ambienteDeProducao(extra);
+}
+
+/** Ответ Meta на отправку — подделанный, но той же формы, что настоящий. */
+function metaResponde(status: number, body: unknown): string[] {
+  const enviados: string[] = [];
+  vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
+    enviados.push(init.body as string);
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  return enviados;
 }
 
 /** Запрос кода со страницы входа, как его делает браузер. */
@@ -56,8 +53,11 @@ afterEach(() => {
 });
 
 describe("вход в production", () => {
-  it("без настроенного канала не падает, а объясняет", async () => {
+  it("отказ канала не падает, а объясняет", async () => {
     produção();
+    // Meta отвергает сообщение — например, шаблон переименовали в кабинете.
+    metaResponde(400, { error: { message: "Template name does not exist" } });
+
     const resposta = await pedirCodigo(createApp(), "11987654321");
 
     // Главное: не 500 и не «Algo deu errado».
@@ -68,8 +68,43 @@ describe("вход в production", () => {
     expect(resposta.text).toContain("11987654321");
   });
 
-  it("/health называет ненастроенный канал", async () => {
+  it("заглушка канала в production не поднимается вовсе", async () => {
+    // Незаданный OTP_PROVIDER даёт mock. Прежде стенд с ним поднимался, и
+    // выяснялось это у первого человека, набравшего свой номер: код не
+    // уходил никуда, а войти было нельзя вообще. Теперь стенд отказывается
+    // стартовать и называет переменную.
     produção();
+    delete process.env.OTP_PROVIDER;
+    resetConfigCache();
+
+    expect(() => loadConfig()).toThrow(/OTP_PROVIDER/);
+  });
+
+  it("опечатка в имени канала тоже останавливает старт", async () => {
+    // Иначе она доживает до первой отправки кода.
+    produção({ OTP_PROVIDER: "whats-app" });
+    resetConfigCache();
+
+    expect(() => loadConfig()).toThrow(/OTP_PROVIDER/);
+  });
+
+  it("/health называет настроенный канал", async () => {
+    produção();
+    const resposta = await request(createApp()).get("/health");
+    const corpo = resposta.body as { checks: { otp: { ok: boolean; detail: string } } };
+
+    expect(corpo.checks.otp.ok).toBe(true);
+    expect(corpo.checks.otp.detail).toContain("OTP_PROVIDER=whatsapp");
+  });
+
+  it("/health вне production называет заглушку заглушкой", async () => {
+    // Стенды разработки на mock работают, и по /health это должно быть видно:
+    // «ok» там означало бы, что код куда-то уходит.
+    produção();
+    process.env.NODE_ENV = "development";
+    delete process.env.OTP_PROVIDER;
+    resetConfigCache();
+
     const resposta = await request(createApp()).get("/health");
     const corpo = resposta.body as { checks: { otp: { ok: boolean; detail: string } } };
 
@@ -78,22 +113,8 @@ describe("вход в production", () => {
   });
 
   it("с настроенным WhatsApp код уходит и человек идёт вводить его", async () => {
-    const enviados: string[] = [];
-    vi.stubGlobal("fetch", async (_url: string, init: RequestInit) => {
-      enviados.push(init.body as string);
-      return new Response(JSON.stringify({ messages: [{ id: "wamid.OK" }] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    });
-
-    produção({
-      OTP_PROVIDER: "whatsapp",
-      WHATSAPP_API_KEY: "token-de-teste",
-      WHATSAPP_PHONE_NUMBER_ID: "123456789",
-      WHATSAPP_API_VERSION: "v21.0",
-      WHATSAPP_TEMPLATE: "codigo_de_acesso",
-    });
+    produção();
+    const enviados = metaResponde(200, { messages: [{ id: "wamid.OK" }] });
 
     const resposta = await pedirCodigo(createApp(), "11987654321");
 
@@ -108,8 +129,11 @@ describe("вход в production", () => {
     // Свойство проверяется на самом провайдере: перехватывать поток пишущего
     // логгера бессмысленно — он держит ссылку на него с момента создания.
     //
-    // В production ветка с записью недостижима: отказ возвращается раньше.
-    // Вне production код в лог попадает намеренно — иначе локально не войти.
+    // Конфигурация до этого провайдера в production уже не доводит, но
+    // свойство проверяется и здесь: код в логе — прямая утечка второго
+    // фактора (§76), и стоит она столько, что одной проверки при старте
+    // мало. Вне production код в лог попадает намеренно — иначе локально
+    // не войти.
     produção();
     const { MockOtpProvider } = await import("../../src/users/otpProvider");
     const emProducao = await new MockOtpProvider().send("+5511987654321", "123456");
