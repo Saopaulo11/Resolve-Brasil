@@ -2768,3 +2768,175 @@ a:focus-visible {
     margin-top: 2rem;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Результат разбора: опознание, шаги, готовое письмо.
+
+   Порядок на экране повторяет порядок решения: что за проблема → чего не
+   хватает → что делать → чем написать. Нумерация шагов рисуется счётчиком,
+   а не цифрами в разметке: своя цифра разошлась бы с порядком, стоило бы
+   шагу пропасть или добавиться.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Селекторы ниже написаны в два класса нарочно: в таблице уже есть
+   .bloco p и .bloco h3 — класс плюс тег, — и одиночный класс им проигрывает.
+   Без этого подпись уходила в серый, а заголовок оставался размером с
+   обычный подзаголовок. */
+.resultado .resultado__rotulo {
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  /* Заглавные — начертанием, а не в тексте: с заглавными в разметке
+     экранный читатель произносит подпись по буквам. */
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.resultado .resultado__titulo {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+.resultado .resultado__lead {
+  margin: 0.375rem 0 0;
+  color: var(--color-muted);
+}
+
+.resultado > .notice {
+  margin-top: 1rem;
+}
+
+/* Что нужно узнать: перечень без маркеров — каждый пункт и так отдельным
+   блоком, а точка перед вопросом добавляет шум, не добавляя смысла. */
+.saber {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.875rem;
+}
+
+.saber > li {
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-border);
+}
+
+.saber .saber__pergunta {
+  margin: 0;
+  font-weight: 550;
+  /* Цвет задаётся явно: .bloco p красит абзацы в серый, а вопрос — это то,
+     что человек должен прочитать, а не фон. */
+  color: var(--color-text);
+}
+
+.saber .saber__pergunta + .small {
+  margin: 0.25rem 0 0;
+}
+
+/* Шаги. */
+.passos {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: passo;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.passos > li {
+  counter-increment: passo;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  column-gap: 0.875rem;
+  row-gap: 0.25rem;
+}
+
+.passos > li::before {
+  content: counter(passo);
+  grid-row: 1 / span 4;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.passos .passos__titulo {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.passos > li > .small,
+.passos > li > .tag {
+  margin: 0;
+}
+
+.passos > li > .tag {
+  justify-self: start;
+}
+
+/* Готовое письмо — за раскрытием. */
+.pronta {
+  padding: 0;
+}
+
+.pronta__botao {
+  /* Подпись раскрытия ведёт себя как кнопка, но остаётся <summary>: без
+     скрипта она всё равно открывает блок. */
+  list-style: none;
+  cursor: pointer;
+  padding: 1.25rem 1.5rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pronta__botao::-webkit-details-marker {
+  display: none;
+}
+
+.pronta__botao::after {
+  content: "›";
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--color-muted);
+}
+
+.pronta[open] > .pronta__botao::after {
+  content: "⌄";
+}
+
+.pronta__botao:focus-visible {
+  outline: 2px solid var(--color-primary-border);
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+}
+
+/* Содержимое раскрытия отделено от подписи — так видно, что письмо
+   относится к ней, а не к следующему блоку. */
+.pronta[open] > .pronta__botao {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pronta > :not(.pronta__botao) {
+  margin-left: 1.5rem;
+  margin-right: 1.5rem;
+}
+
+.pronta > :last-child {
+  margin-bottom: 1.5rem;
+}
+
+.pronta > h3 {
+  margin-top: 1.25rem;
+}

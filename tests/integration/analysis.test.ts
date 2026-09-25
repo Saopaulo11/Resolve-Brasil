@@ -128,9 +128,14 @@ describe("классификация через OpenAI", () => {
       .get(`/caso/${publicId}`)
       .set("Cookie", cookies);
 
-    expect(page.text).toContain("Entendemos sua situação");
-    expect(page.text).toContain("PRODUTO_NAO_RECEBIDO");
-    expect(page.text).toContain("91%");
+    expect(page.text).toContain("Problema identificado");
+    expect(page.text).toContain("Produto não recebido");
+    // Значение перечисления человеку не показывается: он пришёл с бытовой
+    // бедой, а не читать наши константы.
+    expect(page.text).not.toContain("PRODUTO_NAO_RECEBIDO");
+    // И процент уверенности тоже: он говорит о модели, а не о деле, но выглядит
+    // измеренной величиной.
+    expect(page.text).not.toContain("91%");
     expect(page.text).toContain("Número do pedido");
     // §4: под существенным ответом AI дисклеймер обязателен.
     expect(page.text).toContain("Informação gerada por inteligência artificial");
@@ -159,11 +164,15 @@ describe("классификация через OpenAI", () => {
     expect(stored?.category).toBeNull();
     expect(stored?.status).toBe("NOVO");
 
-    // Но сам разбор пользователю показывается — как предположение.
+    // Но сам разбор пользователю показывается — как предположение. Раньше
+    // это выражал процент уверенности; теперь — прямая оговорка, потому что
+    // «20%» человек читает как измеренную величину, а не как сомнение.
     const page = await request(harness.app)
       .get(`/caso/${publicId}`)
       .set("Cookie", cookies);
-    expect(page.text).toContain("20%");
+    expect(page.text).toContain("Produto não recebido");
+    expect(page.text).toContain("Ainda não é certeza");
+    expect(page.text).not.toContain("20%");
   });
 
   it("ответ не по схеме до пользователя не доходит", async () => {

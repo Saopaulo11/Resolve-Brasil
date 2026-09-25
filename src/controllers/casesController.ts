@@ -1,7 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 
-import { CATEGORIES, findCategoryBySlug } from "../cases/categories";
+import { CATEGORIES, findCategoryBySlug, findCategoryByValue } from "../cases/categories";
+import type { CaseCategory } from "../generated/prisma/enums";
 import { DESCRIPTION_MAX, DESCRIPTION_MIN } from "../cases/description";
 import { runAnalysis, type AnalysisKind } from "../cases/analysisService";
 import {
@@ -297,6 +298,31 @@ export async function ver(
  * остальное одинаково: показывать ему меньше, чем он сам только что
  * написал, незачем.
  */
+/**
+ * Категория разбора человеческими словами.
+ *
+ * Подписи берутся из того же списка, что и на главной: свой перевод здесь
+ * рано или поздно разошёлся бы с ним, и одно и то же называлось бы на сайте
+ * по-разному.
+ */
+function rotuloDaCategoria(metadata: unknown): string | null {
+  const categoria = (metadata as { category?: unknown } | null)?.category;
+  if (typeof categoria !== "string") return null;
+  return findCategoryByValue(categoria as CaseCategory)?.label ?? null;
+}
+
+/**
+ * Ниже ли уверенность того порога, при котором мы и сами не меняем категорию.
+ *
+ * Тот же порог, что и в разборе (§87): показывать одно, а решать по другому
+ * значило бы называть предположением то, что уже принято за факт, и наоборот.
+ */
+function classificacaoAbaixoDoLimite(metadata: unknown): boolean {
+  const confianca = (metadata as { confidence?: unknown } | null)?.confidence;
+  if (typeof confianca !== "number") return false;
+  return confianca < loadConfig().ai.classificationMinConfidence;
+}
+
 async function renderCaso(
   req: Request,
   res: Response,
@@ -423,6 +449,20 @@ async function renderCaso(
         !isClosedStatus(found.case.status),
       falhaDaAnalise,
       classificacao: latest("CLASSIFICACAO"),
+      /*
+       * Категория человеческими словами и признак неуверенности (§87).
+       *
+       * Раньше на странице стояло само значение перечисления —
+       * PRODUTO_NAO_RECEBIDO — и процент уверенности модели. Первое человек
+       * читать не должен вовсе, второе выглядит измеренной величиной, хотя
+       * измерять тут нечего: цифра говорит о модели, а не о деле.
+       *
+       * Вместо процента — отметка «ещё не наверняка», и только когда
+       * уверенность ниже порога, при котором мы и сами не меняем категорию
+       * дела. Тогда разбор показан как предположение, а не как факт.
+       */
+      classificacaoLabel: rotuloDaCategoria(latest("CLASSIFICACAO")),
+      classificacaoIncerta: classificacaoAbaixoDoLimite(latest("CLASSIFICACAO")),
       perguntas: latest("PERGUNTAS"),
       plano: latest("PLANO_DE_ACAO"),
       rascunho: latest("RASCUNHO"),

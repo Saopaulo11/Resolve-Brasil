@@ -12,8 +12,10 @@
 
     <div class="caso__marcas">
       <span class="marca marca--<%= statusTone %>"><%= statusLabel %></span>
-      <% if (classificacao && classificacao.category) { %>
-        <span class="marca"><%= classificacao.category %></span>
+      <%# Подпись, а не значение перечисления: та же категория в шапке
+          называется так же, как в разборе ниже и в списке на главной. %>
+      <% if (classificacaoLabel) { %>
+        <span class="marca"><%= classificacaoLabel %></span>
       <% } %>
       <% if (caso.companyName) { %>
         <span class="marca"><%= caso.companyName %></span>
@@ -93,47 +95,31 @@
           </p>
         </form>
       </div>
-    <% } else { %>
-      <div class="bloco">
-        <form method="post" action="/caso/<%= caso.publicId %>/analisar" class="actions">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button type="submit" name="tipo" value="classificar" class="btn btn--primary">
-            <%= classificacao ? "Analisar de novo" : "Analisar meu caso" %>
-          </button>
-          <button type="submit" name="tipo" value="perguntas" class="btn btn--secondary">
-            O que falta saber
-          </button>
-          <button type="submit" name="tipo" value="plano" class="btn btn--secondary">
-            Plano de ação
-          </button>
-          <button type="submit" name="tipo" value="rascunho" class="btn btn--secondary">
-            Preparar mensagem para a empresa
-          </button>
-        </form>
-      </div>
     <% } %>
 
     <% if (classificacao) { %>
-      <div class="bloco">
-        <h3>Entendemos sua situação</h3>
-        <dl class="rows">
-          <div class="row">
-            <dt>Categoria</dt>
-            <dd><%= classificacao.category %></dd>
-          </div>
-          <div class="row">
-            <dt>Confiança</dt>
-            <dd><%= Math.round(classificacao.confidence * 100) %>%</dd>
-          </div>
-        </dl>
+      <div class="bloco resultado">
+        <%# Опознанная проблема — словами человека, а не значением перечисления.
+            Процента уверенности здесь нет: он говорит о модели, а не о деле, и
+            выглядит измеренной величиной, хотя измерять тут нечего (§87). %>
+        <% if (classificacaoLabel) { %>
+          <p class="resultado__rotulo">Problema identificado</p>
+          <h3 class="resultado__titulo"><%= classificacaoLabel %></h3>
+        <% } else { %>
+          <h3 class="resultado__titulo">Entendemos o que aconteceu</h3>
+        <% } %>
 
-        <% if (classificacao.missing_information.length > 0) { %>
-          <h4>O que ainda falta</h4>
-          <ul>
-            <% classificacao.missing_information.forEach(function (item) { %>
-              <li><%= item %></li>
-            <% }); %>
-          </ul>
+        <% if (classificacao.subcategory) { %>
+          <p class="resultado__lead"><%= classificacao.subcategory %></p>
+        <% } %>
+
+        <%# Ниже порога разбор показан предположением, а не установленным
+            фактом: по такой уверенности мы и сами категорию дела не меняем. %>
+        <% if (classificacaoIncerta) { %>
+          <p class="notice">
+            Ainda não é certeza: pode ser outro tipo de problema. Responda o
+            que falta abaixo para confirmar.
+          </p>
         <% } %>
 
         <% if (classificacao.risk_flags.length > 0) { %>
@@ -153,29 +139,48 @@
       </div>
     <% } %>
 
-    <% if (perguntas && perguntas.questions.length > 0) { %>
+    <%# Что нужно узнать.
+
+        Вопросы приходят отдельным шагом разбора, и до него ответить нечем —
+        но уже после опознания видно, каких сведений не хватает. Поэтому до
+        вопросов здесь стоит именно этот список: раздел не пустует, а человек
+        не ждёт следующего обращения к модели, чтобы понять, что от него нужно.
+
+        Когда пришли вопросы, показываются они: в них есть ещё и «зачем». %>
+    <% const faltantes = classificacao ? classificacao.missing_information : []; %>
+    <% if ((perguntas && perguntas.questions.length > 0) || faltantes.length > 0) { %>
       <div class="bloco">
-        <h3>Perguntas para avançar</h3>
-        <ol>
-          <% perguntas.questions.forEach(function (q) { %>
-            <li>
-              <p class="timeline__title"><%= q.question %></p>
-              <p class="small muted"><%= q.why %></p>
-            </li>
-          <% }); %>
-        </ol>
-        <%- include('../partials/ai-disclaimer') %>
+        <h3>O que precisamos saber</h3>
+        <% if (perguntas && perguntas.questions.length > 0) { %>
+          <ul class="saber">
+            <% perguntas.questions.forEach(function (q) { %>
+              <li>
+                <p class="saber__pergunta"><%= q.question %></p>
+                <p class="small muted"><%= q.why %></p>
+              </li>
+            <% }); %>
+          </ul>
+          <%- include('../partials/ai-disclaimer') %>
+        <% } else { %>
+          <ul class="saber">
+            <% faltantes.forEach(function (item) { %>
+              <li><p class="saber__pergunta"><%= item %></p></li>
+            <% }); %>
+          </ul>
+        <% } %>
       </div>
     <% } %>
 
     <% if (plano) { %>
-      <div class="bloco">
-        <h3>Plano de ação</h3>
+      <div class="bloco resultado">
+        <p class="resultado__rotulo">Próximo passo</p>
         <% if (plano.steps.length > 0) { %>
-          <ol>
+          <%# Номера рисует сам список счётчиком CSS: своя цифра в разметке
+              разошлась бы с порядком, стоило бы шагу пропасть или добавиться. %>
+          <ol class="passos">
             <% plano.steps.forEach(function (step) { %>
               <li>
-                <p class="timeline__title"><%= step.title %></p>
+                <p class="passos__titulo"><%= step.title %></p>
                 <p class="small"><%= step.detail %></p>
                 <%# §5: видно, на чём держится шаг — на источнике или на предположении %>
                 <% if (step.source === "OFFICIAL_SOURCE") { %>
@@ -229,7 +234,13 @@
     <% } %>
 
     <% if (rascunho && rascunho.body) { %>
-      <div class="bloco">
+      <%# Письмо — под раскрытием: на экране оно занимает больше места, чем всё
+          остальное вместе, и, открытое сразу, отодвигает шаги, которые надо
+          сделать до отправки. Раскрытие на <details>: работает без скрипта, а
+          встроенные стили нам всё равно запрещены политикой безопасности. %>
+      <details class="bloco pronta">
+        <summary class="pronta__botao">Ver mensagem pronta</summary>
+
         <h3>Mensagem para a empresa</h3>
         <label for="draft-subject">Assunto</label>
         <input type="text" id="draft-subject" value="<%= rascunho.subject %>" readonly />
@@ -237,7 +248,7 @@
         <textarea id="draft-body" rows="12" readonly><%= rascunho.body %></textarea>
         <p>
           <button type="button" class="btn btn--secondary" data-copy="#draft-body">
-            Copiar
+            Copiar mensagem
           </button>
         </p>
 
@@ -255,6 +266,32 @@
         </p>
 
         <%- include('../partials/ai-disclaimer') %>
+      </details>
+    <% } %>
+
+    <%# Повторный разбор — после ответа, а не до него.
+
+        Пока разбор идёт, сверху стоит его ход: читать ещё нечего. Когда он
+        закончен, первое на экране — сам ответ, а четыре кнопки «сделать ещё
+        раз» ниже: они нужны тому, кого ответ не устроил, то есть уже
+        прочитавшему. %>
+    <% if (!autoAnalise) { %>
+      <div class="bloco">
+        <form method="post" action="/caso/<%= caso.publicId %>/analisar" class="actions">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" name="tipo" value="classificar" class="btn btn--primary">
+            <%= classificacao ? "Analisar de novo" : "Analisar meu caso" %>
+          </button>
+          <button type="submit" name="tipo" value="perguntas" class="btn btn--secondary">
+            O que falta saber
+          </button>
+          <button type="submit" name="tipo" value="plano" class="btn btn--secondary">
+            Plano de ação
+          </button>
+          <button type="submit" name="tipo" value="rascunho" class="btn btn--secondary">
+            Preparar mensagem para a empresa
+          </button>
+        </form>
       </div>
     <% } %>
 
